@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="MaintenanceManagement.Application/MaintenanceManagement.Application.csproj" />
+  <Project Path="MaintenanceManagement.Domain/MaintenanceManagement.Domain.csproj" />
+  <Project Path="MaintenanceManagement.Infrastructure/MaintenanceManagement.Infrastructure.csproj" />
+</Solution>
