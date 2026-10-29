@@ -128,6 +128,79 @@ namespace MaintenanceManagement.Infrastructure.DependencyInjection
                 IWorkRequestActionRepository,
                 WorkRequestActionRepository>();
 
+            // İş Emri Yönetimi
+            services.AddScoped<
+                IWorkOrderRepository,
+                WorkOrderRepository>();
+
+            // İş Emri Personel Görevlendirmeleri
+            services.AddScoped<
+                IWorkOrderPersonnelRepository,
+                WorkOrderPersonnelRepository>();
+
+            // İş Emri Faaliyet ve İşçilik Repository
+            services.AddScoped<
+                IWorkOrderActionRepository,
+                WorkOrderActionRepository>();
+
+            // İş Emri Durum Geçmişi Repository
+            services.AddScoped<
+                IWorkOrderStatusHistoryRepository,
+                WorkOrderStatusHistoryRepository>();
+
+            // İş Emri Dosyaları Repository
+            services.AddScoped<
+                IWorkOrderFileRepository,
+                WorkOrderFileRepository>();
+
+            // Planlı Bakım Repository
+            services.AddScoped<
+                IPlannedMaintenanceRepository,
+                PlannedMaintenanceRepository>();
+
+            // Bakım Kontrol Listesi Repository
+            services.AddScoped<
+                IMaintenanceChecklistRepository,
+                MaintenanceChecklistRepository>();
+
+            // İş Emri Bakım Kontrol Sonuçları Repository
+            services.AddScoped<
+                IWorkOrderChecklistResultRepository,
+                WorkOrderChecklistResultRepository>();
+
+            // İş Emri Malzeme Kullanım Repository
+            services.AddScoped<
+                IWorkOrderMaterialRepository,
+                WorkOrderMaterialRepository>();
+
+            // Ölçü Birimi Repository
+            services.AddScoped<
+                IMeasurementUnitRepository,
+                MeasurementUnitRepository>();
+
+            // Malzeme Kategorisi Repository
+            services.AddScoped<
+                IMaterialCategoryRepository,
+                MaterialCategoryRepository>();
+
+            // Malzeme Repository
+            services.AddScoped<IMaterialRepository, MaterialRepository>();
+
+            // Ambar Repository
+            services.AddScoped<
+            IWarehouseRepository,
+            WarehouseRepository>();
+
+            // Ambar Stokları Repository
+            services.AddScoped<
+                IWarehouseStockRepository,
+                WarehouseStockRepository>();
+
+            // Stok Hareketleri Repository
+            services.AddScoped<
+                IStockMovementRepository,
+                StockMovementRepository>();
+
 
             return services;
         }
