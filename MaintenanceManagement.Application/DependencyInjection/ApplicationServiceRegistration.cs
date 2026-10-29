@@ -16,9 +16,9 @@ namespace MaintenanceManagement.Application.DependencyInjection
         public static IServiceCollection AddApplicationServices(
             this IServiceCollection services)
         {
-            
+            services.AddAutoMapper(cfg => { }, typeof(GeneralMapping));
 
-             //Role Services
+            //Role Services
 
             services.AddScoped<IRoleService, RoleService>();
 
@@ -102,6 +102,8 @@ namespace MaintenanceManagement.Application.DependencyInjection
             services.AddScoped<IWarehouseStockService, WarehouseStockService>();
 
             services.AddScoped<IStockMovementService, StockMovementService>();
+
+            
 
             return services;
         }

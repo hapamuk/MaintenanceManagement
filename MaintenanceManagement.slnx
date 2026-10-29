@@ -2,4 +2,5 @@
   <Project Path="MaintenanceManagement.Application/MaintenanceManagement.Application.csproj" />
   <Project Path="MaintenanceManagement.Domain/MaintenanceManagement.Domain.csproj" />
   <Project Path="MaintenanceManagement.Infrastructure/MaintenanceManagement.Infrastructure.csproj" />
+  <Project Path="MaintenanceManagement.WebUI/MaintenanceManagement.WebUI.csproj" Id="41625de7-82b5-442f-93d3-a00d5512dcd7" />
 </Solution>
