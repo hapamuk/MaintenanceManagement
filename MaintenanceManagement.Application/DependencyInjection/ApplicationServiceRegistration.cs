@@ -103,7 +103,9 @@ namespace MaintenanceManagement.Application.DependencyInjection
 
             services.AddScoped<IStockMovementService, StockMovementService>();
 
-            
+            services.AddScoped<
+    IPasswordResetService,
+    PasswordResetService>();
 
             return services;
         }

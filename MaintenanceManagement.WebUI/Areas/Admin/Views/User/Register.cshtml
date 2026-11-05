@@ -1,0 +1,53 @@
+﻿@model RegisterUserDto
+
+@{
+    ViewData["Title"] = "Kullanıcı Kaydı";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                Yeni Kullanıcı Oluştur
+            </h6>
+        </div>
+
+        <div class="card-body">
+
+            <div class="alert alert-info">
+                Bu ekran yalnızca yetkili sistem
+                yöneticileri tarafından kullanılabilir.
+            </div>
+
+            <form asp-area="Admin"
+                  asp-controller="User"
+                  asp-action="Register"
+                  method="post"
+                  autocomplete="off">
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="All"
+                     class="text-danger mb-3"></div>
+
+                <div class="form-group">
+                    @Html.EditorForModel()
+                </div>
+
+                <button type="submit"
+                        class="btn btn-success">
+                    Kullanıcıyı Kaydet
+                </button>
+
+                <a asp-action="Index"
+                   class="btn btn-secondary">
+                    Listeye Dön
+                </a>
+            </form>
+
+        </div>
+    </div>
+</div>

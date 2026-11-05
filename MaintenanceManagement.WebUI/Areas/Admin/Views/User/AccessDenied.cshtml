@@ -1,0 +1,35 @@
+﻿@{
+    ViewData["Title"] = "Erişim Engellendi";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>Erişim Engellendi</title>
+    <link href="~/css/sb-admin-2.min.css"
+          rel="stylesheet" />
+</head>
+
+<body>
+    <div class="container mt-5">
+
+        <div class="alert alert-danger">
+            <h4>Erişim Engellendi</h4>
+
+            <p>
+                Bu sayfaya erişmek için gerekli
+                yetkiniz bulunmamaktadır.
+            </p>
+        </div>
+
+        <a asp-area="Admin"
+           asp-controller="User"
+           asp-action="Profile"
+           class="btn btn-primary">
+            Profilime Dön
+        </a>
+    </div>
+</body>
+</html>

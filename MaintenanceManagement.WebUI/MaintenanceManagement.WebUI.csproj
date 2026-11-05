@@ -23,4 +23,8 @@
     <ProjectReference Include="..\MaintenanceManagement.Infrastructure\MaintenanceManagement.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Areas\Admin\Data\" />
+  </ItemGroup>
+
 </Project>

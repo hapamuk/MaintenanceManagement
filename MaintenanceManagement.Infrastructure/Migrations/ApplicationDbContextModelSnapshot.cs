@@ -508,6 +508,37 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.ToTable("OrganizationTypes");
                 });
 
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.PasswordResetToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UsedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokens");
+                });
+
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.Permission", b =>
                 {
                     b.Property<int>("Id")
@@ -916,6 +947,10 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -940,6 +975,19 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.HasIndex("ParentUnitId");
 
                     b.ToTable("Units");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.UnitCodeCounter", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<long>("NextNumber")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UnitCodeCounters");
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.UnitWorkType", b =>
@@ -1929,6 +1977,17 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.Navigation("MeasurementUnit");
 
                     b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.PasswordResetToken", b =>
+                {
+                    b.HasOne("MaintenanceManagement.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.PlannedMaintenance", b =>

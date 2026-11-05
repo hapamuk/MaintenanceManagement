@@ -20,8 +20,13 @@ namespace MaintenanceManagement.Domain.Entities
         [Display(Name = "Birim Kodu")]
         public string Code { get; set; } = string.Empty;
 
+
+        [StringLength(150)]
+        public string? Description { get; set; } 
+
+
         [Required]
-        [Display(Name = "Organizasyon Türü")]
+        [Display(Name = "Organizasyon ")]
         public int OrganizationTypeId { get; set; }
 
         [Display(Name = "Üst Birim")]

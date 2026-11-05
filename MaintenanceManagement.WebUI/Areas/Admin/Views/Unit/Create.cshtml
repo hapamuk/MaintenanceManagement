@@ -1,0 +1,308 @@
+﻿
+@model MaintenanceManagement.Application.DTOS.UnitDtos.CreateUnitDto
+
+@{
+    ViewData["Title"] = "Yeni Birim Oluştur";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <!-- ===================================== -->
+    <!-- PAGE HEADING -->
+    <!-- ===================================== -->
+
+    <div class="d-sm-flex align-items-center
+                justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">
+
+            <i class="fas fa-plus-circle text-primary mr-2"></i>
+            Yeni Organizasyon Birimi
+
+        </h1>
+
+        <a asp-area="Admin"
+           asp-controller="Unit"
+           asp-action="Index"
+           class="btn btn-secondary shadow-sm">
+
+            <i class="fas fa-arrow-left mr-1"></i>
+            Listeye Dön
+
+        </a>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- CREATE CARD -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-building mr-2"></i>
+                Birim Bilgileri
+
+            </h6>
+
+        </div>
+
+        <div class="card-body">
+
+            <!-- ===================================== -->
+            <!-- INFORMATION -->
+            <!-- ===================================== -->
+
+            <div class="alert alert-info">
+
+                <i class="fas fa-info-circle mr-2"></i>
+
+                Yeni organizasyon biriminin bağlı olacağı
+                üst birimi seçebilirsiniz.
+
+                <br />
+
+                Birim kodu, kayıt işlemi başarılı olduğunda
+                sistem tarafından otomatik olarak oluşturulacaktır.
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- CREATE FORM -->
+            <!-- ===================================== -->
+
+            <form asp-area="Admin"
+                  asp-controller="Unit"
+                  asp-action="Create"
+                  method="post"
+                  autocomplete="off">
+
+                @Html.AntiForgeryToken()
+
+                <!-- ===================================== -->
+                <!-- VALIDATION SUMMARY -->
+                <!-- ===================================== -->
+
+                <div asp-validation-summary="All"
+                     class="text-danger mb-3">
+                </div>
+
+                <div class="row">
+
+                    <!-- ===================================== -->
+                    <!-- ORGANİZASYON TÜRÜ -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="OrganizationTypeId"
+                                   class="font-weight-bold">
+
+                                Organizasyon Türü
+
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <select asp-for="OrganizationTypeId"
+                                    asp-items="ViewBag.OrganizationTypes"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Organizasyon Türü Seçiniz --
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="OrganizationTypeId"
+                                  class="text-danger small">
+                            </span>
+
+                            <small class="form-text text-muted">
+                                Oluşturulacak birimin organizasyon
+                                türünü seçiniz.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <!-- ===================================== -->
+                    <!-- BİRİM ADI -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="Name"
+                                   class="font-weight-bold">
+
+                                Birim Adı
+
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input asp-for="Name"
+                                   class="form-control"
+                                   placeholder="Örn: Bilgi İşlem Müdürlüğü" />
+
+                            <span asp-validation-for="Name"
+                                  class="text-danger small">
+                            </span>
+
+                            <small class="form-text text-muted">
+                                Yeni oluşturulacak birimin
+                                adını giriniz.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <!-- ===================================== -->
+                    <!-- ÜST BİRİM -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="ParentUnitId"
+                                   class="font-weight-bold">
+
+                                <i class="fas fa-sitemap text-primary mr-1"></i>
+
+                                Üst Birim
+
+                            </label>
+
+                            <select asp-for="ParentUnitId"
+                                    asp-items="ViewBag.ParentUnits"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Üst Birim Yok (Ana Birim) --
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="ParentUnitId"
+                                  class="text-danger small">
+                            </span>
+
+                            <small class="form-text text-muted">
+
+                                Yeni birimin hangi organizasyon birimine
+                                bağlı olacağını seçiniz.
+
+                                <br />
+
+                                Üst birim seçilmezse yeni kayıt
+                                ana birim olarak oluşturulur.
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <!-- ===================================== -->
+                    <!-- AÇIKLAMA -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="Description"
+                                   class="font-weight-bold">
+
+                                Açıklama
+
+                            </label>
+
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Birim açıklaması"></textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ===================================== -->
+                <!-- OTOMATİK BİRİM KODU -->
+                <!-- ===================================== -->
+
+                <!--
+                    Code alanı bu formda bulunmaz.
+
+                    Birim kodu kullanıcıdan alınmaz.
+
+                    Code hidden olarak gönderilmez.
+
+                    Birim kodu UnitService ve
+                    UnitCodeRepository içerisinde
+                    kayıt sırasında otomatik oluşturulur.
+
+                    Kullanıcı kaydetmeden geri dönerse
+                    kod numarası artırılmaz.
+                -->
+
+                <hr />
+
+                <!-- ===================================== -->
+                <!-- BUTTONS -->
+                <!-- ===================================== -->
+
+                <div class="d-flex justify-content-end">
+
+                    <!-- CANCEL -->
+                    <a asp-area="Admin"
+                       asp-controller="Unit"
+                       asp-action="Index"
+                       class="btn btn-secondary mr-2">
+
+                        <i class="fas fa-times mr-1"></i>
+                        Vazgeç
+
+                    </a>
+
+                    <!-- SAVE -->
+                    <button type="submit"
+                            class="btn btn-success">
+
+                        <i class="fas fa-save mr-1"></i>
+                        Birimi Kaydet
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+}

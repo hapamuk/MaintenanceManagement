@@ -142,5 +142,70 @@ namespace MaintenanceManagement.Application.Interfaces.Services
             CancellationToken cancellationToken = default);
 
         #endregion
+
+        #region Register Methods
+
+        /// <summary>
+        /// Yalnızca admin tarafından yeni kullanıcı oluşturulur.
+        /// Kullanıcının başlangıç birim ve rol atamaları yapılır.
+        /// </summary>
+        Task<int> RegisterByAdminAsync(
+            RegisterUserDto dto,
+            CancellationToken cancellationToken = default);
+
+        #endregion
+
+
+        #region Authentication Methods
+
+        /// <summary>
+        /// Kullanıcı adı ve parola ile giriş işlemini gerçekleştirir.
+        /// </summary>
+        Task<LoginResultUserDto?> LoginAsync(
+            LoginUserDto dto,
+            CancellationToken cancellationToken = default);
+
+        #endregion
+
+
+        #region Profile Methods
+
+        /// <summary>
+        /// Kullanıcının profil bilgilerini getirir.
+        /// </summary>
+        Task<UserProfileDto?> GetProfileAsync(
+            int userId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Kullanıcının profil bilgilerini günceller.
+        /// Rol ve yetki bilgileri değiştirilemez.
+        /// </summary>
+        Task<bool> UpdateProfileAsync(
+            int userId,
+            UpdateUserProfileDto dto,
+            CancellationToken cancellationToken = default);
+
+        #endregion
+
+
+        #region Password Reset Methods
+
+        /// <summary>
+        /// Kullanıcıya şifre sıfırlama talebi oluşturur.
+        /// </summary>
+        Task RequestPasswordResetAsync(
+            ForgotPasswordUserDto dto,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Geçerli sıfırlama token'ı ile şifreyi yeniler.
+        /// </summary>
+        Task<bool> ResetPasswordAsync(
+            ResetPasswordUserDto dto,
+            CancellationToken cancellationToken = default);
+
+        #endregion
+
     }
 }

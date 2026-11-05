@@ -20,10 +20,9 @@ namespace MaintenanceManagement.Application.DTOS.UnitDtos
         /// <summary>
         /// Organizasyon biriminin kodunu belirtir.
         /// </summary>
-        [Required(
-            ErrorMessage = "Organizasyon birimi kodu zorunludur.")]
+        
         [Display(Name = "Birim Kodu")]
-        public string Code { get; set; } = string.Empty;
+        public string? Code { get; set; } 
 
         /// <summary>
         /// Birimin bağlı olduğu organizasyon
@@ -49,5 +48,8 @@ namespace MaintenanceManagement.Application.DTOS.UnitDtos
             ErrorMessage = "Geçerli bir üst birim seçiniz.")]
         [Display(Name = "Üst Birim")]
         public int? ParentUnitId { get; set; }
+
+        [StringLength(150)]
+        public string? Description { get; set; }
     }
 }

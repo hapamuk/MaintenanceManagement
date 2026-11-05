@@ -1,0 +1,43 @@
+﻿@model UserProfileDto
+
+@{
+    ViewData["Title"] = "Profilim";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <h3 class="mb-4">Profil Bilgilerim</h3>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header">
+            <strong>Kişisel Bilgilerim</strong>
+        </div>
+
+        <div class="card-body">
+
+            @Html.DisplayForModel()
+
+            <hr />
+
+            <a asp-action="ProfileEdit"
+               class="btn btn-primary">
+                Profilimi Düzenle
+            </a>
+
+            <a asp-action="ChangePassword"
+               class="btn btn-warning">
+                Şifremi Değiştir
+            </a>
+
+        </div>
+    </div>
+</div>

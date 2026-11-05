@@ -76,7 +76,7 @@ namespace MaintenanceManagement.Infrastructure.Data
         { get; set; } = null!;
 
         #endregion
-
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
         #region İş Türü ve İş Talebi Yönetimi
 
@@ -157,6 +157,8 @@ namespace MaintenanceManagement.Infrastructure.Data
         { get; set; } = null!;
 
         #endregion
+
+        public DbSet<UnitCodeCounter> UnitCodeCounters { get; set; }
 
 
         #region OnModelCreating

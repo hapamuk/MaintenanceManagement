@@ -189,6 +189,9 @@ namespace MaintenanceManagement.Application.Mapping
                     dest => dest.ParentUnit,
                     opt => opt.Ignore())
                 .ForMember(
+                    dest => dest.Code,
+                    opt => opt.Ignore())
+                .ForMember(
                     dest => dest.ChildUnits,
                     opt => opt.Ignore());
 

@@ -1,0 +1,197 @@
+﻿@model MaintenanceManagement.Application.DTOS.UnitDtos.GetByIdUnitDto
+
+@{
+    ViewData["Title"] = "Birim Detayı";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <!-- ===================================== -->
+    <!-- PAGE HEADING -->
+    <!-- ===================================== -->
+
+    <div class="d-sm-flex align-items-center
+        justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">
+
+            <i class="fas fa-building text-primary mr-2"></i>
+            Organizasyon Birimi Detayı
+
+        </h1>
+
+        <a asp-area="Admin"
+           asp-controller="Unit"
+           asp-action="Index"
+           class="btn btn-secondary shadow-sm">
+
+            <i class="fas fa-arrow-left mr-1"></i>
+            Listeye Dön
+
+        </a>
+
+    </div>
+
+    <!-- SUCCESS MESSAGE -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+
+            <i class="fas fa-check-circle mr-2"></i>
+            @TempData["Success"]
+
+            <button type="button"
+                    class="close"
+                    data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+
+        </div>
+    }
+
+    <!-- ===================================== -->
+    <!-- DETAILS CARD -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-info-circle mr-2"></i>
+                Birim Bilgileri
+
+            </h6>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <!-- UNIT ID -->
+                <div class="col-md-6">
+
+                    <div class="form-group">
+
+                        <label class="font-weight-bold text-gray-700">
+                            Birim ID
+                        </label>
+
+                        <div class="form-control bg-light">
+                            @Model.Id
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- UNIT CODE -->
+                <div class="col-md-6">
+
+                    <div class="form-group">
+
+                        <label class="font-weight-bold text-gray-700">
+                            Birim Kodu
+                        </label>
+
+                        <div class="form-control bg-light">
+                            @Model.Code
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- UNIT NAME -->
+                <div class="col-md-12">
+
+                    <div class="form-group">
+
+                        <label class="font-weight-bold text-gray-700">
+                            Birim Adı
+                        </label>
+
+                        <div class="form-control bg-light">
+                            @Model.Name
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ORGANIZATION TYPE -->
+                <div class="col-md-6">
+
+                    <div class="form-group">
+
+                        <label class="font-weight-bold text-gray-700">
+                            Organizasyon Türü ID
+                        </label>
+
+                        <div class="form-control bg-light">
+                            @Model.OrganizationTypeId
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- DESCRIPTION -->
+                <div class="col-md-12">
+
+                    <div class="form-group">
+
+                        <label class="font-weight-bold text-gray-700">
+                            Açıklama
+                        </label>
+
+                        <div class="border rounded bg-light p-3"
+                             style="min-height:90px; white-space:pre-wrap;">
+                            @(string.IsNullOrWhiteSpace(Model.Description) ? "Açıklama bulunmamaktadır." : Model.Description)
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <hr />
+
+            <!-- ===================================== -->
+            <!-- BUTTONS -->
+            <!-- ===================================== -->
+
+            <div class="d-flex justify-content-end">
+
+                <a asp-area="Admin"
+                   asp-controller="Unit"
+                   asp-action="Index"
+                   class="btn btn-secondary mr-2">
+
+                    <i class="fas fa-list mr-1"></i>
+                    Listeye Dön
+
+                </a>
+
+                <a asp-area="Admin"
+                   asp-controller="Unit"
+                   asp-action="Edit"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-primary">
+
+                    <i class="fas fa-edit mr-1"></i>
+                    Birimi Güncelle
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

@@ -1,0 +1,76 @@
+﻿@model UpdateUserProfileDto
+
+@{
+    ViewData["Title"] = "Profilimi Düzenle";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header">
+            <strong>Profil Bilgilerimi Güncelle</strong>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-action="ProfileEdit"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="All"
+                     class="text-danger"></div>
+
+                <div class="form-group">
+                    <label asp-for="FirstName">
+                        Ad
+                    </label>
+
+                    <input asp-for="FirstName"
+                           class="form-control" />
+
+                    <span asp-validation-for="FirstName"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="LastName">
+                        Soyad
+                    </label>
+
+                    <input asp-for="LastName"
+                           class="form-control" />
+
+                    <span asp-validation-for="LastName"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Phone">
+                        Telefon
+                    </label>
+
+                    <input asp-for="Phone"
+                           type="tel"
+                           class="form-control" />
+
+                    <span asp-validation-for="Phone"
+                          class="text-danger"></span>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-success">
+                    Güncelle
+                </button>
+
+                <a asp-action="Profile"
+                   class="btn btn-secondary">
+                    Vazgeç
+                </a>
+
+            </form>
+        </div>
+    </div>
+</div>

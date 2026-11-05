@@ -52,5 +52,8 @@ namespace MaintenanceManagement.Application.DTOS.UnitDtos
             ErrorMessage = "Geçerli bir üst birim seçiniz.")]
         [Display(Name = "Üst Birim")]
         public int? ParentUnitId { get; set; }
+
+        [StringLength(150)]
+        public string? Description { get; set; }
     }
 }

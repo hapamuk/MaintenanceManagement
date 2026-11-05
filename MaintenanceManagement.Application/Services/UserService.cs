@@ -17,15 +17,18 @@ namespace MaintenanceManagement.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IUnitRepository _unitRepository;
         private readonly IMapper _mapper;
+        private readonly IPasswordResetService _passwordResetService;
 
         public UserService(
             IUserRepository userRepository,
             IUnitRepository unitRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IPasswordResetService passwordResetService)
         {
             _userRepository = userRepository;
             _unitRepository = unitRepository;
             _mapper = mapper;
+            _passwordResetService = passwordResetService;
         }
 
         #region GetAll
@@ -801,6 +804,256 @@ namespace MaintenanceManagement.Application.Services
             }
         }
 
+        public async Task<int> RegisterByAdminAsync(
+     RegisterUserDto dto,
+     CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            ValidateDto(dto);
+
+            // RegisterUserDto -> CreateUserDto
+            var createDto = _mapper.Map<CreateUserDto>(dto);
+
+            // Mevcut CreateAsync iş kurallarını kullan.
+            int userId = await CreateAsync(
+                createDto,
+                cancellationToken);
+
+            return userId;
+        }
+
+        public async Task<LoginResultUserDto?> LoginAsync(
+    LoginUserDto dto,
+    CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            // =====================================
+            // 1. DTO DOĞRULAMASI
+            // =====================================
+
+            ValidateDto(dto);
+
+            if (string.IsNullOrWhiteSpace(dto.UsernameOrEmail) ||
+                string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return null;
+            }
+
+            // =====================================
+            // 2. KULLANICI ADI / E-POSTA NORMALİZASYONU
+            // =====================================
+
+            string usernameOrEmail = NormalizeOptional(
+                dto.UsernameOrEmail,
+                true)!;
+
+            // =====================================
+            // 3. KULLANICIYI BUL
+            // =====================================
+
+            User? user;
+
+            if (usernameOrEmail.Contains('@'))
+            {
+                // E-posta ile giriş
+                user = await _userRepository
+                    .GetByEmailAsync(
+                        usernameOrEmail,
+                        cancellationToken);
+            }
+            else
+            {
+                // Kullanıcı adı ile giriş
+                user = await _userRepository
+                    .GetByUsernameAsync(
+                        usernameOrEmail,
+                        cancellationToken);
+            }
+
+            // =====================================
+            // 4. KULLANICI KONTROLÜ
+            // =====================================
+
+            if (user == null)
+                return null;
+
+            // =====================================
+            // 5. AKTİFLİK VE SİSTEM ERİŞİMİ
+            // =====================================
+
+            if (!user.IsActive || !user.HasSystemAccess)
+                return null;
+
+            // =====================================
+            // 6. PAROLA HASH KONTROLÜ
+            // =====================================
+
+            if (string.IsNullOrWhiteSpace(user.PasswordHash))
+                return null;
+
+            bool isPasswordValid;
+
+            try
+            {
+                isPasswordValid = BCrypt.Net.BCrypt.Verify(
+                    dto.Password,
+                    user.PasswordHash);
+            }
+            catch (BCrypt.Net.SaltParseException)
+            {
+                return null;
+            }
+
+            if (!isPasswordValid)
+                return null;
+
+            // =====================================
+            // 7. BAĞLI OLDUĞU BİRİM KONTROLÜ
+            // =====================================
+
+            await ValidatePrimaryUnitAsync(
+                user.PrimaryUnitId,
+                cancellationToken);
+
+            // =====================================
+            // 8. LOGIN SONUCU
+            // =====================================
+
+            return _mapper.Map<LoginResultUserDto>(user);
+        }
+        public async Task<UserProfileDto?> GetProfileAsync(
+     int userId,
+     CancellationToken cancellationToken = default)
+        {
+            ValidateId(userId, "Kullanıcı");
+
+            var user = await _userRepository
+                .GetByIdWithDetailsAsync(
+                    userId,
+                    cancellationToken);
+
+            if (user == null)
+                return null;
+
+            return _mapper.Map<UserProfileDto>(user);
+        }
+
+        public async Task<bool> UpdateProfileAsync(
+    int userId,
+    UpdateUserProfileDto dto,
+    CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            // =====================================
+            // 1. KULLANICI ID DOĞRULAMASI
+            // =====================================
+
+            ValidateId(userId, "Kullanıcı");
+
+            // =====================================
+            // 2. DTO DOĞRULAMASI
+            // =====================================
+
+            ValidateDto(dto);
+
+            // =====================================
+            // 3. KULLANICIYI GETİR
+            // =====================================
+
+            var user = await _userRepository
+                .GetByIdAsync(
+                    userId,
+                    cancellationToken);
+
+            if (user == null)
+                return false;
+
+            // =====================================
+            // 4. KULLANICI DURUM KONTROLÜ
+            // =====================================
+
+            if (!user.IsActive || !user.HasSystemAccess)
+            {
+                throw new InvalidOperationException(
+                    "Kullanıcı hesabı profil güncelleme " +
+                    "işlemi için uygun değildir.");
+            }
+
+            // =====================================
+            // 5. ZORUNLU ALAN KONTROLLERİ
+            // =====================================
+
+            if (string.IsNullOrWhiteSpace(dto.FirstName) ||
+                string.IsNullOrWhiteSpace(dto.LastName))
+            {
+                throw new ValidationException(
+                    "Ad ve soyad bilgileri zorunludur.");
+            }
+
+            // =====================================
+            // 6. PROFİL BİLGİLERİNİ GÜNCELLE
+            // =====================================
+
+            user.FirstName = dto.FirstName.Trim();
+
+            user.LastName = dto.LastName.Trim();
+
+            user.Phone = NormalizeOptional(dto.Phone);
+
+            // =====================================
+            // 7. DEĞİŞMEYECEK ALANLAR
+            // =====================================
+
+            // Email
+            // Username
+            // Title
+            // PrimaryUnitId
+            // PasswordHash
+            // IsActive
+            // HasSystemAccess
+            // UserUnitRoles
+            // TeamMembers
+            //
+            // Bu alanlara müdahale edilmez.
+
+            // =====================================
+            // 8. VERİTABANINA KAYDET
+            // =====================================
+
+            return await _userRepository
+                .UpdateAsync(
+                    user,
+                    cancellationToken);
+        }
+
+        public async Task RequestPasswordResetAsync(
+    ForgotPasswordUserDto dto,
+    CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            ValidateDto(dto);
+
+            await _passwordResetService.RequestAsync(
+                dto,
+                cancellationToken);
+        }
+
+        public async Task<bool> ResetPasswordAsync(
+     ResetPasswordUserDto dto,
+     CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            ValidateDto(dto);
+
+            return await _passwordResetService.ResetAsync(
+                dto,
+                cancellationToken);
+        }
         #endregion
     }
 }

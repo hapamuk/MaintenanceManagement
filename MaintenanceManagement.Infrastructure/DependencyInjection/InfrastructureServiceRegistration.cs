@@ -1,6 +1,8 @@
 ﻿using MaintenanceManagement.Application.Interfaces;
 using MaintenanceManagement.Application.Interfaces.Repositories;
+using MaintenanceManagement.Application.Interfaces.Services;
 using MaintenanceManagement.Infrastructure.Repositories;
+using MaintenanceManagement.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -201,6 +203,15 @@ namespace MaintenanceManagement.Infrastructure.DependencyInjection
                 IStockMovementRepository,
                 StockMovementRepository>();
 
+            services.AddScoped<
+    IPasswordResetTokenRepository,
+    PasswordResetTokenRepository>();
+
+            services.AddScoped<
+                IPasswordResetEmailSender,
+                SmtpPasswordResetEmailSender>();
+
+            services.AddScoped<IUnitCodeRepository, UnitCodeRepository>();
 
             return services;
         }

@@ -1,0 +1,98 @@
+﻿@model GetByIdRoleDto
+
+@{
+    ViewData["Title"] = "Rol Detayı";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+                Rol Detay Bilgileri
+            </h6>
+
+        </div>
+
+        <div class="card-body">
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">
+                    @TempData["Success"]
+                </div>
+            }
+
+            <table class="table table-bordered">
+
+                <tbody>
+                    <tr>
+                        <th width="30%">Rol ID</th>
+                        <td>@Model.Id</td>
+                    </tr>
+
+                    <tr>
+                        <th>Rol Adı</th>
+                        <td>@Model.Name</td>
+                    </tr>
+
+                    <tr>
+                        <th>Rol Kodu</th>
+                        <td>@Model.Code</td>
+                    </tr>
+
+                    <tr>
+                        <th>Birim</th>
+                        <td>@Model.UnitName</td>
+                    </tr>
+
+                    <tr>
+                        <th>Açıklama</th>
+                        <td>@Model.Description</td>
+                    </tr>
+
+                    <tr>
+                        <th>Durum</th>
+                        <td>
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge badge-success">
+                                    Aktif
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">
+                                    Pasif
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+            <div class="mt-4">
+
+                <a asp-area="Admin"
+                   asp-controller="Role"
+                   asp-action="Edit"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-primary">
+                    Düzenle
+                </a>
+
+                <a asp-area="Admin"
+                   asp-controller="Role"
+                   asp-action="Index"
+                   class="btn btn-secondary">
+                    Listeye Dön
+                </a>
+
+            </div>
+        </div>
+    </div>
+</div>

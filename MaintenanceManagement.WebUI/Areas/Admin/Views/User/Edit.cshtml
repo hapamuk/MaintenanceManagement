@@ -1,0 +1,46 @@
+﻿@model UpdateUserDto
+
+@{
+    ViewData["Title"] = "Kullanıcı Güncelle";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header">
+            <strong>Kullanıcı Güncelle</strong>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-action="Edit"
+                  asp-route-id="@Model.Id"
+                  method="post"
+                  autocomplete="off">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" asp-for="Id" />
+
+                <div asp-validation-summary="All"
+                     class="text-danger mb-3"></div>
+
+                @Html.EditorForModel()
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    Güncelle
+                </button>
+
+                <a asp-action="Details"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-secondary">
+                    Geri Dön
+                </a>
+
+            </form>
+        </div>
+    </div>
+</div>

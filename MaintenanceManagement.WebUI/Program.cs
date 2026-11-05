@@ -1,7 +1,9 @@
 using MaintenanceManagement.Application.DependencyInjection;
+using MaintenanceManagement.Application.Interfaces.Services;
 using MaintenanceManagement.Application.Mapping;
 using MaintenanceManagement.Infrastructure.Data;
 using MaintenanceManagement.Infrastructure.DependencyInjection;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -66,8 +68,30 @@ builder.Services.AddApplicationServices();
 // ve diğer Repository sınıfları.
 
 builder.Services.AddInfrastructureRepositories();
+builder.Services.AddScoped<
+    IPasswordResetService,PasswordResetService>();
 
 #endregion
+
+builder.Services
+    .AddAuthentication(
+        CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "MaintenanceManagement.Auth";
+        options.Cookie.HttpOnly = true;
+
+        options.Cookie.SecurePolicy =
+            CookieSecurePolicy.Always;
+
+        options.LoginPath = "/Admin/User/Login";
+        options.AccessDeniedPath = "/Admin/User/AccessDenied";
+
+        options.ExpireTimeSpan =
+            TimeSpan.FromMinutes(30);
+
+        options.SlidingExpiration = true;
+    });
 
 
 // =====================================
@@ -115,12 +139,16 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 
-// =====================================
-// 8. MVC ROUTING
-// =====================================
+
+
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}"
+);
 
 app.MapControllerRoute(
     name: "default",

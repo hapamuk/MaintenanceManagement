@@ -15,16 +15,19 @@ namespace MaintenanceManagement.Application.Services
     {
         private readonly IUnitRepository _unitRepository;
         private readonly IOrganizationTypeRepository _organizationTypeRepository;
+        private readonly IUnitCodeRepository _unitCodeRepository;
         private readonly IMapper _mapper;
 
         public UnitService(
             IUnitRepository unitRepository,
             IOrganizationTypeRepository organizationTypeRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IUnitCodeRepository unitCodeRepository)
         {
             _unitRepository = unitRepository;
             _organizationTypeRepository = organizationTypeRepository;
             _mapper = mapper;
+            _unitCodeRepository = unitCodeRepository;
         }
 
         #region GetAll
@@ -149,55 +152,95 @@ namespace MaintenanceManagement.Application.Services
         /// Yeni organizasyon birimi oluşturur.
         /// </summary>
         public async Task<int> CreateAsync(
-            CreateUnitDto dto,
-            CancellationToken cancellationToken = default)
+    CreateUnitDto dto,
+    CancellationToken cancellationToken = default)
         {
+            // =====================================
+            // 1. DTO KONTROLÜ
+            // =====================================
+
             ArgumentNullException.ThrowIfNull(dto);
 
-            // Zorunlu alanları kontrol et.
+            // =====================================
+            // 2. ZORUNLU ALAN KONTROLLERİ
+            // =====================================
+
             ValidateUnitFields(
                 dto.Name,
-                dto.Code,
+                null,
                 dto.OrganizationTypeId,
-                dto.ParentUnitId);
+                dto.ParentUnitId,
+                validateCode: false);
 
             string name = dto.Name.Trim();
-            string code = dto.Code.Trim();
 
-            // Organizasyon türünün geçerli olduğunu kontrol et.
+            // =====================================
+            // 3. ORGANİZASYON TÜRÜ DOĞRULAMA
+            // =====================================
+
             await ValidateOrganizationTypeAsync(
                 dto.OrganizationTypeId,
                 cancellationToken);
 
-            // Seçilen üst birimi doğrula.
+            // =====================================
+            // 4. ÜST BİRİM DOĞRULAMA
+            // =====================================
+
             await ValidateParentHierarchyAsync(
                 dto.ParentUnitId,
                 null,
                 cancellationToken);
 
-            // Birim adı ve kodu benzersizliğini kontrol et.
-            await ValidateUniquenessAsync(
-                name,
-                code,
-                dto.ParentUnitId,
-                null,
-                cancellationToken);
+            // =====================================
+            // 5. BİRİM ADI BENZERSİZLİĞİ
+            // =====================================
 
-            // DTO -> Entity dönüşümü
+            bool nameExists = await _unitRepository
+                .ExistsNameAsync(
+                    name,
+                    dto.ParentUnitId,
+                    null,
+                    cancellationToken);
+
+            if (nameExists)
+            {
+                throw new InvalidOperationException(
+                    "Aynı üst birime bağlı bu isimde " +
+                    "başka bir organizasyon birimi bulunmaktadır.");
+            }
+
+            // =====================================
+            // 6. DTO -> ENTITY
+            // =====================================
+
             var unit = _mapper.Map<Unit>(dto);
 
             unit.Name = name;
-            unit.Code = code;
 
-            // Yeni birim varsayılan olarak aktiftir.
+            unit.OrganizationTypeId =
+                dto.OrganizationTypeId;
+
+            unit.ParentUnitId =
+                dto.ParentUnitId;
+
+            // Kullanıcıdan gelen kod dikkate alınmaz.
+            // Gerçek kod repository'de atanacaktır.
+            unit.Code = string.Empty;
+
             unit.IsActive = true;
 
-            // CreatedAt ve SaveChanges işlemleri
-            // mevcut GenericRepository tarafından yapılır.
-            var createdUnit = await _unitRepository
-                .CreateAsync(
+            // =====================================
+            // 7. OTOMATİK KOD VE KAYIT
+            // =====================================
+
+            var createdUnit = await _unitCodeRepository
+                .CreateWithNextCodeAsync(
                     unit,
                     cancellationToken);
+
+            // =====================================
+            // 8. OLUŞTURULAN ID
+            // =====================================
 
             return createdUnit.Id;
         }
@@ -210,9 +253,13 @@ namespace MaintenanceManagement.Application.Services
         /// Mevcut organizasyon birimini günceller.
         /// </summary>
         public async Task<bool> UpdateAsync(
-            UpdateUnitDto dto,
-            CancellationToken cancellationToken = default)
+    UpdateUnitDto dto,
+    CancellationToken cancellationToken = default)
         {
+            // =====================================
+            // 1. DTO KONTROLÜ
+            // =====================================
+
             ArgumentNullException.ThrowIfNull(dto);
 
             if (dto.Id <= 0)
@@ -221,11 +268,9 @@ namespace MaintenanceManagement.Application.Services
                     "Geçerli bir organizasyon birimi seçiniz.");
             }
 
-            ValidateUnitFields(
-                dto.Name,
-                dto.Code,
-                dto.OrganizationTypeId,
-                dto.ParentUnitId);
+            // =====================================
+            // 2. MEVCUT BİRİMİ GETİR
+            // =====================================
 
             var existingUnit = await _unitRepository
                 .GetByIdAsync(
@@ -233,43 +278,74 @@ namespace MaintenanceManagement.Application.Services
                     cancellationToken);
 
             if (existingUnit == null)
-            {
                 return false;
-            }
+
+            // =====================================
+            // 3. MEVCUT KODU KORU
+            // =====================================
+
+            string originalCode = existingUnit.Code;
+
+            // =====================================
+            // 4. ZORUNLU ALAN DOĞRULAMASI
+            // =====================================
+
+            ValidateUnitFields(
+                dto.Name,
+                originalCode,
+                dto.OrganizationTypeId,
+                dto.ParentUnitId);
 
             string name = dto.Name.Trim();
-            string code = dto.Code.Trim();
 
-            // Organizasyon türünü doğrula.
+            // =====================================
+            // 5. ORGANİZASYON TÜRÜNÜ DOĞRULA
+            // =====================================
+
             await ValidateOrganizationTypeAsync(
                 dto.OrganizationTypeId,
                 cancellationToken);
 
-            // Üst birim ilişkisini kontrol et.
-            // Birim kendi altına veya alt birimlerinin
-            // altına taşınamaz.
+            // =====================================
+            // 6. ÜST BİRİM HİYERARŞİSİNİ DOĞRULA
+            // =====================================
+
             await ValidateParentHierarchyAsync(
                 dto.ParentUnitId,
                 existingUnit.Id,
                 cancellationToken);
 
-            // Kendi ID değerini benzersizlik
-            // sorgularından hariç tut.
+            // =====================================
+            // 7. BENZERSİZLİK KONTROLÜ
+            // =====================================
+
             await ValidateUniquenessAsync(
                 name,
-                code,
+                originalCode,
                 dto.ParentUnitId,
                 existingUnit.Id,
                 cancellationToken);
 
-            // DTO -> Mevcut Entity
+            // =====================================
+            // 8. DTO -> ENTITY
+            // =====================================
+
             _mapper.Map(dto, existingUnit);
 
             existingUnit.Name = name;
-            existingUnit.Code = code;
 
-            // Id, IsActive, CreatedAt ve navigation
-            // koleksiyonları mapping tarafından korunur.
+            // =====================================
+            // 9. BİRİM KODUNU KORU
+            // =====================================
+
+            // DTO içindeki Code değiştirilmiş olsa bile
+            // veritabanındaki mevcut kod korunur.
+            existingUnit.Code = originalCode;
+
+            // =====================================
+            // 10. VERİTABANINA KAYDET
+            // =====================================
+
             return await _unitRepository
                 .UpdateAsync(
                     existingUnit,
@@ -424,11 +500,16 @@ namespace MaintenanceManagement.Application.Services
         /// Birimin zorunlu alanlarını kontrol eder.
         /// </summary>
         private static void ValidateUnitFields(
-            string? name,
-            string? code,
-            int organizationTypeId,
-            int? parentUnitId)
+    string? name,
+    string? code,
+    int organizationTypeId,
+    int? parentUnitId,
+    bool validateCode = true)
         {
+            // =====================================
+            // 1. BİRİM ADI
+            // =====================================
+
             if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException(
@@ -441,23 +522,38 @@ namespace MaintenanceManagement.Application.Services
                     "Birim adı en fazla 150 karakter olabilir.");
             }
 
-            if (string.IsNullOrWhiteSpace(code))
+            // =====================================
+            // 2. BİRİM KODU
+            // =====================================
+
+            if (validateCode)
             {
-                throw new ArgumentException(
-                    "Birim kodu zorunludur.");
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    throw new ArgumentException(
+                        "Birim kodu boş olamaz.");
+                }
+
+                if (code.Trim().Length > 50)
+                {
+                    throw new ArgumentException(
+                        "Birim kodu en fazla 50 karakter olabilir.");
+                }
             }
 
-            if (code.Trim().Length > 50)
-            {
-                throw new ArgumentException(
-                    "Birim kodu en fazla 50 karakter olabilir.");
-            }
+            // =====================================
+            // 3. ORGANİZASYON TÜRÜ
+            // =====================================
 
             if (organizationTypeId <= 0)
             {
                 throw new ArgumentException(
                     "Geçerli bir organizasyon türü seçiniz.");
             }
+
+            // =====================================
+            // 4. ÜST BİRİM
+            // =====================================
 
             if (parentUnitId.HasValue &&
                 parentUnitId.Value <= 0)

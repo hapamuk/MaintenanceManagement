@@ -116,5 +116,8 @@ namespace MaintenanceManagement.Application.DTOS.UnitDtos
         /// </summary>
         [Display(Name = "Güncellenme Tarihi")]
         public DateTime? UpdatedAt { get; set; }
+
+        [StringLength(150)]
+        public string? Description { get; set; }
     }
 }

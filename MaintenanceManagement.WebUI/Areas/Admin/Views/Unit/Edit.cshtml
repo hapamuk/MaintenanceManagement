@@ -1,0 +1,260 @@
+﻿@model MaintenanceManagement.Application.DTOS.UnitDtos.UpdateUnitDto
+
+@{
+    ViewData["Title"] = "Birim Güncelle";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <!-- ===================================== -->
+    <!-- PAGE HEADING -->
+    <!-- ===================================== -->
+
+    <div class="d-sm-flex align-items-center
+        justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">
+
+            <i class="fas fa-edit text-primary mr-2"></i>
+            Organizasyon Birimi Güncelle
+
+        </h1>
+
+        <a asp-area="Admin"
+           asp-controller="Unit"
+           asp-action="Index"
+           class="btn btn-secondary shadow-sm">
+
+            <i class="fas fa-arrow-left mr-1"></i>
+            Listeye Dön
+
+        </a>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- EDIT CARD -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-building mr-2"></i>
+                Birim Güncelleme Formu
+
+            </h6>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="alert alert-warning">
+
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+
+                Organizasyon birimi bilgilerini
+                güncellerken mevcut kullanıcı,
+                rol ve iş süreçleriyle ilişkilerini
+                dikkate alınız.
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- EDIT FORM -->
+            <!-- ===================================== -->
+
+            <form asp-area="Admin"
+                  asp-controller="Unit"
+                  asp-action="Edit"
+                  asp-route-id="@Model.Id"
+                  method="post"
+                  autocomplete="off">
+
+                @Html.AntiForgeryToken()
+
+                <!-- UNIT ID -->
+                <input type="hidden" asp-for="Id" />
+
+                <!-- VALIDATION -->
+                <div asp-validation-summary="All"
+                     class="text-danger mb-3">
+                </div>
+
+                <div class="row">
+
+                    <!-- ===================================== -->
+                    <!-- ORGANIZATION TYPE -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="OrganizationTypeId"
+                                   class="font-weight-bold">
+
+                                Organizasyon Türü
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <select asp-for="OrganizationTypeId"
+                                    asp-items="ViewBag.OrganizationTypes"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Organizasyon Türü Seçiniz --
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="OrganizationTypeId"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- ===================================== -->
+                    <!-- UNIT CODE -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="Code"
+                                   class="font-weight-bold">
+
+                                Birim Kodu
+
+                            </label>
+
+                            <div class="input-group">
+
+                                <input asp-for="Code"
+                                       class="form-control bg-light"
+                                       readonly="readonly"
+                                       aria-readonly="true" />
+
+                                <div class="input-group-append">
+
+                                    <span class="input-group-text">
+
+                                        <i class="fas fa-lock text-secondary"></i>
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                            <small class="form-text text-muted">
+                                Bu kod sistem tarafından otomatik
+                                oluşturulmuştur ve değiştirilemez.
+                            </small>
+
+                        </div>
+
+                    <!-- ===================================== -->
+                    <!-- UNIT NAME -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="Name"
+                                   class="font-weight-bold">
+
+                                Birim Adı
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input asp-for="Name"
+                                   class="form-control" />
+
+                            <span asp-validation-for="Name"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- ===================================== -->
+                    <!-- DESCRIPTION -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="Description"
+                                   class="font-weight-bold">
+
+                                Açıklama
+
+                            </label>
+
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4">
+                            </textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- ===================================== -->
+                <!-- BUTTONS -->
+                <!-- ===================================== -->
+
+                <div class="d-flex justify-content-end">
+
+                    <a asp-area="Admin"
+                       asp-controller="Unit"
+                       asp-action="Details"
+                       asp-route-id="@Model.Id"
+                       class="btn btn-secondary mr-2">
+
+                        <i class="fas fa-times mr-1"></i>
+                        Vazgeç
+
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        <i class="fas fa-save mr-1"></i>
+                        Değişiklikleri Kaydet
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
