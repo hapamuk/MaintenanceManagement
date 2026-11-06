@@ -19,8 +19,7 @@ namespace MaintenanceManagement.Infrastructure.Data
 
         #region Organizasyon, Kullanıcı, Rol ve Yetki Yönetimi
 
-        public DbSet<OrganizationType> OrganizationTypes
-        { get; set; } = null!;
+
 
         public DbSet<Unit> Units
         { get; set; } = null!;
@@ -174,7 +173,17 @@ namespace MaintenanceManagement.Infrastructure.Data
             modelBuilder.Entity<Unit>(entity =>
             {
                 // =====================================
-                // 1. ÜST BİRİM - ALT BİRİM
+                // 1. ORGANİZASYON TÜRÜ (ENUM)
+                // =====================================
+
+                // OrganizationType entity / foreign key kullanılmaz.
+                // Enum, Units tablosunda int olarak saklanır.
+                entity.Property(x => x.OrganizationTypeEnum)
+                    .HasConversion<int>()
+                    .IsRequired();
+
+                // =====================================
+                // 2. ÜST BİRİM - ALT BİRİM
                 // =====================================
 
                 entity.HasOne(x => x.ParentUnit)

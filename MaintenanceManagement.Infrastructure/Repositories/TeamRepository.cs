@@ -1,4 +1,5 @@
-﻿using MaintenanceManagement.Application.Interfaces.Repositories;
+﻿
+using MaintenanceManagement.Application.Interfaces.Repositories;
 using MaintenanceManagement.Domain.Entities;
 using MaintenanceManagement.Domain.Enums;
 using MaintenanceManagement.Infrastructure.Data;
@@ -14,14 +15,21 @@ namespace MaintenanceManagement.Infrastructure.Repositories
     public class TeamRepository :
        GenericRepository<Team>, ITeamRepository
     {
+        #region Constructor
+
         public TeamRepository(ApplicationDbContext context)
             : base(context)
         {
         }
 
+        #endregion
+
+        #region GetActiveTeams
+
         /// <summary>
-        /// Aktif organizasyonlarda bulunan aktif takımları
-        /// organizasyon adına göre sıralayarak getirir.
+        /// Aktif organizasyon birimlerinde bulunan
+        /// aktif takımları organizasyon adına göre
+        /// sıralayarak getirir.
         /// </summary>
         public async Task<List<Team>> GetActiveTeamsAsync(
             CancellationToken cancellationToken = default)
@@ -31,12 +39,15 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 .Include(x => x.Unit)
                 .Where(x =>
                     x.IsActive &&
-                    x.Unit.IsActive &&
-                    x.Unit.OrganizationType.IsActive)
+                    x.Unit.IsActive)
                 .OrderBy(x => x.Unit.Name)
                 .ThenBy(x => x.Name)
                 .ToListAsync(cancellationToken);
         }
+
+        #endregion
+
+        #region GetAllWithDetails
 
         /// <summary>
         /// Bütün takımları organizasyon, takım üyeleri
@@ -51,6 +62,10 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        #endregion
+
+        #region GetByIdWithDetails
+
         /// <summary>
         /// Belirtilen takımı organizasyon,
         /// personel ve iş emri detaylarıyla getirir.
@@ -64,6 +79,10 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     x => x.Id == id,
                     cancellationToken);
         }
+
+        #endregion
+
+        #region GetTeamsByUnitId
 
         /// <summary>
         /// Belirtilen organizasyona ait aktif ve
@@ -81,10 +100,17 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        #endregion
+
+        #region GetActiveTeamsByUnitId
+
         /// <summary>
         /// Belirtilen organizasyona ait aktif takımları getirir.
-        /// Organizasyonun ve organizasyon türünün de aktif
-        /// olması gerekir.
+        /// Takımın ve bağlı olduğu organizasyon biriminin
+        /// aktif olması gerekir.
+        ///
+        /// Organizasyon türü artık OrganizationTypeEnum
+        /// üzerinden yönetilir.
         /// </summary>
         public async Task<List<Team>> GetActiveTeamsByUnitIdAsync(
             int unitId,
@@ -96,11 +122,14 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 .Where(x =>
                     x.UnitId == unitId &&
                     x.IsActive &&
-                    x.Unit.IsActive &&
-                    x.Unit.OrganizationType.IsActive)
+                    x.Unit.IsActive)
                 .OrderBy(x => x.Name)
                 .ToListAsync(cancellationToken);
         }
+
+        #endregion
+
+        #region GetActiveTeamMembers
 
         /// <summary>
         /// Takıma ait aktif personel üyeliklerini getirir.
@@ -126,6 +155,10 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 .ThenBy(x => x.User.LastName)
                 .ToListAsync(cancellationToken);
         }
+
+        #endregion
+
+        #region ExistsName
 
         /// <summary>
         /// Aynı organizasyonda takım adının mevcut
@@ -154,6 +187,10 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     cancellationToken);
         }
 
+        #endregion
+
+        #region ExistsCode
+
         /// <summary>
         /// Aynı organizasyonda takım kodunun mevcut
         /// olup olmadığını kontrol eder.
@@ -181,6 +218,10 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     cancellationToken);
         }
 
+        #endregion
+
+        #region HasActiveMembers
+
         /// <summary>
         /// Belirtilen takımda aktif personel
         /// bulunup bulunmadığını kontrol eder.
@@ -201,6 +242,10 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     cancellationToken);
         }
 
+        #endregion
+
+        #region HasOpenWorkOrders
+
         /// <summary>
         /// Takımın henüz tamamlanmamış veya iptal edilmemiş
         /// iş emri olup olmadığını kontrol eder.
@@ -220,6 +265,10 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     ),
                     cancellationToken);
         }
+
+        #endregion
+
+        #region ChangeStatus
 
         /// <summary>
         /// Takımın aktiflik durumunu değiştirir
@@ -254,20 +303,29 @@ namespace MaintenanceManagement.Infrastructure.Repositories
             return true;
         }
 
+        #endregion
+
+        #region GetDetailsQuery
+
         /// <summary>
-        /// Organizasyon, organizasyon türü, takım üyeleri
+        /// Organizasyon birimi, takım üyeleri
         /// ve iş emirlerini içeren ortak detay sorgusu.
+        ///
+        /// OrganizationType navigation kaldırılmıştır.
+        /// Organizasyon türü Unit.OrganizationTypeEnum
+        /// üzerinden okunur.
         /// </summary>
         private IQueryable<Team> GetDetailsQuery()
         {
             return _dbSet
                 .AsNoTracking()
                 .Include(x => x.Unit)
-                    .ThenInclude(x => x.OrganizationType)
                 .Include(x => x.TeamMembers)
                     .ThenInclude(x => x.User)
                 .Include(x => x.WorkOrders)
                 .AsSplitQuery();
         }
+
+        #endregion
     }
 }

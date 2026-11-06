@@ -1,4 +1,5 @@
-﻿using MaintenanceManagement.Application.Interfaces.Repositories;
+﻿
+using MaintenanceManagement.Application.Interfaces.Repositories;
 using MaintenanceManagement.Domain.Entities;
 using MaintenanceManagement.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,8 @@ namespace MaintenanceManagement.Infrastructure.Repositories
         /// Sayaç kilidi ve birim kaydı aynı
         /// transaction içerisinde gerçekleştirilir.
         ///
+        /// Sayaç kaydı bulunmuyorsa otomatik oluşturulur.
+        ///
         /// Başarısız transaction numara tüketmez.
         /// </summary>
         public async Task<Unit> CreateWithNextCodeAsync(
@@ -68,10 +71,28 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                           WITH (UPDLOCK, HOLDLOCK)
                           WHERE Id = 1")
                     .AsTracking()
-                    .SingleAsync(cancellationToken);
+                    .SingleOrDefaultAsync(cancellationToken);
 
                 // =====================================
-                // 3. SIRADAKİ KODU BELİRLE
+                // 3. SAYAÇ YOKSA OLUŞTUR
+                // =====================================
+
+                if (counter == null)
+                {
+                    counter = new UnitCodeCounter
+                    {
+                        Id = 1,
+                        NextNumber = 1
+                    };
+
+                    await _context.UnitCodeCounters
+                        .AddAsync(
+                            counter,
+                            cancellationToken);
+                }
+
+                // =====================================
+                // 4. SIRADAKİ KODU BELİRLE
                 // =====================================
 
                 long nextNumber = counter.NextNumber;
@@ -88,7 +109,7 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                         CultureInfo.InvariantCulture);
 
                 // =====================================
-                // 4. YENİ BİRİME KODU ATA
+                // 5. YENİ BİRİME KODU ATA
                 // =====================================
 
                 unit.Code = generatedCode;
@@ -98,13 +119,13 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 unit.CreatedAt = DateTime.UtcNow;
 
                 // =====================================
-                // 5. SAYAÇ DEĞERİNİ ARTIR
+                // 6. SAYAÇ DEĞERİNİ ARTIR
                 // =====================================
 
                 counter.NextNumber = nextNumber + 1;
 
                 // =====================================
-                // 6. BİRİM KAYDINI EKLE
+                // 7. BİRİM KAYDINI EKLE
                 // =====================================
 
                 await _context.Units.AddAsync(
@@ -112,14 +133,14 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     cancellationToken);
 
                 // =====================================
-                // 7. DEĞİŞİKLİKLERİ KAYDET
+                // 8. DEĞİŞİKLİKLERİ KAYDET
                 // =====================================
 
                 await _context.SaveChangesAsync(
                     cancellationToken);
 
                 // =====================================
-                // 8. TRANSACTION'I TAMAMLA
+                // 9. TRANSACTION'I TAMAMLA
                 // =====================================
 
                 await transaction.CommitAsync(
@@ -130,7 +151,7 @@ namespace MaintenanceManagement.Infrastructure.Repositories
             catch
             {
                 // =====================================
-                // 9. HATA DURUMUNDA GERİ AL
+                // 10. HATA DURUMUNDA GERİ AL
                 // =====================================
 
                 await transaction.RollbackAsync(

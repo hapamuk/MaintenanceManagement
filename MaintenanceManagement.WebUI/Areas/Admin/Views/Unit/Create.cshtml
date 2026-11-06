@@ -1,5 +1,4 @@
-﻿
-@model MaintenanceManagement.Application.DTOS.UnitDtos.CreateUnitDto
+﻿@model MaintenanceManagement.Application.DTOS.UnitDtos.CreateUnitDto
 
 @{
     ViewData["Title"] = "Yeni Birim Oluştur";
@@ -83,10 +82,7 @@
 
                 @Html.AntiForgeryToken()
 
-                <!-- ===================================== -->
                 <!-- VALIDATION SUMMARY -->
-                <!-- ===================================== -->
-
                 <div asp-validation-summary="All"
                      class="text-danger mb-3">
                 </div>
@@ -101,7 +97,7 @@
 
                         <div class="form-group">
 
-                            <label asp-for="OrganizationTypeId"
+                            <label asp-for="OrganizationTypeEnum"
                                    class="font-weight-bold">
 
                                 Organizasyon Türü
@@ -110,17 +106,17 @@
 
                             </label>
 
-                            <select asp-for="OrganizationTypeId"
+                            <select asp-for="OrganizationTypeEnum"
                                     asp-items="ViewBag.OrganizationTypes"
                                     class="form-control">
 
-                                <option value="">
+                                <option value="0">
                                     -- Organizasyon Türü Seçiniz --
                                 </option>
 
                             </select>
 
-                            <span asp-validation-for="OrganizationTypeId"
+                            <span asp-validation-for="OrganizationTypeEnum"
                                   class="text-danger small">
                             </span>
 
@@ -247,7 +243,6 @@
                 <!-- ===================================== -->
                 <!-- OTOMATİK BİRİM KODU -->
                 <!-- ===================================== -->
-
                 <!--
                     Code alanı bu formda bulunmaz.
 

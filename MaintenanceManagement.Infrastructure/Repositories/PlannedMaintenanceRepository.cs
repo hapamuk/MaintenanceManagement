@@ -576,8 +576,8 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                         .ThenInclude(x => x.AssetCategory)
 
                 // Bakımdan sorumlu organizasyon
+                // OrganizationTypeEnum, Unit üzerinde bir enum alanıdır.
                 .Include(x => x.Unit)
-                    .ThenInclude(x => x.OrganizationType)
 
                 // İş alt türü ve bağlı iş türü
                 .Include(x => x.WorkSubType)

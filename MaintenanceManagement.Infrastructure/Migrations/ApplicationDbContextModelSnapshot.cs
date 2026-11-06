@@ -472,42 +472,6 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.ToTable("MeasurementUnits");
                 });
 
-            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.OrganizationType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("OrganizationTypes");
-                });
-
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.PasswordResetToken", b =>
                 {
                     b.Property<int>("Id")
@@ -959,7 +923,7 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<int>("OrganizationTypeId")
+                    b.Property<int>("OrganizationTypeEnum")
                         .HasColumnType("int");
 
                     b.Property<int?>("ParentUnitId")
@@ -969,8 +933,6 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("OrganizationTypeId");
 
                     b.HasIndex("ParentUnitId");
 
@@ -2139,18 +2101,10 @@ namespace MaintenanceManagement.Infrastructure.Migrations
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.Unit", b =>
                 {
-                    b.HasOne("MaintenanceManagement.Domain.Entities.OrganizationType", "OrganizationType")
-                        .WithMany("Units")
-                        .HasForeignKey("OrganizationTypeId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("MaintenanceManagement.Domain.Entities.Unit", "ParentUnit")
                         .WithMany("ChildUnits")
                         .HasForeignKey("ParentUnitId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("OrganizationType");
 
                     b.Navigation("ParentUnit");
                 });
@@ -2593,11 +2547,6 @@ namespace MaintenanceManagement.Infrastructure.Migrations
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.MeasurementUnit", b =>
                 {
                     b.Navigation("Materials");
-                });
-
-            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.OrganizationType", b =>
-                {
-                    b.Navigation("Units");
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.Permission", b =>

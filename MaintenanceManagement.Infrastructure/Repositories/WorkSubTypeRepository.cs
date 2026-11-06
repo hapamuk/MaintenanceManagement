@@ -455,8 +455,8 @@ namespace MaintenanceManagement.Infrastructure.Repositories
         /// aktif iş alt türlerini sorgular.
         ///
         /// İş alt türü, iş türü, organizasyon,
-        /// organizasyon türü ve UnitWorkType
-        /// eşleştirmesi aktif olmalıdır.
+        /// ve UnitWorkType eşleştirmesi aktif olmalıdır.
+        /// Organizasyon türü Unit.OrganizationTypeEnum üzerinden tutulur.
         /// </summary>
         private IQueryable<WorkSubType> GetAvailableForUnitQuery(
             int unitId)
@@ -470,8 +470,7 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     x.WorkType.UnitWorkTypes.Any(uwt =>
                         uwt.UnitId == unitId &&
                         uwt.IsActive &&
-                        uwt.Unit.IsActive &&
-                        uwt.Unit.OrganizationType.IsActive));
+                        uwt.Unit.IsActive));
         }
     }
 }

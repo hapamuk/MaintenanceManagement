@@ -10,7 +10,6 @@ using MaintenanceManagement.Application.DTOS.MaintenanceChecklistDtos;
 using MaintenanceManagement.Application.DTOS.MaterialCategoryDtos;
 using MaintenanceManagement.Application.DTOS.MaterialDtos;
 using MaintenanceManagement.Application.DTOS.MeasurementUnitDtos;
-using MaintenanceManagement.Application.DTOS.OrganizationTypeDtos;
 using MaintenanceManagement.Application.DTOS.PermissionDtos;
 using MaintenanceManagement.Application.DTOS.PlannedMaintenancesDtos;
 using MaintenanceManagement.Application.DTOS.RoleDtos;
@@ -39,6 +38,8 @@ using MaintenanceManagement.Application.DTOS.WorkRequestFileDtos;
 using MaintenanceManagement.Application.DTOS.WorkSubTypeDtos;
 using MaintenanceManagement.Application.DTOS.WorkTypeDtos;
 using MaintenanceManagement.Domain.Entities;
+using MaintenanceManagement.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,7 +48,7 @@ using System.Threading.Tasks;
 
 namespace MaintenanceManagement.Application.Mapping
 {
-    public class GeneralMapping:Profile
+    public class GeneralMapping : Profile
     {
 
         public GeneralMapping()
@@ -88,124 +89,39 @@ namespace MaintenanceManagement.Application.Mapping
 
             #endregion
 
-
-            #region OrganizationType Mapping
-
-            // Yeni organizasyon türü oluşturma
-            CreateMap<CreateOrganizationTypeDto, OrganizationType>()
-                .ForMember(
-                    dest => dest.Id,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.IsActive,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.CreatedAt,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.UpdatedAt,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.Units,
-                    opt => opt.Ignore());
-
-            // Organizasyon türü güncelleme
-            CreateMap<UpdateOrganizationTypeDto, OrganizationType>()
-                .ForMember(
-                    dest => dest.IsActive,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.CreatedAt,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.UpdatedAt,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.Units,
-                    opt => opt.Ignore());
-
-            // Organizasyon türü listeleme
-            CreateMap<OrganizationType, ResultOrganizationTypeDto>();
-
-            // Organizasyon türü detayları
-            CreateMap<OrganizationType, GetByIdOrganizationTypeDto>()
-                .ForMember(
-                    dest => dest.UnitCount,
-                    opt => opt.MapFrom(src =>
-                        src.Units.Count))
-                .ForMember(
-                    dest => dest.ActiveUnitCount,
-                    opt => opt.MapFrom(src =>
-                        src.Units.Count(x => x.IsActive)))
-                .ForMember(
-                    dest => dest.InactiveUnitCount,
-                    opt => opt.MapFrom(src =>
-                        src.Units.Count(x => !x.IsActive)));
-
-            #endregion
-
             #region Unit Mapping
-            CreateMap<CreateUnitDto, Unit>()
-    .ForMember(
-        dest => dest.Id,
-        opt => opt.Ignore())
-    .ForMember(
-        dest => dest.IsActive,
-        opt => opt.Ignore())
-    .ForMember(
-        dest => dest.CreatedAt,
-        opt => opt.Ignore())
-    .ForMember(
-        dest => dest.UpdatedAt,
-        opt => opt.Ignore())
-    .ForMember(
-        dest => dest.OrganizationType,
-        opt => opt.Ignore())
-    .ForMember(
-        dest => dest.ParentUnit,
-        opt => opt.Ignore())
-    .ForMember(
-        dest => dest.ChildUnits,
-        opt => opt.Ignore());
 
-            // Organizasyon birimi güncelleme
+            // Yeni birim oluşturma
+            // Birim kodu UnitCodeRepository tarafından atanır.
+            CreateMap<CreateUnitDto, Unit>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.Code, opt => opt.Ignore())
+                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.ParentUnit, opt => opt.Ignore())
+                .ForMember(dest => dest.ChildUnits, opt => opt.Ignore());
+
+            // Birim güncelleme
+            // Birim kodu ve sistem alanları değiştirilemez.
             CreateMap<UpdateUnitDto, Unit>()
-                .ForMember(
-                    dest => dest.Id,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.IsActive,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.CreatedAt,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.UpdatedAt,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.OrganizationType,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.ParentUnit,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.Code,
-                    opt => opt.Ignore())
-                .ForMember(
-                    dest => dest.ChildUnits,
-                    opt => opt.Ignore());
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.Code, opt => opt.Ignore())
+                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.ParentUnit, opt => opt.Ignore())
+                .ForMember(dest => dest.ChildUnits, opt => opt.Ignore());
 
             // Güncelleme formunu doldurma
             CreateMap<Unit, UpdateUnitDto>();
 
-            // Organizasyon birimi listeleme
+            // Birim listesi
             CreateMap<Unit, ResultUnitDto>()
                 .ForMember(
                     dest => dest.OrganizationTypeName,
                     opt => opt.MapFrom(src =>
-                        src.OrganizationType != null
-                            ? src.OrganizationType.Name
-                            : string.Empty))
+                        GetOrganizationTypeDisplayName(src.OrganizationTypeEnum)))
                 .ForMember(
                     dest => dest.ParentUnitName,
                     opt => opt.MapFrom(src =>
@@ -213,14 +129,12 @@ namespace MaintenanceManagement.Application.Mapping
                             ? src.ParentUnit.Name
                             : null));
 
-            // Organizasyon birimi detayları
+            // Birim detayları
             CreateMap<Unit, GetByIdUnitDto>()
                 .ForMember(
                     dest => dest.OrganizationTypeName,
                     opt => opt.MapFrom(src =>
-                        src.OrganizationType != null
-                            ? src.OrganizationType.Name
-                            : string.Empty))
+                        GetOrganizationTypeDisplayName(src.OrganizationTypeEnum)))
                 .ForMember(
                     dest => dest.ParentUnitName,
                     opt => opt.MapFrom(src =>
@@ -251,7 +165,6 @@ namespace MaintenanceManagement.Application.Mapping
                     dest => dest.AssetCount,
                     opt => opt.MapFrom(src =>
                         src.Assets.Count));
-
 
             #endregion
 
@@ -4910,6 +4823,21 @@ namespace MaintenanceManagement.Application.Mapping
 
 
             #endregion
+        }
+
+
+        // OrganizationTypeEnum üzerindeki Display(Name) değerini döndürür.
+        private static string GetOrganizationTypeDisplayName(
+            OrganizationTypeEnum value)
+        {
+            var field = typeof(OrganizationTypeEnum).GetField(value.ToString());
+
+            var display = field?
+                .GetCustomAttributes(typeof(DisplayAttribute), false)
+                .OfType<DisplayAttribute>()
+                .FirstOrDefault();
+
+            return display?.GetName() ?? value.ToString();
         }
 
     }

@@ -23,10 +23,6 @@ namespace MaintenanceManagement.Infrastructure.DependencyInjection
 
             services.AddScoped<IRoleRepository, RoleRepository>();
 
-            // Organization Type Repository
-            services.AddScoped<
-                IOrganizationTypeRepository,
-                OrganizationTypeRepository>();
 
             // Unit Repository
             services.AddScoped<

@@ -12,7 +12,7 @@
     <!-- ===================================== -->
 
     <div class="d-sm-flex align-items-center
-        justify-content-between mb-4">
+                justify-content-between mb-4">
 
         <h1 class="h3 mb-0 text-gray-800">
 
@@ -52,14 +52,17 @@
 
         <div class="card-body">
 
+            <!-- ===================================== -->
+            <!-- INFORMATION -->
+            <!-- ===================================== -->
+
             <div class="alert alert-warning">
 
                 <i class="fas fa-exclamation-triangle mr-2"></i>
 
-                Organizasyon birimi bilgilerini
-                güncellerken mevcut kullanıcı,
-                rol ve iş süreçleriyle ilişkilerini
-                dikkate alınız.
+                Organizasyon birimi bilgilerini güncellerken
+                mevcut kullanıcı, rol ve iş süreçleriyle
+                ilişkilerini dikkate alınız.
 
             </div>
 
@@ -79,7 +82,7 @@
                 <!-- UNIT ID -->
                 <input type="hidden" asp-for="Id" />
 
-                <!-- VALIDATION -->
+                <!-- VALIDATION SUMMARY -->
                 <div asp-validation-summary="All"
                      class="text-danger mb-3">
                 </div>
@@ -87,41 +90,46 @@
                 <div class="row">
 
                     <!-- ===================================== -->
-                    <!-- ORGANIZATION TYPE -->
+                    <!-- ORGANİZASYON TÜRÜ -->
                     <!-- ===================================== -->
 
                     <div class="col-md-6">
 
                         <div class="form-group">
 
-                            <label asp-for="OrganizationTypeId"
+                            <label asp-for="OrganizationTypeEnum"
                                    class="font-weight-bold">
 
                                 Organizasyon Türü
+
                                 <span class="text-danger">*</span>
 
                             </label>
 
-                            <select asp-for="OrganizationTypeId"
+                            <select asp-for="OrganizationTypeEnum"
                                     asp-items="ViewBag.OrganizationTypes"
                                     class="form-control">
 
-                                <option value="">
+                                <option value="0">
                                     -- Organizasyon Türü Seçiniz --
                                 </option>
 
                             </select>
 
-                            <span asp-validation-for="OrganizationTypeId"
+                            <span asp-validation-for="OrganizationTypeEnum"
                                   class="text-danger small">
                             </span>
+
+                            <small class="form-text text-muted">
+                                Birimin organizasyon türünü seçiniz.
+                            </small>
 
                         </div>
 
                     </div>
 
                     <!-- ===================================== -->
-                    <!-- UNIT CODE -->
+                    <!-- BİRİM KODU -->
                     <!-- ===================================== -->
 
                     <div class="col-md-6">
@@ -161,8 +169,10 @@
 
                         </div>
 
+                    </div>
+
                     <!-- ===================================== -->
-                    <!-- UNIT NAME -->
+                    <!-- BİRİM ADI -->
                     <!-- ===================================== -->
 
                     <div class="col-md-12">
@@ -173,12 +183,14 @@
                                    class="font-weight-bold">
 
                                 Birim Adı
+
                                 <span class="text-danger">*</span>
 
                             </label>
 
                             <input asp-for="Name"
-                                   class="form-control" />
+                                   class="form-control"
+                                   placeholder="Örn: Bilgi İşlem Müdürlüğü" />
 
                             <span asp-validation-for="Name"
                                   class="text-danger small">
@@ -189,7 +201,59 @@
                     </div>
 
                     <!-- ===================================== -->
-                    <!-- DESCRIPTION -->
+                    <!-- ÜST BİRİM -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="ParentUnitId"
+                                   class="font-weight-bold">
+
+                                <i class="fas fa-sitemap text-primary mr-1"></i>
+
+                                Üst Birim
+
+                            </label>
+
+                            <select asp-for="ParentUnitId"
+                                    asp-items="ViewBag.ParentUnits"
+                                    class="form-control">
+
+                                <option value="">
+                                    -- Üst Birim Yok (Ana Birim) --
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="ParentUnitId"
+                                  class="text-danger small">
+                            </span>
+
+                            <small class="form-text text-muted">
+
+                                Birimin bağlı olacağı üst organizasyon
+                                birimini seçiniz.
+
+                                <br />
+
+                                Üst birim seçilmezse kayıt
+                                ana birim olarak güncellenir.
+
+                                <br />
+
+                                Birimin kendisi veya alt birimleri
+                                üst birim olarak seçilemez.
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <!-- ===================================== -->
+                    <!-- AÇIKLAMA -->
                     <!-- ===================================== -->
 
                     <div class="col-md-12">
@@ -205,8 +269,8 @@
 
                             <textarea asp-for="Description"
                                       class="form-control"
-                                      rows="4">
-                            </textarea>
+                                      rows="4"
+                                      placeholder="Birim açıklaması"></textarea>
 
                             <span asp-validation-for="Description"
                                   class="text-danger small">
@@ -256,5 +320,7 @@
 </div>
 
 @section Scripts {
+
     <partial name="_ValidationScriptsPartial" />
+
 }

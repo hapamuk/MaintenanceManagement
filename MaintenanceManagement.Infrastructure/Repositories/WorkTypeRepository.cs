@@ -79,8 +79,8 @@ namespace MaintenanceManagement.Infrastructure.Repositories
         /// Organizasyonda kullanılabilecek aktif iş
         /// türlerini getirir.
         ///
-        /// İş türü, eşleştirme, organizasyon ve
-        /// organizasyon türü aktif olmalıdır.
+        /// İş türü, eşleştirme ve organizasyon birimi
+        /// aktif olmalıdır.
         /// </summary>
         public async Task<List<WorkType>>
             GetActiveWorkTypesByUnitIdAsync(
@@ -94,8 +94,7 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     x.UnitWorkTypes.Any(uwt =>
                         uwt.UnitId == unitId &&
                         uwt.IsActive &&
-                        uwt.Unit.IsActive &&
-                        uwt.Unit.OrganizationType.IsActive))
+                        uwt.Unit.IsActive))
                 .OrderBy(x => x.Name)
                 .ToListAsync(cancellationToken);
         }
@@ -161,8 +160,7 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     x.WorkType.UnitWorkTypes.Any(uwt =>
                         uwt.UnitId == unitId &&
                         uwt.IsActive &&
-                        uwt.Unit.IsActive &&
-                        uwt.Unit.OrganizationType.IsActive))
+                        uwt.Unit.IsActive))
                 .OrderBy(x => x.Name)
                 .ToListAsync(cancellationToken);
         }
@@ -340,7 +338,6 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 // Organizasyon eşleştirmeleri
                 .Include(x => x.UnitWorkTypes)
                     .ThenInclude(x => x.Unit)
-                        .ThenInclude(x => x.OrganizationType)
 
                 .AsSplitQuery();
         }

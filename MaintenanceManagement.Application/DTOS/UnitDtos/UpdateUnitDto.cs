@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MaintenanceManagement.Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -28,16 +29,9 @@ namespace MaintenanceManagement.Application.DTOS.UnitDtos
         [Display(Name = "Birim Kodu")]
         public string Code { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Organizasyon biriminin bağlı olduğu
-        /// organizasyon türünün ID bilgisidir.
-        /// </summary>
-        [Range(
-            1,
-            int.MaxValue,
-            ErrorMessage = "Geçerli bir organizasyon türü seçiniz.")]
+        [Required(ErrorMessage = "Organizasyon türü seçiniz.")]
         [Display(Name = "Organizasyon Türü")]
-        public int OrganizationTypeId { get; set; }
+        public OrganizationTypeEnum OrganizationTypeEnum { get; set; }
 
         /// <summary>
         /// Organizasyon biriminin bağlı

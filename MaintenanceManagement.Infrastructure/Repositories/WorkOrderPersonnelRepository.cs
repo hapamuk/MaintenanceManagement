@@ -362,7 +362,6 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                         x.WorkTypeId == workOrder.WorkTypeId &&
                         x.IsActive &&
                         x.Unit.IsActive &&
-                        x.Unit.OrganizationType.IsActive &&
                         x.WorkType.IsActive,
                         cancellationToken);
 
@@ -399,7 +398,6 @@ namespace MaintenanceManagement.Infrastructure.Repositories
 
                     tm.Team.Unit.IsActive &&
 
-                    tm.Team.Unit.OrganizationType.IsActive &&
 
                     tm.User.IsActive &&
 

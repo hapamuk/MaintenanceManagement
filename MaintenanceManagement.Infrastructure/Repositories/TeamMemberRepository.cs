@@ -343,8 +343,7 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     x.LeftAt == null &&
                     x.User.IsActive &&
                     x.Team.IsActive &&
-                    x.Team.Unit.IsActive &&
-                    x.Team.Unit.OrganizationType.IsActive);
+                    x.Team.Unit.IsActive);
         }
 
         /// <summary>

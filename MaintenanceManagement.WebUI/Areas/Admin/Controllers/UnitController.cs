@@ -1,9 +1,11 @@
 ﻿using MaintenanceManagement.Application.DTOS.UnitDtos;
 using MaintenanceManagement.Application.Interfaces.Services;
+using MaintenanceManagement.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 {
@@ -15,20 +17,11 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
         private readonly IUnitService _unitService;
 
-        private readonly IOrganizationTypeService
-            _organizationTypeService;
-
         private readonly ILogger<UnitController> _logger;
 
-        public UnitController(
-            IUnitService unitService,
-            IOrganizationTypeService organizationTypeService,
-            ILogger<UnitController> logger)
+        public UnitController(IUnitService unitService, ILogger<UnitController> logger)
         {
             _unitService = unitService;
-
-            _organizationTypeService =
-                organizationTypeService;
 
             _logger = logger;
         }
@@ -89,12 +82,9 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
         /// Yeni organizasyon birimi oluşturma formu.
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> Create(
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Create(CancellationToken cancellationToken)
         {
-            await LoadOrganizationTypesAsync(
-                null,
-                cancellationToken);
+            LoadOrganizationTypes();
 
             await LoadParentUnitsAsync(
                 null,
@@ -134,11 +124,11 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             // 2. ORGANİZASYON TÜRÜ KONTROLÜ
             // =====================================
 
-            if (model.OrganizationTypeId <= 0)
+            if (!Enum.IsDefined(typeof(OrganizationTypeEnum), model.OrganizationTypeEnum))
             {
                 ModelState.AddModelError(
-                    nameof(model.OrganizationTypeId),
-                    "Organizasyon türü seçiniz.");
+                    nameof(model.OrganizationTypeEnum),
+                    "Geçerli bir organizasyon türü seçiniz.");
             }
 
             // =====================================
@@ -159,9 +149,7 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadOrganizationTypesAsync(
-                    model.OrganizationTypeId,
-                    cancellationToken);
+                LoadOrganizationTypes();
 
                 await LoadParentUnitsAsync(
                     model.ParentUnitId,
@@ -221,9 +209,7 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             // 6. FORMU YENİDEN YÜKLE
             // =====================================
 
-            await LoadOrganizationTypesAsync(
-                model.OrganizationTypeId,
-                cancellationToken);
+            LoadOrganizationTypes();
 
             await LoadParentUnitsAsync(
                 model.ParentUnitId,
@@ -278,8 +264,8 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
                 Description = unit.Description,
 
-                OrganizationTypeId =
-                    unit.OrganizationTypeId,
+                OrganizationTypeEnum =
+                    unit.OrganizationTypeEnum,
 
                 ParentUnitId =
                     unit.ParentUnitId
@@ -289,9 +275,7 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             // 3. ORGANİZASYON TÜRLERİNİ YÜKLE
             // =====================================
 
-            await LoadOrganizationTypesAsync(
-                model.OrganizationTypeId,
-                cancellationToken);
+            LoadOrganizationTypes();
 
             // =====================================
             // 4. HİYERARŞİK ÜST BİRİMLERİ YÜKLE
@@ -331,11 +315,13 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             // 2. ORGANİZASYON TÜRÜ KONTROLÜ
             // =====================================
 
-            if (model.OrganizationTypeId <= 0)
+            if (!Enum.IsDefined(
+                typeof(OrganizationTypeEnum),
+                model.OrganizationTypeEnum))
             {
                 ModelState.AddModelError(
-                    nameof(model.OrganizationTypeId),
-                    "Organizasyon türü seçiniz.");
+                    nameof(model.OrganizationTypeEnum),
+                    "Geçerli bir organizasyon türü seçiniz.");
             }
 
             // =====================================
@@ -366,9 +352,7 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadOrganizationTypesAsync(
-                    model.OrganizationTypeId,
-                    cancellationToken);
+                LoadOrganizationTypes();
 
                 await LoadParentUnitsAsync(
                     model.ParentUnitId,
@@ -439,9 +423,7 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             // 6. HATA DURUMUNDA FORMU YÜKLE
             // =====================================
 
-            await LoadOrganizationTypesAsync(
-                model.OrganizationTypeId,
-                cancellationToken);
+            LoadOrganizationTypes();
 
             await LoadParentUnitsAsync(
                 model.ParentUnitId,
@@ -519,23 +501,30 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
         /// Organizasyon türlerini Create ve Edit
         /// ekranları için SelectList olarak hazırlar.
         /// </summary>
-        private async Task LoadOrganizationTypesAsync(
-            int? selectedId,
-            CancellationToken cancellationToken)
+        private void LoadOrganizationTypes()
         {
-            var organizationTypes =
-                await _organizationTypeService
-                    .GetAllAsync(cancellationToken);
+            var items = Enum
+                .GetValues<OrganizationTypeEnum>()
+                .Select(value =>
+                {
+                    var member = typeof(OrganizationTypeEnum)
+                        .GetMember(value.ToString())
+                        .First();
 
-            ViewBag.OrganizationTypes =
-                new SelectList(
-                    organizationTypes
-                        .Where(x => x.IsActive ||
-                                    x.Id == selectedId)
-                        .OrderBy(x => x.Name),
-                    "Id",
-                    "Name",
-                    selectedId);
+                    var display = member.GetCustomAttribute<
+                        System.ComponentModel.DataAnnotations.DisplayAttribute>();
+
+                    return new SelectListItem
+                    {
+                        Value = ((int)value).ToString(),
+
+                        Text = display?.GetName()
+                            ?? value.ToString()
+                    };
+                })
+                .ToList();
+
+            ViewBag.OrganizationTypes = items;
         }
 
         #endregion

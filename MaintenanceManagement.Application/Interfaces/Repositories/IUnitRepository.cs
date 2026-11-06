@@ -1,4 +1,5 @@
 ﻿using MaintenanceManagement.Domain.Entities;
+using MaintenanceManagement.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,11 +32,11 @@ namespace MaintenanceManagement.Application.Interfaces.Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Belirtilen organizasyon türüne bağlı
+        /// Belirtilen organizasyon türüne sahip
         /// aktif birimleri getirir.
         /// </summary>
-        Task<List<Unit>> GetUnitsByOrganizationTypeIdAsync(
-            int organizationTypeId,
+        Task<List<Unit>> GetUnitsByOrganizationTypeAsync(
+            OrganizationTypeEnum organizationType,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -83,7 +84,7 @@ namespace MaintenanceManagement.Application.Interfaces.Repositories
 
         /// <summary>
         /// Birimin aktiflik durumunu değiştirir.
-        /// </summary>
+        /// </summary> 
         Task<bool> ChangeStatusAsync(
             int id,
             bool isActive,

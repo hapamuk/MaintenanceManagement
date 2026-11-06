@@ -75,7 +75,6 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     x.UnitId == unitId &&
                     x.IsActive &&
                     x.Unit.IsActive &&
-                    x.Unit.OrganizationType.IsActive &&
                     x.WorkType.IsActive)
                 .OrderBy(x => x.WorkType.Name)
                 .ToListAsync(cancellationToken);
@@ -108,7 +107,6 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     x.WorkTypeId == workTypeId &&
                     x.IsActive &&
                     x.Unit.IsActive &&
-                    x.Unit.OrganizationType.IsActive &&
                     x.WorkType.IsActive)
                 .OrderBy(x => x.Unit.Name)
                 .ToListAsync(cancellationToken);
@@ -166,8 +164,7 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     x.WorkType.UnitWorkTypes.Any(uwt =>
                         uwt.UnitId == unitId &&
                         uwt.IsActive &&
-                        uwt.Unit.IsActive &&
-                        uwt.Unit.OrganizationType.IsActive))
+                        uwt.Unit.IsActive))
                 .OrderBy(x => x.WorkType.Name)
                 .ThenBy(x => x.Name)
                 .ToListAsync(cancellationToken);
@@ -297,7 +294,7 @@ namespace MaintenanceManagement.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// Organizasyon, organizasyon türü,
+        /// Organizasyon birimi,
         /// iş türü ve iş alt türleriyle birlikte
         /// detaylı eşleştirme sorgusunu oluşturur.
         /// </summary>
@@ -307,7 +304,6 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 .AsNoTracking()
 
                 .Include(x => x.Unit)
-                    .ThenInclude(x => x.OrganizationType)
 
                 .Include(x => x.WorkType)
                     .ThenInclude(x => x.WorkSubTypes)
@@ -326,7 +322,6 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 .Where(x =>
                     x.IsActive &&
                     x.Unit.IsActive &&
-                    x.Unit.OrganizationType.IsActive &&
                     x.WorkType.IsActive);
         }
     }

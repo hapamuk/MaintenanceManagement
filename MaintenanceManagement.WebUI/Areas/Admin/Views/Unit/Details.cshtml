@@ -1,24 +1,19 @@
 ﻿@model MaintenanceManagement.Application.DTOS.UnitDtos.GetByIdUnitDto
 
 @{
-    ViewData["Title"] = "Birim Detayı";
+    ViewData["Title"] = "Organizasyon Birimi Detayları";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
 <div class="container-fluid">
 
-    <!-- ===================================== -->
     <!-- PAGE HEADING -->
-    <!-- ===================================== -->
-
     <div class="d-sm-flex align-items-center
-        justify-content-between mb-4">
+                justify-content-between mb-4">
 
         <h1 class="h3 mb-0 text-gray-800">
-
             <i class="fas fa-building text-primary mr-2"></i>
-            Organizasyon Birimi Detayı
-
+            Organizasyon Birimi Detayları
         </h1>
 
         <a asp-area="Admin"
@@ -28,42 +23,35 @@
 
             <i class="fas fa-arrow-left mr-1"></i>
             Listeye Dön
-
         </a>
 
     </div>
 
-    <!-- SUCCESS MESSAGE -->
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show">
-
-            <i class="fas fa-check-circle mr-2"></i>
-            @TempData["Success"]
-
-            <button type="button"
-                    class="close"
-                    data-dismiss="alert">
-                <span>&times;</span>
-            </button>
-
-        </div>
-    }
-
-    <!-- ===================================== -->
-    <!-- DETAILS CARD -->
-    <!-- ===================================== -->
-
+    <!-- UNIT DETAILS -->
     <div class="card shadow mb-4">
 
-        <div class="card-header py-3">
+        <div class="card-header py-3 d-flex
+                    justify-content-between align-items-center">
 
             <h6 class="m-0 font-weight-bold text-primary">
-
                 <i class="fas fa-info-circle mr-2"></i>
                 Birim Bilgileri
-
             </h6>
+
+            @if (Model.IsActive)
+            {
+                <span class="badge badge-success p-2">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    Aktif
+                </span>
+            }
+            else
+            {
+                <span class="badge badge-danger p-2">
+                    <i class="fas fa-ban mr-1"></i>
+                    Pasif
+                </span>
+            }
 
         </div>
 
@@ -71,87 +59,89 @@
 
             <div class="row">
 
-                <!-- UNIT ID -->
-                <div class="col-md-6">
+                <!-- ORGANIZATION TYPE -->
+                <div class="col-md-6 mb-4">
 
-                    <div class="form-group">
+                    <label class="font-weight-bold text-gray-600">
+                        Organizasyon Türü
+                    </label>
 
-                        <label class="font-weight-bold text-gray-700">
-                            Birim ID
-                        </label>
-
-                        <div class="form-control bg-light">
-                            @Model.Id
-                        </div>
-
+                    <div class="form-control bg-light">
+                        @Model.OrganizationTypeName
                     </div>
 
                 </div>
 
                 <!-- UNIT CODE -->
-                <div class="col-md-6">
+                <div class="col-md-6 mb-4">
 
-                    <div class="form-group">
+                    <label class="font-weight-bold text-gray-600">
+                        Birim Kodu
+                    </label>
 
-                        <label class="font-weight-bold text-gray-700">
-                            Birim Kodu
-                        </label>
-
-                        <div class="form-control bg-light">
-                            @Model.Code
-                        </div>
-
+                    <div class="form-control bg-light">
+                        @Model.Code
                     </div>
 
                 </div>
 
                 <!-- UNIT NAME -->
-                <div class="col-md-12">
+                <div class="col-md-6 mb-4">
 
-                    <div class="form-group">
+                    <label class="font-weight-bold text-gray-600">
+                        Birim Adı
+                    </label>
 
-                        <label class="font-weight-bold text-gray-700">
-                            Birim Adı
-                        </label>
-
-                        <div class="form-control bg-light">
-                            @Model.Name
-                        </div>
-
+                    <div class="form-control bg-light">
+                        @Model.Name
                     </div>
 
                 </div>
 
-                <!-- ORGANIZATION TYPE -->
-                <div class="col-md-6">
+                <!-- PARENT UNIT -->
+                <div class="col-md-6 mb-4">
 
-                    <div class="form-group">
+                    <label class="font-weight-bold text-gray-600">
+                        Üst Birim
+                    </label>
 
-                        <label class="font-weight-bold text-gray-700">
-                            Organizasyon Türü ID
-                        </label>
+                    <div class="form-control bg-light">
 
-                        <div class="form-control bg-light">
-                            @Model.OrganizationTypeId
-                        </div>
+                        @if (Model.ParentUnitId.HasValue)
+                        {
+                            @Model.ParentUnitName
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Ana Birim (Üst Birim Yok)
+                            </span>
+                        }
 
                     </div>
 
                 </div>
 
                 <!-- DESCRIPTION -->
-                <div class="col-md-12">
+                <div class="col-md-12 mb-4">
 
-                    <div class="form-group">
+                    <label class="font-weight-bold text-gray-600">
+                        Açıklama
+                    </label>
 
-                        <label class="font-weight-bold text-gray-700">
-                            Açıklama
-                        </label>
+                    <div class="border rounded bg-light p-3"
+                         style="min-height: 90px; white-space: pre-wrap;">
 
-                        <div class="border rounded bg-light p-3"
-                             style="min-height:90px; white-space:pre-wrap;">
-                            @(string.IsNullOrWhiteSpace(Model.Description) ? "Açıklama bulunmamaktadır." : Model.Description)
-                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            @Model.Description
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Açıklama girilmemiş.
+                            </span>
+                        }
 
                     </div>
 
@@ -161,10 +151,132 @@
 
             <hr />
 
-            <!-- ===================================== -->
-            <!-- BUTTONS -->
-            <!-- ===================================== -->
+            <!-- RELATED INFORMATION -->
+            <h6 class="font-weight-bold text-primary mb-3">
+                <i class="fas fa-chart-bar mr-2"></i>
+                İlişkili Kayıt Bilgileri
+            </h6>
 
+            <div class="row">
+
+                <!-- CHILD UNITS -->
+                <div class="col-xl-3 col-md-6 mb-4">
+
+                    <div class="card border-left-primary shadow h-100 py-2">
+
+                        <div class="card-body">
+
+                            <div class="text-xs font-weight-bold
+                                        text-primary text-uppercase mb-1">
+                                Alt Birim Sayısı
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.ChildUnitCount
+                            </div>
+
+                            <small class="text-muted">
+                                Aktif: @Model.ActiveChildUnitCount
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- USERS -->
+                <div class="col-xl-3 col-md-6 mb-4">
+
+                    <div class="card border-left-success shadow h-100 py-2">
+
+                        <div class="card-body">
+
+                            <div class="text-xs font-weight-bold
+                                        text-success text-uppercase mb-1">
+                                Kullanıcı Sayısı
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.UserCount
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ROLES -->
+                <div class="col-xl-3 col-md-6 mb-4">
+
+                    <div class="card border-left-info shadow h-100 py-2">
+
+                        <div class="card-body">
+
+                            <div class="text-xs font-weight-bold
+                                        text-info text-uppercase mb-1">
+                                Rol Sayısı
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.RoleCount
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- TEAMS -->
+                <div class="col-xl-3 col-md-6 mb-4">
+
+                    <div class="card border-left-warning shadow h-100 py-2">
+
+                        <div class="card-body">
+
+                            <div class="text-xs font-weight-bold
+                                        text-warning text-uppercase mb-1">
+                                Takım Sayısı
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.TeamCount
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ASSET INFORMATION -->
+            <div class="row">
+
+                <div class="col-md-12 mb-3">
+
+                    <div class="alert alert-light border">
+
+                        <i class="fas fa-desktop text-primary mr-2"></i>
+
+                        <strong>Bağlı Demirbaş Sayısı:</strong>
+
+                        <span class="badge badge-primary ml-2">
+                            @Model.AssetCount
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <hr />
+
+            <!-- BUTTONS -->
             <div class="d-flex justify-content-end">
 
                 <a asp-area="Admin"
@@ -172,7 +284,7 @@
                    asp-action="Index"
                    class="btn btn-secondary mr-2">
 
-                    <i class="fas fa-list mr-1"></i>
+                    <i class="fas fa-arrow-left mr-1"></i>
                     Listeye Dön
 
                 </a>

@@ -1,4 +1,5 @@
 ﻿using MaintenanceManagement.Application.DTOS.UnitDtos;
+using MaintenanceManagement.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,10 +35,7 @@ namespace MaintenanceManagement.Application.Interfaces.Services
         /// <summary>
         /// Organizasyon türüne bağlı birimleri getirir.
         /// </summary>
-        Task<IReadOnlyList<ResultUnitDto>>
-            GetByOrganizationTypeAsync(
-                int organizationTypeId,
-                CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ResultUnitDto>> GetByOrganizationTypeAsync(OrganizationTypeEnum organizationType,CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Belirtilen birime bağlı doğrudan

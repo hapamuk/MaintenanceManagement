@@ -22,10 +22,6 @@ namespace MaintenanceManagement.Application.DependencyInjection
 
             services.AddScoped<IRoleService, RoleService>();
 
-            services.AddScoped<
-                IOrganizationTypeService,
-                OrganizationTypeService>();
-
             services.AddScoped<IUnitService, UnitService>();
 
             services.AddScoped<IUserService, UserService>();

@@ -1,9 +1,7 @@
 ﻿using MaintenanceManagement.Domain.Entities;
+using MaintenanceManagement.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace MaintenanceManagement.Infrastructure.Data
@@ -18,9 +16,8 @@ namespace MaintenanceManagement.Infrastructure.Data
 
         private const string AdminUserName = "admin";
 
+        //admin sifresi
         private const string InitialPassword = "1";
-
-        private const string SystemOrganizationTypeCode = "SYSTEM";
 
         private const string SystemUnitCode = "SYS_ADMIN";
 
@@ -29,7 +26,7 @@ namespace MaintenanceManagement.Infrastructure.Data
         #region SeedAsync
 
         /// <summary>
-        /// Organizasyon, birim, rol, kullanıcı ve
+        /// Birim, rol, kullanıcı ve
         /// kullanıcı-rol ilişkisini oluşturur.
         ///
         /// Bu metod yalnızca geliştirme ortamında
@@ -67,44 +64,7 @@ namespace MaintenanceManagement.Infrastructure.Data
                 if (adminRole == null)
                 {
                     // =================================
-                    // 3.1 ORGANİZASYON TÜRÜ
-                    // =================================
-
-                    var organizationType =
-                        await context.OrganizationTypes
-                            .FirstOrDefaultAsync(
-                                x => x.Code ==
-                                    SystemOrganizationTypeCode,
-                                cancellationToken);
-
-                    if (organizationType == null)
-                    {
-                        organizationType = new OrganizationType
-                        {
-                            Name = "Sistem",
-
-                            Code = SystemOrganizationTypeCode,
-
-                            Description =
-                                "Sistem yönetimi için başlangıç " +
-                                "organizasyon türü.",
-
-                            IsActive = true,
-
-                            CreatedAt = DateTime.UtcNow
-                        };
-
-                        await context.OrganizationTypes
-                            .AddAsync(
-                                organizationType,
-                                cancellationToken);
-
-                        await context.SaveChangesAsync(
-                            cancellationToken);
-                    }
-
-                    // =================================
-                    // 3.2 ORGANİZASYON BİRİMİ
+                    // 3.1 ORGANİZASYON BİRİMİ
                     // =================================
 
                     var systemUnit = await context.Units
@@ -116,12 +76,13 @@ namespace MaintenanceManagement.Infrastructure.Data
                     {
                         systemUnit = new Unit
                         {
-                            Name = "Sistem Yönetimi",
+                            Name = "Genel Müdürlük",
 
                             Code = SystemUnitCode,
 
-                            OrganizationTypeId =
-                                organizationType.Id,
+                            OrganizationTypeEnum = OrganizationTypeEnum.HeadOffice,
+
+                            ParentUnitId = null,
 
                             IsActive = true,
 
@@ -137,7 +98,7 @@ namespace MaintenanceManagement.Infrastructure.Data
                     }
 
                     // =================================
-                    // 3.3 ADMIN ROLÜ
+                    // 3.2 ADMIN ROLÜ
                     // =================================
 
                     adminRole = new Role
