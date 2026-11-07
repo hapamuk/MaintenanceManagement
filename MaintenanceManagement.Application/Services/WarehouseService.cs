@@ -805,6 +805,7 @@ namespace MaintenanceManagement.Application.Services
         /// Mevcut ambarın düzenlenebilir
         /// bilgilerini günceller.
         ///
+        /// Ambar kodu oluşturulduktan sonra değiştirilemez.
         /// Stok veya işlem geçmişi bulunan
         /// ambarın bağlı birimi değiştirilemez.
         /// </summary>
@@ -815,35 +816,15 @@ namespace MaintenanceManagement.Application.Services
             ArgumentNullException.ThrowIfNull(dto);
 
             // =====================================
-            // 1. DTO DOĞRULAMASI
+            // 1. AMBAR ID DOĞRULAMASI
             // =====================================
-
-            ValidateDto(dto);
 
             ValidateId(
                 dto.Id,
                 "Ambar");
 
             // =====================================
-            // 2. GİRİLEN DEĞERLERİ NORMALİZE ET
-            // =====================================
-
-            string code = ValidateCode(dto.Code);
-
-            string name = ValidateName(dto.Name);
-
-            string? location = NormalizeOptionalText(
-                dto.Location,
-                MaxLocationLength,
-                "Ambar Konumu");
-
-            string? description = NormalizeOptionalText(
-                dto.Description,
-                MaxDescriptionLength,
-                "Ambar Açıklaması");
-
-            // =====================================
-            // 3. MEVCUT AMBARI GETİR
+            // 2. MEVCUT AMBARI GETİR
             // =====================================
 
             var warehouse = await _warehouseRepository
@@ -857,21 +838,33 @@ namespace MaintenanceManagement.Application.Services
             }
 
             // =====================================
-            // 4. AMBAR KODU BENZERSİZLİĞİ
+            // 3. AMBAR KODUNU KORU
             // =====================================
 
-            bool codeExists = await _warehouseRepository
-                .ExistsCodeAsync(
-                    code,
-                    warehouse.Id,
-                    cancellationToken);
+            // Kod kullanıcı tarafından değiştirilemez.
+            // Gelen DTO.Code dikkate alınmaz.
+            string originalCode = ValidateCode(warehouse.Code);
 
-            if (codeExists)
-            {
-                throw new ValidationException(
-                    "Bu ambar kodu başka bir kayıt " +
-                    "tarafından kullanılmaktadır.");
-            }
+            dto.Code = originalCode;
+
+            // DTO doğrulaması mevcut kod atandıktan sonra yapılır.
+            ValidateDto(dto);
+
+            // =====================================
+            // 4. GİRİLEN DİĞER DEĞERLERİ NORMALİZE ET
+            // =====================================
+
+            string name = ValidateName(dto.Name);
+
+            string? location = NormalizeOptionalText(
+                dto.Location,
+                MaxLocationLength,
+                "Ambar Konumu");
+
+            string? description = NormalizeOptionalText(
+                dto.Description,
+                MaxDescriptionLength,
+                "Ambar Açıklaması");
 
             // =====================================
             // 5. BİRİM DEĞİŞİKLİĞİ KONTROLÜ
@@ -957,7 +950,8 @@ namespace MaintenanceManagement.Application.Services
             // WarehouseStocks, StockMovements
             // ve WorkOrderMaterials korunur.
 
-            warehouse.Code = code;
+            // Veritabanındaki ambar kodu korunur.
+            warehouse.Code = originalCode;
 
             warehouse.Name = name;
 

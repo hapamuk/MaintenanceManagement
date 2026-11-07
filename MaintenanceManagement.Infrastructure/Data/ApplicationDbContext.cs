@@ -161,6 +161,8 @@ namespace MaintenanceManagement.Infrastructure.Data
 
         public DbSet<MaterialCategoryUnit> MaterialCategoryUnits { get; set; }
 
+        public DbSet<WarehousePersonnel> WarehousePersonnels { get; set; } = null!;
+
 
         #region OnModelCreating
 
@@ -563,6 +565,26 @@ namespace MaintenanceManagement.Infrastructure.Data
             });
 
             #endregion
+
+
+            modelBuilder.Entity<Warehouse>(entity =>
+            {
+                entity.HasIndex(x => x.Code).IsUnique();
+            });
+
+            modelBuilder.Entity<WarehousePersonnel>(entity =>
+            {
+                entity.HasIndex(x => new { x.WarehouseId, x.UserId }).IsUnique();
+                entity.HasOne(x => x.Warehouse)
+                    .WithMany(x => x.WarehousePersonnels)
+                    .HasForeignKey(x => x.WarehouseId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
 
             #region Decimal Precision Configurations
 

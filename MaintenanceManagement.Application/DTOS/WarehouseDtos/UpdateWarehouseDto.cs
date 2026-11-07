@@ -71,5 +71,11 @@ namespace MaintenanceManagement.Application.DTOS.WarehouseDtos
             ErrorMessage = "Açıklama en fazla 500 karakter olabilir.")]
         [Display(Name = "Açıklama")]
         public string? Description { get; set; }
+
+        /// <summary>
+        /// Ambara görevlendirilecek personellerin ID listesi.
+        /// </summary>
+        [Display(Name = "Görevli Personeller")]
+        public List<int> SelectedPersonnelIds { get; set; } = new();
     }
 }

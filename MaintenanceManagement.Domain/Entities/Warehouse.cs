@@ -41,5 +41,8 @@ namespace MaintenanceManagement.Domain.Entities
 
         public ICollection<WorkOrderMaterial> WorkOrderMaterials
         { get; set; } = new HashSet<WorkOrderMaterial>();
+
+        public ICollection<WarehousePersonnel> WarehousePersonnels { get; set; }
+    = new HashSet<WarehousePersonnel>();
     }
 }

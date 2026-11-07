@@ -1147,9 +1147,42 @@ namespace MaintenanceManagement.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique();
+
                     b.HasIndex("UnitId");
 
                     b.ToTable("Warehouses");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.WarehousePersonnel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WarehouseId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("WarehousePersonnels");
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.WarehouseStock", b =>
@@ -2215,6 +2248,25 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.Navigation("Unit");
                 });
 
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.WarehousePersonnel", b =>
+                {
+                    b.HasOne("MaintenanceManagement.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MaintenanceManagement.Domain.Entities.Warehouse", "Warehouse")
+                        .WithMany("WarehousePersonnels")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+
+                    b.Navigation("Warehouse");
+                });
+
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.WarehouseStock", b =>
                 {
                     b.HasOne("MaintenanceManagement.Domain.Entities.Material", "Material")
@@ -2718,6 +2770,8 @@ namespace MaintenanceManagement.Infrastructure.Migrations
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.Warehouse", b =>
                 {
                     b.Navigation("StockMovements");
+
+                    b.Navigation("WarehousePersonnels");
 
                     b.Navigation("WarehouseStocks");
 

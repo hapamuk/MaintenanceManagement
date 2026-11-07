@@ -107,6 +107,10 @@ namespace MaintenanceManagement.Application.DependencyInjection
     IMaterialCategoryService,
     MaterialCategoryService>();
 
+            services.AddScoped<
+    IWarehouseRegistrationService,
+    WarehouseRegistrationService>();
+
             return services;
         }
     }
