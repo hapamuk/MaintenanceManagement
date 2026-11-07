@@ -55,6 +55,24 @@ namespace MaintenanceManagement.Application.DTOS.UserDtos
         public string? Title { get; set; }
 
         /// <summary>
+        /// Kullanıcının yeni şifresi.
+        /// Boş bırakılırsa mevcut şifresi korunur.
+        /// </summary>
+        [DataType(DataType.Password)]
+        [Display(Name = "Yeni Şifre")]
+        public string? NewPassword { get; set; }
+
+        /// <summary>
+        /// Yeni şifrenin tekrar girildiği alan.
+        /// </summary>
+        [DataType(DataType.Password)]
+        [Compare(
+            nameof(NewPassword),
+            ErrorMessage = "Yeni şifreler eşleşmiyor.")]
+        [Display(Name = "Yeni Şifre Tekrar")]
+        public string? ConfirmNewPassword { get; set; }
+
+        /// <summary>
         /// Kullanıcının birincil
         /// organizasyon birimi.
         /// </summary>

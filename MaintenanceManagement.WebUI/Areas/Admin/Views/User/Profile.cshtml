@@ -1,43 +1,610 @@
-﻿@model UserProfileDto
+﻿@model MaintenanceManagement.Application.DTOS.UserDtos.UserProfileDto
 
 @{
     ViewData["Title"] = "Profilim";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    string fullName = !string.IsNullOrWhiteSpace(Model.FullName)
+        ? Model.FullName
+        : (Model.FirstName + " " + Model.LastName).Trim();
 }
 
 <div class="container-fluid">
 
-    <h3 class="mb-4">Profil Bilgilerim</h3>
+    <!-- ===================================== -->
+    <!-- PAGE HEADING -->
+    <!-- ===================================== -->
 
+    <div class="d-sm-flex align-items-center
+                justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">
+
+            <i class="fas fa-id-card text-primary mr-2"></i>
+            Profil Bilgilerim
+
+        </h1>
+
+        <a asp-area="Admin"
+           asp-controller="User"
+           asp-action="ProfileEdit"
+           class="btn btn-primary shadow-sm">
+
+            <i class="fas fa-user-edit mr-1"></i>
+            Profilimi Düzenle
+
+        </a>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- NOTIFICATIONS -->
+    <!-- ===================================== -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success">
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+
+            <i class="fas fa-check-circle mr-2"></i>
             @TempData["Success"]
+
+            <button type="button"
+                    class="close"
+                    data-dismiss="alert"
+                    aria-label="Kapat">
+
+                <span aria-hidden="true">&times;</span>
+
+            </button>
+
         </div>
     }
 
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            @TempData["Error"]
+
+            <button type="button"
+                    class="close"
+                    data-dismiss="alert"
+                    aria-label="Kapat">
+
+                <span aria-hidden="true">&times;</span>
+
+            </button>
+
+        </div>
+    }
+
+    <!-- ===================================== -->
+    <!-- PROFILE SUMMARY -->
+    <!-- ===================================== -->
+
     <div class="card shadow mb-4">
 
-        <div class="card-header">
-            <strong>Kişisel Bilgilerim</strong>
+        <div class="card-body">
+
+            <div class="row align-items-center">
+
+                <div class="col-md-8">
+
+                    <div class="d-flex align-items-center">
+
+                        <!-- PROFILE ICON -->
+
+                        <div class="mr-3">
+
+                            <i class="fas fa-user-circle
+                                      fa-4x text-primary"></i>
+
+                        </div>
+
+                        <!-- PROFILE INFORMATION -->
+
+                        <div>
+
+                            <h4 class="font-weight-bold
+                                       text-gray-800 mb-1">
+
+                                @fullName
+
+                            </h4>
+
+                            <div class="text-muted mb-1">
+
+                                <i class="fas fa-user mr-1"></i>
+
+                                @(string.IsNullOrWhiteSpace(Model.Username)
+                                                                ? "Kullanıcı adı tanımlanmamış"
+                                                                : Model.Username)
+
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(Model.Title))
+                            {
+                                <div class="text-muted mb-2">
+
+                                    <i class="fas fa-briefcase mr-1"></i>
+                                    @Model.Title
+
+                                </div>
+                            }
+
+                            <!-- STATUS BADGES -->
+
+                            <div class="mt-2">
+
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge badge-success p-2 mr-1">
+
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        Aktif Hesap
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger p-2 mr-1">
+
+                                        <i class="fas fa-ban mr-1"></i>
+                                        Pasif Hesap
+
+                                    </span>
+                                }
+
+                                @if (Model.HasSystemAccess)
+                                {
+                                    <span class="badge badge-info p-2">
+
+                                        <i class="fas fa-lock-open mr-1"></i>
+                                        Sistem Erişimi Var
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary p-2">
+
+                                        <i class="fas fa-lock mr-1"></i>
+                                        Sistem Erişimi Yok
+
+                                    </span>
+                                }
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- PROFILE ACTIONS -->
+
+                <div class="col-md-4 text-md-right mt-3 mt-md-0">
+
+                    <a asp-area="Admin"
+                       asp-controller="User"
+                       asp-action="ProfileEdit"
+                       class="btn btn-primary btn-sm mb-2">
+
+                        <i class="fas fa-user-edit mr-1"></i>
+                        Profilimi Düzenle
+
+                    </a>
+
+                    <br />
+
+                    <a asp-area="Admin"
+                       asp-controller="User"
+                       asp-action="ChangePassword"
+                       class="btn btn-warning btn-sm">
+
+                        <i class="fas fa-key mr-1"></i>
+                        Şifremi Değiştir
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- PERSONAL INFORMATION -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-address-card mr-2"></i>
+                Kişisel Bilgilerim
+
+            </h6>
+
         </div>
 
         <div class="card-body">
 
-            @Html.DisplayForModel()
+            <div class="row">
 
-            <hr />
+                <!-- FIRST NAME -->
 
-            <a asp-action="ProfileEdit"
-               class="btn btn-primary">
-                Profilimi Düzenle
-            </a>
+                <div class="col-md-6 mb-3">
 
-            <a asp-action="ChangePassword"
-               class="btn btn-warning">
-                Şifremi Değiştir
-            </a>
+                    <label class="font-weight-bold text-gray-700">
+
+                        Ad
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @Model.FirstName
+
+                    </div>
+
+                </div>
+
+                <!-- LAST NAME -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Soyad
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @Model.LastName
+
+                    </div>
+
+                </div>
+
+                <!-- EMAIL -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        E-Posta Adresi
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Email))
+                        {
+                            @Model.Email
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Belirtilmemiş
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- PHONE -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Telefon
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Phone))
+                        {
+                            @Model.Phone
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Belirtilmemiş
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- TITLE -->
+
+                <div class="col-md-12 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Unvan
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Title))
+                        {
+                            @Model.Title
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Unvan tanımlanmamış
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
+
     </div>
+
+    <!-- ===================================== -->
+    <!-- ORGANIZATION INFORMATION -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-sitemap mr-2"></i>
+                Organizasyon Bilgilerim
+
+            </h6>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <!-- PRIMARY UNIT -->
+
+                <div class="col-md-12 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Bağlı Olduğum Organizasyon Birimi
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(
+                                                Model.PrimaryUnitName))
+                        {
+                            <i class="fas fa-building
+                                          text-primary mr-2"></i>
+
+                            @Model.PrimaryUnitName
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+
+                                Organizasyon birimi bulunamadı.
+
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <small class="text-muted">
+
+                <i class="fas fa-info-circle mr-1"></i>
+
+                Organizasyon birimi ve sistem yetkileri,
+                yetkili yöneticiler tarafından yönetilmektedir.
+
+            </small>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- ACCOUNT INFORMATION -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-user-shield mr-2"></i>
+                Hesap Bilgilerim
+
+            </h6>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <!-- USERNAME -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Kullanıcı Adı
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Username))
+                        {
+                            @Model.Username
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Tanımlanmamış
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- USER STATUS -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Hesap Durumu
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (Model.IsActive)
+                        {
+                            <span class="font-weight-bold text-success">
+
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Aktif
+
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="font-weight-bold text-danger">
+
+                                <i class="fas fa-ban mr-1"></i>
+                                Pasif
+
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- SYSTEM ACCESS -->
+
+                <div class="col-md-12 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Sistem Giriş Yetkisi
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (Model.HasSystemAccess)
+                        {
+                            <span class="font-weight-bold text-success">
+
+                                <i class="fas fa-lock-open mr-1"></i>
+                                Sistem Erişimi Var
+
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="font-weight-bold text-danger">
+
+                                <i class="fas fa-lock mr-1"></i>
+                                Sistem Erişimi Yok
+
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- SECURITY INFORMATION -->
+
+            <div class="alert alert-light border mb-0">
+
+                <i class="fas fa-shield-alt text-primary mr-2"></i>
+
+                Hesap şifreniz güvenlik nedeniyle görüntülenmez.
+
+                <br />
+
+                Şifrenizi değiştirmek için
+                <strong>Şifremi Değiştir</strong>
+                butonunu kullanabilirsiniz.
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- ACTION BUTTONS -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-body">
+
+            <div class="d-flex flex-wrap justify-content-end">
+
+                <a asp-area="Admin"
+                   asp-controller="User"
+                   asp-action="ProfileEdit"
+                   class="btn btn-primary mr-2 mb-2">
+
+                    <i class="fas fa-user-edit mr-1"></i>
+                    Profilimi Düzenle
+
+                </a>
+
+                <a asp-area="Admin"
+                   asp-controller="User"
+                   asp-action="ChangePassword"
+                   class="btn btn-warning mb-2">
+
+                    <i class="fas fa-key mr-1"></i>
+                    Şifremi Değiştir
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>

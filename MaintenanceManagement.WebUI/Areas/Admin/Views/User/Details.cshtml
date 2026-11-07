@@ -1,4 +1,4 @@
-﻿@model GetByIdUserDto
+﻿@model MaintenanceManagement.Application.DTOS.UserDtos.GetByIdUserDto
 
 @{
     ViewData["Title"] = "Kullanıcı Detayı";
@@ -7,37 +7,697 @@
 
 <div class="container-fluid">
 
-    <h3 class="mb-4">Kullanıcı Detayı</h3>
+    <!-- ===================================== -->
+    <!-- PAGE HEADING -->
+    <!-- ===================================== -->
 
+    <div class="d-sm-flex align-items-center
+                justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">
+
+            <i class="fas fa-user-circle text-primary mr-2"></i>
+            Kullanıcı Detayı
+
+        </h1>
+
+        <a asp-area="Admin"
+           asp-controller="User"
+           asp-action="Index"
+           class="btn btn-secondary shadow-sm">
+
+            <i class="fas fa-arrow-left mr-1"></i>
+            Kullanıcı Listesi
+
+        </a>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- NOTIFICATIONS -->
+    <!-- ===================================== -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success">
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+
+            <i class="fas fa-check-circle mr-2"></i>
             @TempData["Success"]
+
+            <button type="button"
+                    class="close"
+                    data-dismiss="alert"
+                    aria-label="Kapat">
+
+                <span aria-hidden="true">&times;</span>
+
+            </button>
+
         </div>
     }
 
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            @TempData["Error"]
+
+            <button type="button"
+                    class="close"
+                    data-dismiss="alert"
+                    aria-label="Kapat">
+
+                <span aria-hidden="true">&times;</span>
+
+            </button>
+
+        </div>
+    }
+
+    <!-- ===================================== -->
+    <!-- USER SUMMARY CARD -->
+    <!-- ===================================== -->
+
     <div class="card shadow mb-4">
 
-        <div class="card-header">
-            <strong>Kullanıcı Bilgileri</strong>
+        <div class="card-body">
+
+            <div class="row align-items-center">
+
+                <div class="col-md-8">
+
+                    <div class="d-flex align-items-center">
+
+                        <div class="mr-3">
+
+                            <i class="fas fa-user-circle
+                                      fa-4x text-primary"></i>
+
+                        </div>
+
+                        <div>
+
+                            <h4 class="font-weight-bold
+                                       text-gray-800 mb-1">
+
+                                @Model.FullName
+
+                            </h4>
+
+                            <div class="text-muted mb-2">
+
+                                <i class="fas fa-user mr-1"></i>
+
+                                @(string.IsNullOrWhiteSpace(Model.Username)
+                                                                ? "Kullanıcı adı tanımlanmamış"
+                                                                : Model.Username)
+
+                            </div>
+
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge badge-success p-2 mr-1">
+
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Aktif Kullanıcı
+
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger p-2 mr-1">
+
+                                    <i class="fas fa-ban mr-1"></i>
+                                    Pasif Kullanıcı
+
+                                </span>
+                            }
+
+                            @if (Model.HasSystemAccess)
+                            {
+                                <span class="badge badge-info p-2">
+
+                                    <i class="fas fa-lock-open mr-1"></i>
+                                    Sistem Erişimi Var
+
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary p-2">
+
+                                    <i class="fas fa-lock mr-1"></i>
+                                    Sistem Erişimi Yok
+
+                                </span>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- EDIT BUTTON -->
+
+                <div class="col-md-4 text-md-right mt-3 mt-md-0">
+
+                    <a asp-area="Admin"
+                       asp-controller="User"
+                       asp-action="Edit"
+                       asp-route-id="@Model.Id"
+                       class="btn btn-primary shadow-sm">
+
+                        <i class="fas fa-user-edit mr-1"></i>
+                        Kullanıcıyı Güncelle
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- SUMMARY CARDS -->
+    <!-- ===================================== -->
+
+    <div class="row">
+
+        <!-- ACTIVE ROLE COUNT -->
+
+        <div class="col-xl-6 col-md-6 mb-4">
+
+            <div class="card border-left-primary shadow h-100 py-2">
+
+                <div class="card-body">
+
+                    <div class="row no-gutters align-items-center">
+
+                        <div class="col mr-2">
+
+                            <div class="text-xs font-weight-bold
+                                        text-primary text-uppercase mb-1">
+
+                                Aktif Rol Ataması
+
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold
+                                        text-gray-800">
+
+                                @Model.ActiveRoleAssignmentCount
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-auto">
+
+                            <i class="fas fa-user-shield
+                                      fa-2x text-gray-300"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ACTIVE TEAM COUNT -->
+
+        <div class="col-xl-6 col-md-6 mb-4">
+
+            <div class="card border-left-info shadow h-100 py-2">
+
+                <div class="card-body">
+
+                    <div class="row no-gutters align-items-center">
+
+                        <div class="col mr-2">
+
+                            <div class="text-xs font-weight-bold
+                                        text-info text-uppercase mb-1">
+
+                                Aktif Ekip Üyeliği
+
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold
+                                        text-gray-800">
+
+                                @Model.ActiveTeamMembershipCount
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-auto">
+
+                            <i class="fas fa-users-cog
+                                      fa-2x text-gray-300"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- PERSONAL INFORMATION -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-address-card mr-2"></i>
+                Kişisel Bilgiler
+
+            </h6>
+
         </div>
 
         <div class="card-body">
 
-            @Html.DisplayForModel()
+            <div class="row">
 
-            <hr />
+                <!-- FIRST NAME -->
 
-            <a asp-action="Edit"
-               asp-route-id="@Model.Id"
-               class="btn btn-primary">
-                Kullanıcıyı Güncelle
-            </a>
+                <div class="col-md-6 mb-3">
 
-            <a asp-action="Index"
-               class="btn btn-secondary">
-                Listeye Dön
-            </a>
+                    <label class="font-weight-bold text-gray-700">
+
+                        Ad
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @Model.FirstName
+
+                    </div>
+
+                </div>
+
+                <!-- LAST NAME -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Soyad
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @Model.LastName
+
+                    </div>
+
+                </div>
+
+                <!-- EMAIL -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        E-Posta
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Email))
+                        {
+                            @Model.Email
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Belirtilmemiş
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- PHONE -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Telefon
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Phone))
+                        {
+                            @Model.Phone
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Belirtilmemiş
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- TITLE -->
+
+                <div class="col-md-12 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Unvan
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Title))
+                        {
+                            @Model.Title
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Unvan tanımlanmamış
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
+
     </div>
+
+    <!-- ===================================== -->
+    <!-- ORGANIZATION INFORMATION -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-sitemap mr-2"></i>
+                Organizasyon Bilgileri
+
+            </h6>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <!-- PRIMARY UNIT -->
+
+                <div class="col-md-8 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Asıl Organizasyon Birimi
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(
+                                                Model.PrimaryUnitName))
+                        {
+                            <i class="fas fa-building
+                                          text-primary mr-2"></i>
+
+                            @Model.PrimaryUnitName
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Organizasyon birimi bulunamadı
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- PRIMARY UNIT ID -->
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Birim ID
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @Model.PrimaryUnitId
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <small class="text-muted">
+
+                <i class="fas fa-info-circle mr-1"></i>
+
+                Kullanıcının asıl organizasyon birimi,
+                sistemdeki personel ve organizasyon
+                ilişkilerinde kullanılmaktadır.
+
+            </small>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- ACCOUNT INFORMATION -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-user-lock mr-2"></i>
+                Sistem Hesap Bilgileri
+
+            </h6>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <!-- USER ID -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Kullanıcı ID
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @Model.Id
+
+                    </div>
+
+                </div>
+
+                <!-- USERNAME -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Kullanıcı Adı
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Username))
+                        {
+                            @Model.Username
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Tanımlanmamış
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- USER STATUS -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Kullanıcı Durumu
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (Model.IsActive)
+                        {
+                            <span class="text-success font-weight-bold">
+
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Aktif
+
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-danger font-weight-bold">
+
+                                <i class="fas fa-ban mr-1"></i>
+                                Pasif
+
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- SYSTEM ACCESS -->
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="font-weight-bold text-gray-700">
+
+                        Sistem Giriş Yetkisi
+
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @if (Model.HasSystemAccess)
+                        {
+                            <span class="text-success font-weight-bold">
+
+                                <i class="fas fa-lock-open mr-1"></i>
+                                Erişim Var
+
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-danger font-weight-bold">
+
+                                <i class="fas fa-lock mr-1"></i>
+                                Erişim Yok
+
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="alert alert-light border mb-0">
+
+                <i class="fas fa-shield-alt text-primary mr-2"></i>
+
+                Güvenlik nedeniyle kullanıcı şifresi
+                bu ekranda görüntülenmez.
+
+                <br />
+
+                Şifre değişikliği yalnızca yetkili
+                güncelleme ekranından gerçekleştirilir.
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- ACTION BUTTONS -->
+    <!-- ===================================== -->
+
+    <div class="card shadow mb-4">
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-end">
+
+                <a asp-area="Admin"
+                   asp-controller="User"
+                   asp-action="Index"
+                   class="btn btn-secondary mr-2">
+
+                    <i class="fas fa-arrow-left mr-1"></i>
+                    Listeye Dön
+
+                </a>
+
+                <a asp-area="Admin"
+                   asp-controller="User"
+                   asp-action="Edit"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-primary">
+
+                    <i class="fas fa-user-edit mr-1"></i>
+                    Kullanıcıyı Güncelle
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>

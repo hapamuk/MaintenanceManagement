@@ -294,6 +294,10 @@ namespace MaintenanceManagement.Application.Mapping
                     dest => dest.TeamMemberships,
                     opt => opt.Ignore());
 
+            // Giriş doğrulaması başarılı olan kullanıcının
+            // oturum sonucuna dönüştürülmesi
+            CreateMap<User, LoginResultUserDto>();
+
             // Kullanıcı profilini görüntüleme
             CreateMap<User, UserProfileDto>()
                 .ForMember(
@@ -351,6 +355,12 @@ namespace MaintenanceManagement.Application.Mapping
                 .ForMember(
                     dest => dest.TeamMemberships,
                     opt => opt.Ignore());
+
+            // Admin kayıt formundan kullanıcı oluşturma DTO'suna
+            CreateMap<RegisterUserDto, CreateUserDto>()
+                .ForMember(
+                    dest => dest.HasSystemAccess,
+                    opt => opt.MapFrom(src => true));
 
             #endregion
 

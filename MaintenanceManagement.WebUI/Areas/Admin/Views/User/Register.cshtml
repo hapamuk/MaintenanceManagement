@@ -1,26 +1,73 @@
-﻿@model RegisterUserDto
+﻿@model MaintenanceManagement.Application.DTOS.UserDtos.RegisterUserDto
 
 @{
-    ViewData["Title"] = "Kullanıcı Kaydı";
+    ViewData["Title"] = "Yeni Kullanıcı Oluştur";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
 <div class="container-fluid">
 
+    <!-- ===================================== -->
+    <!-- PAGE HEADING -->
+    <!-- ===================================== -->
+
+    <div class="d-sm-flex align-items-center
+                justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-plus text-primary mr-2"></i>
+            Yeni Kullanıcı Oluştur
+        </h1>
+
+        <a asp-area="Admin"
+           asp-controller="User"
+           asp-action="Index"
+           class="btn btn-secondary shadow-sm">
+
+            <i class="fas fa-arrow-left mr-1"></i>
+            Kullanıcı Listesi
+        </a>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- REGISTER CARD -->
+    <!-- ===================================== -->
+
     <div class="card shadow mb-4">
 
         <div class="card-header py-3">
+
             <h6 class="m-0 font-weight-bold text-primary">
-                Yeni Kullanıcı Oluştur
+
+                <i class="fas fa-user-cog mr-2"></i>
+                Kullanıcı Kayıt Bilgileri
+
             </h6>
+
         </div>
 
         <div class="card-body">
 
+            <!-- INFORMATION -->
+
             <div class="alert alert-info">
-                Bu ekran yalnızca yetkili sistem
-                yöneticileri tarafından kullanılabilir.
+
+                <i class="fas fa-info-circle mr-2"></i>
+
+                Kullanıcı kaydı yalnızca yetkili sistem
+                yöneticileri tarafından oluşturulur.
+
+                <br />
+
+                Kullanıcının bağlı olacağı aktif
+                organizasyon birimini seçiniz.
+
             </div>
+
+            <!-- ===================================== -->
+            <!-- REGISTER FORM -->
+            <!-- ===================================== -->
 
             <form asp-area="Admin"
                   asp-controller="User"
@@ -30,24 +77,421 @@
 
                 @Html.AntiForgeryToken()
 
-                <div asp-validation-summary="All"
-                     class="text-danger mb-3"></div>
+                <!-- VALIDATION SUMMARY -->
 
-                <div class="form-group">
-                    @Html.EditorForModel()
+                <div asp-validation-summary="All"
+                     class="text-danger mb-3">
                 </div>
 
-                <button type="submit"
-                        class="btn btn-success">
-                    Kullanıcıyı Kaydet
-                </button>
+                <!-- ===================================== -->
+                <!-- PERSONAL INFORMATION -->
+                <!-- ===================================== -->
 
-                <a asp-action="Index"
-                   class="btn btn-secondary">
-                    Listeye Dön
-                </a>
+                <h6 class="font-weight-bold text-primary mb-3">
+
+                    <i class="fas fa-address-card mr-2"></i>
+                    Kişisel Bilgiler
+
+                </h6>
+
+                <div class="row">
+
+                    <!-- FIRST NAME -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="FirstName"
+                                   class="font-weight-bold">
+
+                                Ad
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input asp-for="FirstName"
+                                   class="form-control"
+                                   placeholder="Kullanıcının adı" />
+
+                            <span asp-validation-for="FirstName"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- LAST NAME -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="LastName"
+                                   class="font-weight-bold">
+
+                                Soyad
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input asp-for="LastName"
+                                   class="form-control"
+                                   placeholder="Kullanıcının soyadı" />
+
+                            <span asp-validation-for="LastName"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- EMAIL -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="Email"
+                                   class="font-weight-bold">
+
+                                E-Posta
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <div class="input-group">
+
+                                <div class="input-group-prepend">
+
+                                    <span class="input-group-text">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+
+                                </div>
+
+                                <input asp-for="Email"
+                                       type="email"
+                                       class="form-control"
+                                       placeholder="ornek@kurum.gov.tr" />
+
+                            </div>
+
+                            <span asp-validation-for="Email"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- PHONE -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="Phone"
+                                   class="font-weight-bold">
+
+                                Telefon
+
+                            </label>
+
+                            <div class="input-group">
+
+                                <div class="input-group-prepend">
+
+                                    <span class="input-group-text">
+                                        <i class="fas fa-phone"></i>
+                                    </span>
+
+                                </div>
+
+                                <input asp-for="Phone"
+                                       type="tel"
+                                       class="form-control"
+                                       placeholder="Telefon numarası" />
+
+                            </div>
+
+                            <span asp-validation-for="Phone"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- ===================================== -->
+                <!-- ORGANIZATION INFORMATION -->
+                <!-- ===================================== -->
+
+                <h6 class="font-weight-bold text-primary mb-3">
+
+                    <i class="fas fa-sitemap mr-2"></i>
+                    Organizasyon Bilgileri
+
+                </h6>
+
+                <div class="row">
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="PrimaryUnitId"
+                                   class="font-weight-bold">
+
+                                Organizasyon Birimi
+
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <select asp-for="PrimaryUnitId"
+                                    asp-items="ViewBag.PrimaryUnits"
+                                    id="PrimaryUnitId"
+                                    class="form-control js-unit-select"
+                                    style="width:100%">
+
+                                <option value="0">
+                                    -- Organizasyon Birimi Seçiniz --
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="PrimaryUnitId"
+                                  class="text-danger small">
+                            </span>
+
+                            <small class="form-text text-muted">
+
+                                Organizasyon birimini seçmek için
+                                açılır listeye tıklayınız.
+
+                                Liste içerisinde birim adına göre
+                                arama yapabilirsiniz.
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- ===================================== -->
+                <!-- LOGIN INFORMATION -->
+                <!-- ===================================== -->
+
+                <h6 class="font-weight-bold text-primary mb-3">
+
+                    <i class="fas fa-lock mr-2"></i>
+                    Sistem Giriş Bilgileri
+
+                </h6>
+
+                <div class="row">
+
+                    <!-- USERNAME -->
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="Username"
+                                   class="font-weight-bold">
+
+                                Kullanıcı Adı
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <div class="input-group">
+
+                                <div class="input-group-prepend">
+
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+
+                                </div>
+
+                                <input asp-for="Username"
+                                       class="form-control"
+                                       placeholder="Sistem kullanıcı adı"
+                                       autocomplete="off" />
+
+                            </div>
+
+                            <span asp-validation-for="Username"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- PASSWORD -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="Password"
+                                   class="font-weight-bold">
+
+                                Şifre
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input asp-for="Password"
+                                   type="password"
+                                   class="form-control"
+                                   autocomplete="new-password"
+                                   placeholder="En az 12 karakter" />
+
+                            <span asp-validation-for="Password"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- CONFIRM PASSWORD -->
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="ConfirmPassword"
+                                   class="font-weight-bold">
+
+                                Şifre Tekrar
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input asp-for="ConfirmPassword"
+                                   type="password"
+                                   class="form-control"
+                                   autocomplete="new-password"
+                                   placeholder="Şifreyi tekrar giriniz" />
+
+                            <span asp-validation-for="ConfirmPassword"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- ===================================== -->
+                <!-- BUTTONS -->
+                <!-- ===================================== -->
+
+                <div class="d-flex justify-content-end">
+
+                    <a asp-area="Admin"
+                       asp-controller="User"
+                       asp-action="Index"
+                       class="btn btn-secondary mr-2">
+
+                        <i class="fas fa-times mr-1"></i>
+                        Vazgeç
+
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-success">
+
+                        <i class="fas fa-save mr-1"></i>
+                        Kullanıcıyı Kaydet
+
+                    </button>
+
+                </div>
+
             </form>
 
         </div>
+
     </div>
+
 </div>
+
+@section Styles {
+
+    <link rel="stylesheet" href="~/tema/css/select2.min.css" />
+
+    <link rel="stylesheet" href="~/tema/css/select2-bootstrap4.min.css" />
+
+}
+
+@section Scripts {
+
+    <script src="~/tema/js/select2.min.js"></script>
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(function () {
+
+            $('.js-unit-select').select2({
+
+                theme: 'bootstrap4',
+
+                width: '100%',
+
+                placeholder: '-- Organizasyon Birimi Seçiniz --',
+
+                allowClear: true,
+
+                minimumResultsForSearch: 0,
+
+                language: {
+
+                    noResults: function () {
+                        return 'Organizasyon birimi bulunamadı.';
+                    },
+
+                    searching: function () {
+                        return 'Aranıyor...';
+                    },
+
+                    inputTooShort: function () {
+                        return 'Arama yapmak için yazınız.';
+                    }
+                }
+
+            });
+
+            // Organizasyon birimi değiştiğinde
+            // doğrulama alanını güncelle.
+            $('.js-unit-select').on(
+                'change',
+                function () {
+
+                    $(this).valid();
+
+                }
+            );
+
+        });
+    </script>
+}

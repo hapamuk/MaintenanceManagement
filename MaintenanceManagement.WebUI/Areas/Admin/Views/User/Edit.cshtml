@@ -1,4 +1,4 @@
-﻿@model UpdateUserDto
+﻿@model MaintenanceManagement.Application.DTOS.UserDtos.UpdateUserDto
 
 @{
     ViewData["Title"] = "Kullanıcı Güncelle";
@@ -7,40 +7,625 @@
 
 <div class="container-fluid">
 
+    <!-- ===================================== -->
+    <!-- PAGE HEADING -->
+    <!-- ===================================== -->
+
+    <div class="d-sm-flex align-items-center
+                justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">
+
+            <i class="fas fa-user-edit text-primary mr-2"></i>
+            Kullanıcı Güncelle
+
+        </h1>
+
+        <a asp-area="Admin"
+           asp-controller="User"
+           asp-action="Index"
+           class="btn btn-secondary shadow-sm">
+
+            <i class="fas fa-arrow-left mr-1"></i>
+            Kullanıcı Listesi
+
+        </a>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- EDIT CARD -->
+    <!-- ===================================== -->
+
     <div class="card shadow mb-4">
 
-        <div class="card-header">
-            <strong>Kullanıcı Güncelle</strong>
+        <div class="card-header py-3">
+
+            <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-user-cog mr-2"></i>
+                Kullanıcı Güncelleme Formu
+
+            </h6>
+
         </div>
 
         <div class="card-body">
 
-            <form asp-action="Edit"
+            <!-- ===================================== -->
+            <!-- INFORMATION -->
+            <!-- ===================================== -->
+
+            <div class="alert alert-info">
+
+                <i class="fas fa-info-circle mr-2"></i>
+
+                Kullanıcının kişisel ve organizasyon
+                bilgilerini bu ekrandan güncelleyebilirsiniz.
+
+                <br />
+
+                Şifre değiştirilmeyecekse yeni şifre
+                alanlarını boş bırakınız.
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- EDIT FORM -->
+            <!-- ===================================== -->
+
+            <form asp-area="Admin"
+                  asp-controller="User"
+                  asp-action="Edit"
                   asp-route-id="@Model.Id"
                   method="post"
                   autocomplete="off">
 
                 @Html.AntiForgeryToken()
 
+                <!-- USER ID -->
                 <input type="hidden" asp-for="Id" />
 
+                <!-- VALIDATION SUMMARY -->
                 <div asp-validation-summary="All"
-                     class="text-danger mb-3"></div>
+                     class="text-danger mb-3">
+                </div>
 
-                @Html.EditorForModel()
+                <!-- ===================================== -->
+                <!-- PERSONAL INFORMATION -->
+                <!-- ===================================== -->
 
-                <button type="submit"
-                        class="btn btn-primary">
-                    Güncelle
-                </button>
+                <h6 class="font-weight-bold text-primary mb-3">
 
-                <a asp-action="Details"
-                   asp-route-id="@Model.Id"
-                   class="btn btn-secondary">
-                    Geri Dön
-                </a>
+                    <i class="fas fa-address-card mr-2"></i>
+                    Kişisel Bilgiler
+
+                </h6>
+
+                <div class="row">
+
+                    <!-- FIRST NAME -->
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="FirstName"
+                                   class="font-weight-bold">
+
+                                Ad
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input asp-for="FirstName"
+                                   class="form-control"
+                                   placeholder="Kullanıcının adı" />
+
+                            <span asp-validation-for="FirstName"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- LAST NAME -->
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="LastName"
+                                   class="font-weight-bold">
+
+                                Soyad
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <input asp-for="LastName"
+                                   class="form-control"
+                                   placeholder="Kullanıcının soyadı" />
+
+                            <span asp-validation-for="LastName"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- EMAIL -->
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="Email"
+                                   class="font-weight-bold">
+
+                                E-Posta
+
+                            </label>
+
+                            <div class="input-group">
+
+                                <div class="input-group-prepend">
+
+                                    <span class="input-group-text">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+
+                                </div>
+
+                                <input asp-for="Email"
+                                       type="email"
+                                       class="form-control"
+                                       placeholder="ornek@kurum.gov.tr" />
+
+                            </div>
+
+                            <span asp-validation-for="Email"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- PHONE -->
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="Phone"
+                                   class="font-weight-bold">
+
+                                Telefon
+
+                            </label>
+
+                            <div class="input-group">
+
+                                <div class="input-group-prepend">
+
+                                    <span class="input-group-text">
+                                        <i class="fas fa-phone"></i>
+                                    </span>
+
+                                </div>
+
+                                <input asp-for="Phone"
+                                       type="tel"
+                                       class="form-control"
+                                       placeholder="Telefon numarası" />
+
+                            </div>
+
+                            <span asp-validation-for="Phone"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- TITLE -->
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="Title"
+                                   class="font-weight-bold">
+
+                                Unvan
+
+                            </label>
+
+                            <input asp-for="Title"
+                                   class="form-control"
+                                   placeholder="Örn: Yazılım Uzmanı" />
+
+                            <span asp-validation-for="Title"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- ===================================== -->
+                <!-- ORGANIZATION INFORMATION -->
+                <!-- ===================================== -->
+
+                <h6 class="font-weight-bold text-primary mb-3">
+
+                    <i class="fas fa-sitemap mr-2"></i>
+                    Organizasyon Bilgileri
+
+                </h6>
+
+                <div class="row">
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="PrimaryUnitId"
+                                   class="font-weight-bold">
+
+                                Organizasyon Birimi
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <select asp-for="PrimaryUnitId"
+                                    asp-items="ViewBag.PrimaryUnits"
+                                    class="form-control js-unit-select"
+                                    style="width:100%">
+
+                                <option value="0">
+                                    -- Organizasyon Birimi Seçiniz --
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="PrimaryUnitId"
+                                  class="text-danger small">
+                            </span>
+
+                            <small class="form-text text-muted">
+
+                                Kullanıcının bağlı olacağı
+                                organizasyon birimini seçiniz.
+
+                                <br />
+
+                                Liste içerisinde birim adına
+                                göre arama yapabilirsiniz.
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- ===================================== -->
+                <!-- ACCOUNT INFORMATION -->
+                <!-- ===================================== -->
+
+                <h6 class="font-weight-bold text-primary mb-3">
+
+                    <i class="fas fa-user-lock mr-2"></i>
+                    Sistem Giriş Bilgileri
+
+                </h6>
+
+                <div class="row">
+
+                    <!-- USERNAME -->
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="Username"
+                                   class="font-weight-bold">
+
+                                Kullanıcı Adı
+
+                            </label>
+
+                            <div class="input-group">
+
+                                <div class="input-group-prepend">
+
+                                    <span class="input-group-text">
+
+                                        <i class="fas fa-user"></i>
+
+                                    </span>
+
+                                </div>
+
+                                <input asp-for="Username"
+                                       class="form-control"
+                                       placeholder="Kullanıcı adı"
+                                       autocomplete="off" />
+
+                            </div>
+
+                            <span asp-validation-for="Username"
+                                  class="text-danger small">
+                            </span>
+
+                            <small class="form-text text-muted">
+
+                                Kullanıcının sisteme giriş
+                                yaparken kullandığı ad.
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- ===================================== -->
+                <!-- PASSWORD INFORMATION -->
+                <!-- ===================================== -->
+
+                <h6 class="font-weight-bold text-primary mb-3">
+
+                    <i class="fas fa-key mr-2"></i>
+                    Şifre Güncelleme
+
+                </h6>
+
+                <div class="alert alert-light border">
+
+                    <i class="fas fa-shield-alt text-primary mr-2"></i>
+
+                    Şifre değiştirilmeyecekse aşağıdaki
+                    alanları boş bırakınız.
+
+                    <br />
+
+                    Yeni şifre girildiğinde mevcut şifre
+                    BCrypt ile güvenli şekilde güncellenir.
+
+                </div>
+
+                <div class="row">
+
+                    <!-- NEW PASSWORD -->
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="NewPassword"
+                                   class="font-weight-bold">
+
+                                Yeni Şifre
+
+                            </label>
+
+                            <div class="input-group">
+
+                                <input asp-for="NewPassword"
+                                       type="password"
+                                       class="form-control"
+                                       placeholder="En az 12 karakter"
+                                       autocomplete="new-password"
+                                       value="" />
+
+                                <div class="input-group-append">
+
+                                    <button type="button"
+                                            class="btn btn-outline-secondary js-toggle-password"
+                                            data-target="NewPassword"
+                                            title="Şifreyi Göster/Gizle"
+                                            aria-label="Şifreyi göster veya gizle">
+
+                                        <i class="fas fa-eye"></i>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <span asp-validation-for="NewPassword"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- CONFIRM PASSWORD -->
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="ConfirmNewPassword"
+                                   class="font-weight-bold">
+
+                                Yeni Şifre Tekrar
+
+                            </label>
+
+                            <div class="input-group">
+
+                                <input asp-for="ConfirmNewPassword"
+                                       type="password"
+                                       class="form-control"
+                                       placeholder="Yeni şifreyi tekrar giriniz"
+                                       autocomplete="new-password"
+                                       value="" />
+
+                                <div class="input-group-append">
+
+                                    <button type="button"
+                                            class="btn btn-outline-secondary js-toggle-password"
+                                            data-target="ConfirmNewPassword"
+                                            title="Şifreyi Göster/Gizle"
+                                            aria-label="Şifreyi göster veya gizle">
+
+                                        <i class="fas fa-eye"></i>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <span asp-validation-for="ConfirmNewPassword"
+                                  class="text-danger small">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- ===================================== -->
+                <!-- BUTTONS -->
+                <!-- ===================================== -->
+
+                <div class="d-flex justify-content-end">
+
+                    <a asp-area="Admin"
+                       asp-controller="User"
+                       asp-action="Details"
+                       asp-route-id="@Model.Id"
+                       class="btn btn-secondary mr-2">
+
+                        <i class="fas fa-times mr-1"></i>
+                        Vazgeç
+
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        <i class="fas fa-save mr-1"></i>
+                        Değişiklikleri Kaydet
+
+                    </button>
+
+                </div>
 
             </form>
+
         </div>
+
     </div>
+
 </div>
+
+@section Styles {
+
+    <link rel="stylesheet" href="~/tema/css/select2.min.css" />
+
+    <link rel="stylesheet" href="~/tema/css/select2-bootstrap4.min.css" />
+
+}
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script src="~/tema/js/select2.min.js"></script>
+
+    <script>
+        $(function () {
+
+            // =====================================
+            // ORGANİZASYON BİRİMİ SELECT2
+            // =====================================
+
+            $('.js-unit-select').select2({
+
+                theme: 'bootstrap4',
+
+                width: '100%',
+
+                placeholder: '-- Organizasyon Birimi Seçiniz --',
+
+                minimumResultsForSearch: 0,
+
+                language: {
+
+                    noResults: function () {
+                        return 'Organizasyon birimi bulunamadı.';
+                    },
+
+                    searching: function () {
+                        return 'Aranıyor...';
+                    }
+                }
+
+            });
+
+            // =====================================
+            // DROPDOWN VALIDATION
+            // =====================================
+
+            $('.js-unit-select').on(
+                'change',
+                function () {
+
+                    $(this).valid();
+
+                }
+            );
+
+            // =====================================
+            // PASSWORD SHOW / HIDE
+            // =====================================
+
+            $('.js-toggle-password').on(
+                'click',
+                function () {
+
+                    const targetId =
+                        $(this).data('target');
+
+                    const input =
+                        document.getElementById(targetId);
+
+                    if (!input) {
+                        return;
+                    }
+
+                    const isPassword =
+                        input.type === 'password';
+
+                    input.type = isPassword
+                        ? 'text'
+                        : 'password';
+
+                    $(this)
+                        .find('i')
+                        .toggleClass(
+                            'fa-eye fa-eye-slash'
+                        );
+
+                }
+            );
+
+        });
+    </script>
+}

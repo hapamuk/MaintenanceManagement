@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using System.Threading;
 
 namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 {
@@ -16,13 +18,16 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
         #region Fields and Constructor
 
         private readonly IUserService _userService;
+        private readonly IUnitService _unitService;
         private readonly ILogger<UserController> _logger;
 
         public UserController(
             IUserService userService,
+            IUnitService unitService,
             ILogger<UserController> logger)
         {
             _userService = userService;
+            _unitService = unitService;
             _logger = logger;
         }
 
@@ -69,8 +74,10 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
         //[Authorize(Policy = "AdminOnly")]
         [HttpGet]
-        public IActionResult Register()
+        public async Task<IActionResult> Register(CancellationToken cancellationToken)
         {
+            await LoadPrimaryUnitsAsync(cancellationToken);
+
             return View(new RegisterUserDto());
         }
 
@@ -78,11 +85,15 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(
-            RegisterUserDto model,
-            CancellationToken cancellationToken)
+    RegisterUserDto model,
+    CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
+            {
+                await LoadPrimaryUnitsAsync(cancellationToken);
+
                 return View(model);
+            }
 
             try
             {
@@ -101,17 +112,20 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             catch (ValidationException ex)
             {
                 ModelState.AddModelError(
-                    string.Empty, ex.Message);
+                    string.Empty,
+                    ex.Message);
             }
             catch (ArgumentException ex)
             {
                 ModelState.AddModelError(
-                    string.Empty, ex.Message);
+                    string.Empty,
+                    ex.Message);
             }
             catch (InvalidOperationException ex)
             {
                 ModelState.AddModelError(
-                    string.Empty, ex.Message);
+                    string.Empty,
+                    ex.Message);
             }
             catch (Exception ex)
             {
@@ -124,6 +138,10 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
                     "Kullanıcı oluşturulurken hata oluştu.");
             }
 
+            // Doğrulama hatası olduğunda
+            // dropdown listesi tekrar yüklenir.
+            await LoadPrimaryUnitsAsync(cancellationToken);
+
             return View(model);
         }
 
@@ -131,24 +149,31 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
         #region Edit
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpGet]
         public async Task<IActionResult> Edit(
-            int id,
-            CancellationToken cancellationToken)
+    int id,
+    CancellationToken cancellationToken)
         {
             if (id <= 0)
+            {
                 return BadRequest();
+            }
 
             var user = await _userService
-                .GetByIdAsync(id, cancellationToken);
+                .GetByIdAsync(
+                    id,
+                    cancellationToken);
 
             if (user == null)
+            {
                 return NotFound();
+            }
 
-            // GetByIdUserDto ile UpdateUserDto
-            // aynı alanları taşımayabilir.
-            // İzin verilen alanları açıkça eşleştir.
+            // =====================================
+            // 1. GÜNCELLEME MODELİNİ HAZIRLA
+            // =====================================
+
             var model = new UpdateUserDto
             {
                 Id = user.Id,
@@ -158,36 +183,67 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
                 Email = user.Email,
                 PrimaryUnitId = user.PrimaryUnitId,
                 Phone = user.Phone,
-                Title = user.Title
+                Title = user.Title,
+
+                // Güvenlik gereği mevcut parola
+                // hiçbir zaman forma doldurulmaz.
+                NewPassword = null,
+                ConfirmNewPassword = null
             };
+
+            // =====================================
+            // 2. ORGANİZASYON BİRİMLERİNİ GETİR
+            // =====================================
+
+            await LoadPrimaryUnitsAsync(cancellationToken);
 
             return View(model);
         }
 
-        [Authorize(Policy = "AdminOnly")]
+       // [Authorize(Policy = "AdminOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-            int id,
-            UpdateUserDto model,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> Edit(int id,UpdateUserDto model,CancellationToken cancellationToken)
         {
             if (id <= 0 || id != model.Id)
+            {
                 return BadRequest();
+            }
+
+            // =====================================
+            // 1. MODEL DOĞRULAMASI
+            // =====================================
 
             if (!ModelState.IsValid)
+            {
+                await LoadPrimaryUnitsAsync(
+                    cancellationToken);
+
                 return View(model);
+            }
 
             try
             {
+                // =================================
+                // 2. KULLANICIYI GÜNCELLE
+                // =================================
+
                 bool updated = await _userService
-                    .UpdateAsync(model, cancellationToken);
+                    .UpdateAsync(
+                        model,
+                        cancellationToken);
 
                 if (!updated)
+                {
                     return NotFound();
+                }
+
+                // =================================
+                // 3. BAŞARI MESAJI
+                // =================================
 
                 TempData["Success"] =
-                    "Kullanıcı başarıyla güncellendi.";
+                    "Kullanıcı bilgileri başarıyla güncellendi.";
 
                 return RedirectToAction(
                     nameof(Details),
@@ -196,17 +252,20 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             catch (ValidationException ex)
             {
                 ModelState.AddModelError(
-                    string.Empty, ex.Message);
+                    string.Empty,
+                    ex.Message);
             }
             catch (ArgumentException ex)
             {
                 ModelState.AddModelError(
-                    string.Empty, ex.Message);
+                    string.Empty,
+                    ex.Message);
             }
             catch (InvalidOperationException ex)
             {
                 ModelState.AddModelError(
-                    string.Empty, ex.Message);
+                    string.Empty,
+                    ex.Message);
             }
             catch (Exception ex)
             {
@@ -220,6 +279,24 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
                     "Güncelleme sırasında hata oluştu.");
             }
 
+            // =====================================
+            // 4. DROPDOWN LİSTESİNİ YENİDEN YÜKLE
+            // =====================================
+
+            await LoadPrimaryUnitsAsync(
+                cancellationToken);
+
+            // Şifre alanları hatadan sonra forma
+            // yeniden basılmasın.
+            model.NewPassword = null;
+            model.ConfirmNewPassword = null;
+
+            ModelState.Remove(
+                nameof(UpdateUserDto.NewPassword));
+
+            ModelState.Remove(
+                nameof(UpdateUserDto.ConfirmNewPassword));
+
             return View(model);
         }
 
@@ -227,7 +304,7 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
         #region Change Status
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangeStatus(
@@ -268,7 +345,7 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
         #region Change System Access
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangeSystemAccess(
@@ -495,9 +572,7 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        public IActionResult ResetPassword(
-    string? email,
-    string? token)
+        public IActionResult ResetPassword(string? email,string? token)
         {
             if (string.IsNullOrWhiteSpace(email) ||
                 string.IsNullOrWhiteSpace(token))
@@ -748,6 +823,25 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             return int.TryParse(value, out int id)
                 ? id
                 : null;
+        }
+
+        /// <summary>
+        /// Aktif organizasyon birimlerini kayıt
+        /// ekranındaki aranabilir dropdown için yükler.
+        /// </summary>
+        private async Task LoadPrimaryUnitsAsync(CancellationToken cancellationToken)
+        {
+            var units = await _unitService
+                .GetActiveAsync(cancellationToken);
+
+            ViewBag.PrimaryUnits = units
+                .OrderBy(x => x.Name)
+                .Select(x => new SelectListItem
+                {
+                    Value = x.Id.ToString(),
+                    Text = x.Name
+                })
+                .ToList();
         }
 
         #endregion

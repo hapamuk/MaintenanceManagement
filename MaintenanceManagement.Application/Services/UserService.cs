@@ -322,10 +322,14 @@ namespace MaintenanceManagement.Application.Services
         /// Parola, rol, aktiflik ve sistem erişimi korunur.
         /// </summary>
         public async Task<bool> UpdateAsync(
-            UpdateUserDto dto,
-            CancellationToken cancellationToken = default)
+    UpdateUserDto dto,
+    CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
+
+            // =====================================
+            // 1. DTO DOĞRULAMASI
+            // =====================================
 
             ValidateDto(dto);
 
@@ -336,13 +340,23 @@ namespace MaintenanceManagement.Application.Services
                 dto.LastName,
                 dto.PrimaryUnitId);
 
+            // =====================================
+            // 2. KULLANICIYI GETİR
+            // =====================================
+
             var existingUser = await _userRepository
                 .GetByIdAsync(
                     dto.Id,
                     cancellationToken);
 
             if (existingUser == null)
+            {
                 return false;
+            }
+
+            // =====================================
+            // 3. GİRİŞ BİLGİLERİNİ NORMALİZE ET
+            // =====================================
 
             string? email = NormalizeOptional(
                 dto.Email,
@@ -352,8 +366,10 @@ namespace MaintenanceManagement.Application.Services
                 dto.Username,
                 true);
 
-            // Sisteme erişimi olan kullanıcı
-            // giriş bilgilerinin tamamını silemez.
+            // =====================================
+            // 4. SİSTEM ERİŞİMİ KONTROLÜ
+            // =====================================
+
             if (existingUser.HasSystemAccess)
             {
                 ValidateLoginIdentifiers(
@@ -361,9 +377,17 @@ namespace MaintenanceManagement.Application.Services
                     email);
             }
 
+            // =====================================
+            // 5. ORGANİZASYON BİRİMİNİ DOĞRULA
+            // =====================================
+
             await ValidatePrimaryUnitAsync(
                 dto.PrimaryUnitId,
                 cancellationToken);
+
+            // =====================================
+            // 6. BENZERSİZLİK KONTROLÜ
+            // =====================================
 
             await ValidateUniquenessAsync(
                 email,
@@ -371,20 +395,114 @@ namespace MaintenanceManagement.Application.Services
                 existingUser.Id,
                 cancellationToken);
 
-            // DTO -> Takip edilen mevcut Entity
+            // =====================================
+            // 7. ŞİFRE DEĞİŞİKLİĞİ KONTROLÜ
+            // =====================================
+
+            bool hasNewPassword =
+                !string.IsNullOrEmpty(dto.NewPassword);
+
+            bool hasConfirmPassword =
+                !string.IsNullOrEmpty(dto.ConfirmNewPassword);
+
+            // Şifre alanlarından yalnızca biri
+            // doldurulmuşsa güncelleme yapılmaz.
+            if (hasNewPassword != hasConfirmPassword)
+            {
+                throw new ValidationException(
+                    "Yeni şifre ve şifre tekrarı " +
+                    "birlikte girilmelidir.");
+            }
+
+            string? newPasswordHash = null;
+
+            if (hasNewPassword)
+            {
+                // Sistem erişimi olmayan kullanıcıya
+                // bu ekran üzerinden şifre atanmaz.
+                if (!existingUser.HasSystemAccess)
+                {
+                    throw new ValidationException(
+                        "Sistem erişimi olmayan kullanıcının " +
+                        "şifresi güncellenemez.");
+                }
+
+                // Mevcut parola uzunluk kurallarını kullan.
+                ValidateNewPassword(dto.NewPassword);
+
+                if (dto.NewPassword != dto.ConfirmNewPassword)
+                {
+                    throw new ValidationException(
+                        "Yeni şifreler eşleşmiyor.");
+                }
+
+                // Yeni şifre mevcut şifreyle aynı olmamalı.
+                if (!string.IsNullOrWhiteSpace(
+                    existingUser.PasswordHash))
+                {
+                    bool isSamePassword =
+                        BCrypt.Net.BCrypt.Verify(
+                            dto.NewPassword!,
+                            existingUser.PasswordHash);
+
+                    if (isSamePassword)
+                    {
+                        throw new ValidationException(
+                            "Yeni şifre mevcut şifreyle " +
+                            "aynı olamaz.");
+                    }
+                }
+
+                // Yeni şifreyi güvenli biçimde hash'le.
+                newPasswordHash =
+                    BCrypt.Net.BCrypt.HashPassword(
+                        dto.NewPassword!,
+                        workFactor: 12);
+            }
+
+            // =====================================
+            // 8. KULLANICI BİLGİLERİNİ GÜNCELLE
+            // =====================================
+
             _mapper.Map(dto, existingUser);
 
-            existingUser.FirstName = dto.FirstName.Trim();
-            existingUser.LastName = dto.LastName.Trim();
+            existingUser.FirstName =
+                dto.FirstName.Trim();
+
+            existingUser.LastName =
+                dto.LastName.Trim();
 
             existingUser.Email = email;
+
             existingUser.Username = username;
 
-            existingUser.Phone = NormalizeOptional(dto.Phone);
-            existingUser.Title = NormalizeOptional(dto.Title);
+            existingUser.Phone =
+                NormalizeOptional(dto.Phone);
 
-            // PasswordHash, HasSystemAccess, IsActive,
-            // CreatedAt ve rol/ekip ilişkileri korunur.
+            existingUser.Title =
+                NormalizeOptional(dto.Title);
+
+            existingUser.PrimaryUnitId =
+                dto.PrimaryUnitId;
+
+            // =====================================
+            // 9. ŞİFREYİ GÜNCELLE
+            // =====================================
+
+            // Yeni şifre oluşturulmadıysa
+            // PasswordHash değerine dokunulmaz.
+            if (newPasswordHash != null)
+            {
+                existingUser.PasswordHash =
+                    newPasswordHash;
+            }
+
+            // =====================================
+            // 10. VERİTABANINA KAYDET
+            // =====================================
+
+            // IsActive, HasSystemAccess, CreatedAt,
+            // rol ve takım ilişkileri korunur.
             return await _userRepository
                 .UpdateAsync(
                     existingUser,

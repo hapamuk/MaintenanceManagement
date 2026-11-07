@@ -1,129 +1,998 @@
-﻿@model IReadOnlyList<ResultUserDto>
+﻿@model IReadOnlyList<MaintenanceManagement.Application.DTOS.UserDtos.ResultUserDto>
 
 @{
     ViewData["Title"] = "Kullanıcı Yönetimi";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    int totalUsers = Model?.Count ?? 0;
+    int activeUsers = Model?.Count(x => x.IsActive) ?? 0;
+    int passiveUsers = totalUsers - activeUsers;
+    int systemAccessUsers =
+        Model?.Count(x => x.HasSystemAccess) ?? 0;
 }
 
 <div class="container-fluid">
 
-    <div class="d-flex justify-content-between
-        align-items-center mb-4">
+    <!-- ===================================== -->
+    <!-- PAGE HEADING -->
+    <!-- ===================================== -->
 
-        <h3>Kullanıcı Yönetimi</h3>
+    <div class="d-sm-flex align-items-center
+                justify-content-between mb-4">
+
+        <h1 class="h3 mb-0 text-gray-800">
+
+            <i class="fas fa-users text-primary mr-2"></i>
+            Kullanıcı Yönetimi
+
+        </h1>
 
         <a asp-area="Admin"
            asp-controller="User"
            asp-action="Register"
-           class="btn btn-primary">
+           class="btn btn-primary shadow-sm">
 
-            <i class="fas fa-plus"></i>
+            <i class="fas fa-user-plus mr-1"></i>
             Yeni Kullanıcı
+
         </a>
+
     </div>
 
+    <!-- ===================================== -->
+    <!-- NOTIFICATIONS -->
+    <!-- ===================================== -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success">
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+
+            <i class="fas fa-check-circle mr-2"></i>
             @TempData["Success"]
+
+            <button type="button"
+                    class="close"
+                    data-dismiss="alert"
+                    aria-label="Kapat">
+
+                <span aria-hidden="true">&times;</span>
+
+            </button>
+
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger">
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+
+            <i class="fas fa-exclamation-triangle mr-2"></i>
             @TempData["Error"]
+
+            <button type="button"
+                    class="close"
+                    data-dismiss="alert"
+                    aria-label="Kapat">
+
+                <span aria-hidden="true">&times;</span>
+
+            </button>
+
         </div>
     }
 
+    <!-- ===================================== -->
+    <!-- SUMMARY CARDS -->
+    <!-- ===================================== -->
+
+    <div class="row">
+
+        <!-- TOTAL USERS -->
+        <div class="col-xl-3 col-md-6 mb-4">
+
+            <div class="card border-left-primary shadow h-100 py-2">
+
+                <div class="card-body">
+
+                    <div class="row no-gutters align-items-center">
+
+                        <div class="col mr-2">
+
+                            <div class="text-xs font-weight-bold
+                                        text-primary text-uppercase mb-1">
+
+                                Toplam Kullanıcı
+
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold
+                                        text-gray-800">
+
+                                @totalUsers
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-auto">
+
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ACTIVE USERS -->
+        <div class="col-xl-3 col-md-6 mb-4">
+
+            <div class="card border-left-success shadow h-100 py-2">
+
+                <div class="card-body">
+
+                    <div class="row no-gutters align-items-center">
+
+                        <div class="col mr-2">
+
+                            <div class="text-xs font-weight-bold
+                                        text-success text-uppercase mb-1">
+
+                                Aktif Kullanıcı
+
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold
+                                        text-gray-800">
+
+                                @activeUsers
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-auto">
+
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- PASSIVE USERS -->
+        <div class="col-xl-3 col-md-6 mb-4">
+
+            <div class="card border-left-danger shadow h-100 py-2">
+
+                <div class="card-body">
+
+                    <div class="row no-gutters align-items-center">
+
+                        <div class="col mr-2">
+
+                            <div class="text-xs font-weight-bold
+                                        text-danger text-uppercase mb-1">
+
+                                Pasif Kullanıcı
+
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold
+                                        text-gray-800">
+
+                                @passiveUsers
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-auto">
+
+                            <i class="fas fa-user-slash fa-2x text-gray-300"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- SYSTEM ACCESS -->
+        <div class="col-xl-3 col-md-6 mb-4">
+
+            <div class="card border-left-info shadow h-100 py-2">
+
+                <div class="card-body">
+
+                    <div class="row no-gutters align-items-center">
+
+                        <div class="col mr-2">
+
+                            <div class="text-xs font-weight-bold
+                                        text-info text-uppercase mb-1">
+
+                                Sistem Erişimi Olan
+
+                            </div>
+
+                            <div class="h5 mb-0 font-weight-bold
+                                        text-gray-800">
+
+                                @systemAccessUsers
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-auto">
+
+                            <i class="fas fa-user-lock fa-2x text-gray-300"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- USERS CARD -->
+    <!-- ===================================== -->
+
     <div class="card shadow mb-4">
 
-        <div class="card-header py-3">
+        <div class="card-header py-3
+                    d-flex justify-content-between align-items-center">
+
             <h6 class="m-0 font-weight-bold text-primary">
+
+                <i class="fas fa-list mr-2"></i>
                 Kullanıcı Listesi
+
             </h6>
+
+            <span class="badge badge-primary px-3 py-2">
+
+                @totalUsers Kayıt
+
+            </span>
+
         </div>
 
         <div class="card-body">
 
-            @if (Model == null || Model.Count == 0)
-            {
-                <p class="text-muted">
-                    Kayıtlı kullanıcı bulunamadı.
-                </p>
-            }
-            else
-            {
-                @foreach (var user in Model)
-                {
-                    <div class="card mb-3">
-                        <div class="card-body">
+            <!-- ===================================== -->
+            <!-- SEARCH AREA -->
+            <!-- ===================================== -->
 
-                            <div class="row">
-                                <div class="col-md-9">
-                                    @Html.DisplayFor(m => user)
-                                </div>
-                            </div>
+            <div class="row mb-3">
 
-                            <div class="mt-3">
+                <div class="col-lg-6 col-md-8">
 
-                                <a asp-action="Details"
-                                   asp-route-id="@user.Id"
-                                   class="btn btn-info btn-sm">
-                                    Detay
-                                </a>
+                    <label for="userSearch"
+                           class="font-weight-bold">
 
-                                <a asp-action="Edit"
-                                   asp-route-id="@user.Id"
-                                   class="btn btn-warning btn-sm">
-                                    Güncelle
-                                </a>
+                        Kullanıcı Ara
 
-                                <form asp-action="ChangeStatus"
-                                      method="post"
-                                      class="d-inline">
-                                    @Html.AntiForgeryToken()
+                    </label>
 
-                                    <input type="hidden"
-                                           name="id"
-                                           value="@user.Id" />
+                    <div class="input-group">
 
-                                    <input type="hidden"
-                                           name="isActive"
-                                           value="@(user.IsActive ? "false" : "true")" />
+                        <div class="input-group-prepend">
 
-                                    <button type="submit"
-                                            class="btn btn-outline-secondary btn-sm"
-                                            onclick="return confirm('Durum değiştirilsin mi?');">
-                                        @(user.IsActive ? "Pasifleştir" : "Aktifleştir")
-                                    </button>
-                                </form>
+                            <span class="input-group-text">
 
-                                <form asp-action="ChangeSystemAccess"
-                                      method="post"
-                                      class="d-inline">
-                                    @Html.AntiForgeryToken()
+                                <i class="fas fa-search"></i>
 
-                                    <input type="hidden"
-                                           name="id"
-                                           value="@user.Id" />
-
-                                    <input type="hidden"
-                                           name="hasSystemAccess"
-                                           value="@(user.HasSystemAccess ? "false" : "true")" />
-
-                                    <button type="submit"
-                                            class="btn btn-outline-primary btn-sm"
-                                            onclick="return confirm('Sistem erişimi değiştirilsin mi?');">
-                                        @(user.HasSystemAccess ? "Erişimi Kapat" : "Erişim Ver")
-                                    </button>
-                                </form>
-                            </div>
+                            </span>
 
                         </div>
+
+                        <input type="search"
+                               id="userSearch"
+                               class="form-control"
+                               placeholder="Ad, kullanıcı adı, e-posta veya birim ara..."
+                               autocomplete="off" />
+
                     </div>
-                }
-            }
+
+                    <small class="form-text text-muted">
+
+                        Yazdıkça sonuçlar otomatik filtrelenir.
+
+                    </small>
+
+                </div>
+
+                <div class="col-lg-6 col-md-4
+                            d-flex align-items-end justify-content-md-end">
+
+                    <span id="searchResultInfo"
+                          class="text-muted small mb-2"
+                          aria-live="polite">
+
+                        @totalUsers kullanıcı listeleniyor.
+
+                    </span>
+
+                </div>
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- USERS TABLE -->
+            <!-- ===================================== -->
+
+            <div class="table-responsive">
+
+                <table id="usersTable"
+                       class="table table-bordered table-hover"
+                       width="100%"
+                       cellspacing="0">
+
+                    <thead class="thead-light">
+
+                        <tr>
+
+                            <th scope="col">#</th>
+
+                            <th scope="col">Ad Soyad</th>
+
+                            <th scope="col">Kullanıcı Adı</th>
+
+                            <th scope="col">E-Posta</th>
+
+                            <th scope="col">Organizasyon Birimi</th>
+
+                            <th scope="col">Durum</th>
+
+                            <th scope="col">Sistem Erişimi</th>
+
+                            <th scope="col" style="min-width: 250px;">
+                                İşlemler
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="usersTableBody">
+
+                        @if (Model != null)
+                        {
+                            foreach (var user in Model)
+                            {
+                                <tr class="user-row">
+
+                                    <!-- ROW NUMBER -->
+                                    <td class="row-number align-middle"></td>
+
+                                    <!-- FULL NAME -->
+                                    <td class="align-middle">
+
+                                        <div class="font-weight-bold text-gray-800">
+
+                                            <i class="fas fa-user-circle
+                                                              text-primary mr-2"></i>
+
+                                            @user.FullName
+
+                                        </div>
+
+                                    </td>
+
+                                    <!-- USERNAME -->
+                                    <td class="align-middle">
+
+                                        @if (!string.IsNullOrWhiteSpace(user.Username))
+                                        {
+                                            <span class="font-weight-bold">
+                                                @user.Username
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+
+                                    </td>
+
+                                    <!-- EMAIL -->
+                                    <td class="align-middle">
+
+                                        @if (!string.IsNullOrWhiteSpace(user.Email))
+                                        {
+                                            <span>@user.Email</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+
+                                    </td>
+
+                                    <!-- UNIT -->
+                                    <td class="align-middle">
+
+                                        @if (!string.IsNullOrWhiteSpace(user.PrimaryUnitName))
+                                        {
+                                            <span>
+
+                                                <i class="fas fa-building
+                                                                      text-secondary mr-1"></i>
+
+                                                @user.PrimaryUnitName
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+                                                Birim belirtilmemiş
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <!-- STATUS -->
+                                    <td class="align-middle">
+
+                                        @if (user.IsActive)
+                                        {
+                                            <span class="badge badge-success p-2">
+
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Aktif
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-danger p-2">
+
+                                                <i class="fas fa-ban mr-1"></i>
+                                                Pasif
+
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <!-- SYSTEM ACCESS -->
+                                    <td class="align-middle">
+
+                                        @if (user.HasSystemAccess)
+                                        {
+                                            <span class="badge badge-info p-2">
+
+                                                <i class="fas fa-lock-open mr-1"></i>
+                                                Var
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary p-2">
+
+                                                <i class="fas fa-lock mr-1"></i>
+                                                Yok
+
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <!-- ACTIONS -->
+                                    <td class="align-middle">
+
+                                        <div class="d-flex flex-wrap"
+                                             style="gap: 5px;">
+
+                                            <!-- DETAILS -->
+                                            <a asp-area="Admin"
+                                               asp-controller="User"
+                                               asp-action="Details"
+                                               asp-route-id="@user.Id"
+                                               class="btn btn-info btn-sm"
+                                               title="Kullanıcı Detayı"
+                                               aria-label="Kullanıcı detayı">
+
+                                                <i class="fas fa-eye"></i>
+
+                                            </a>
+
+                                            <!-- EDIT -->
+                                            <a asp-area="Admin"
+                                               asp-controller="User"
+                                               asp-action="Edit"
+                                               asp-route-id="@user.Id"
+                                               class="btn btn-warning btn-sm"
+                                               title="Kullanıcı Güncelle"
+                                               aria-label="Kullanıcı güncelle">
+
+                                                <i class="fas fa-edit"></i>
+
+                                            </a>
+
+                                            <!-- CHANGE STATUS -->
+                                            <form asp-area="Admin"
+                                                  asp-controller="User"
+                                                  asp-action="ChangeStatus"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="id"
+                                                       value="@user.Id" />
+
+                                                <input type="hidden"
+                                                       name="isActive"
+                                                       value="@(user.IsActive ? "false" : "true")" />
+
+                                                <button type="submit"
+                                                        class="btn btn-sm @(user.IsActive ? "btn-outline-danger" : "btn-outline-success")"
+                                                        title="@(user.IsActive ? "Pasifleştir" : "Aktifleştir")"
+                                                        onclick="return confirm('Kullanıcının durumu değiştirilsin mi?');">
+
+                                                    <i class="fas @(user.IsActive ? "fa-user-slash" : "fa-user-check")"></i>
+
+                                                </button>
+
+                                            </form>
+
+                                            <!-- SYSTEM ACCESS -->
+                                            <form asp-area="Admin"
+                                                  asp-controller="User"
+                                                  asp-action="ChangeSystemAccess"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="id"
+                                                       value="@user.Id" />
+
+                                                <input type="hidden"
+                                                       name="hasSystemAccess"
+                                                       value="@(user.HasSystemAccess ? "false" : "true")" />
+
+                                                <button type="submit"
+                                                        class="btn btn-outline-primary btn-sm"
+                                                        title="@(user.HasSystemAccess ? "Sistem Erişimini Kapat" : "Sistem Erişimi Ver")"
+                                                        onclick="return confirm('Sistem erişimi değiştirilsin mi?');">
+
+                                                    <i class="fas @(user.HasSystemAccess ? "fa-lock" : "fa-unlock")"></i>
+
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- NO RESULTS -->
+            <!-- ===================================== -->
+
+            <div id="noResults"
+                 class="text-center py-5"
+                 style="display:none;">
+
+                <i class="fas fa-search fa-3x
+                          text-gray-300 mb-3"></i>
+
+                <h6 class="font-weight-bold text-gray-600">
+
+                    Kullanıcı bulunamadı
+
+                </h6>
+
+                <p class="text-muted mb-0">
+
+                    Arama kriterlerine uygun kullanıcı bulunmamaktadır.
+
+                </p>
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- PAGINATION -->
+            <!-- ===================================== -->
+
+            <div class="row mt-4">
+
+                <div class="col-md-6 mb-2">
+
+                    <span id="paginationInfo"
+                          class="text-muted small"
+                          aria-live="polite"></span>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <nav aria-label="Kullanıcı listesi sayfaları">
+
+                        <ul id="usersPagination"
+                            class="pagination pagination-sm
+                                   justify-content-md-end mb-0">
+                        </ul>
+
+                    </nav>
+
+                </div>
+
+            </div>
+
         </div>
+
     </div>
+
 </div>
+
+@section Scripts {
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // =====================================
+            // ELEMENTS
+            // =====================================
+
+            const searchInput =
+                document.getElementById('userSearch');
+
+            const table =
+                document.getElementById('usersTable');
+
+            const rows = Array.from(
+                document.querySelectorAll(
+                    '#usersTableBody .user-row'
+                )
+            );
+
+            const pagination =
+                document.getElementById('usersPagination');
+
+            const paginationInfo =
+                document.getElementById('paginationInfo');
+
+            const searchResultInfo =
+                document.getElementById('searchResultInfo');
+
+            const noResults =
+                document.getElementById('noResults');
+
+            // =====================================
+            // SETTINGS
+            // =====================================
+
+            const pageSize = 10;
+
+            let currentPage = 1;
+
+            let filteredRows = [...rows];
+
+            // =====================================
+            // SEARCH NORMALIZATION
+            // =====================================
+
+            function normalizeText(value) {
+
+                return (value || '')
+                    .toLocaleLowerCase('tr-TR')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/ı/g, 'i')
+                    .trim();
+
+            }
+
+            // =====================================
+            // SEARCH TEXTS
+            // =====================================
+
+            rows.forEach(function (row) {
+
+                // Yalnızca ilk 5 veri sütununda ara.
+                // İşlem butonları aranacak metne dahil edilmez.
+                const searchableCells = Array.from(
+                    row.querySelectorAll('td')
+                ).slice(1, 5);
+
+                row.dataset.searchText = normalizeText(
+                    searchableCells
+                        .map(cell => cell.textContent)
+                        .join(' ')
+                );
+
+            });
+
+            // =====================================
+            // PAGINATION BUTTON
+            // =====================================
+
+            function createPageButton(
+                text,
+                page,
+                disabled = false,
+                active = false
+            ) {
+
+                const li = document.createElement('li');
+
+                li.className = 'page-item';
+
+                if (disabled) {
+                    li.classList.add('disabled');
+                }
+
+                if (active) {
+                    li.classList.add('active');
+                }
+
+                const button = document.createElement('button');
+
+                button.type = 'button';
+                button.className = 'page-link';
+                button.textContent = text;
+
+                if (active) {
+                    button.setAttribute('aria-current', 'page');
+                }
+
+                button.disabled = disabled;
+
+                button.addEventListener('click', function () {
+
+                    if (disabled || active) {
+                        return;
+                    }
+
+                    currentPage = page;
+
+                    renderTable();
+
+                });
+
+                li.appendChild(button);
+
+                pagination.appendChild(li);
+
+            }
+
+            // =====================================
+            // RENDER PAGINATION
+            // =====================================
+
+            function renderPagination(totalPages) {
+
+                pagination.innerHTML = '';
+
+                if (totalPages <= 1) {
+                    return;
+                }
+
+                createPageButton(
+                    'Önceki',
+                    currentPage - 1,
+                    currentPage === 1
+                );
+
+                for (let page = 1; page <= totalPages; page++) {
+
+                    // En fazla 5 sayfa numarasını
+                    // görüntüle.
+                    if (
+                        page === 1 ||
+                        page === totalPages ||
+                        Math.abs(page - currentPage) <= 1
+                    ) {
+
+                        createPageButton(
+                            page.toString(),
+                            page,
+                            false,
+                            page === currentPage
+                        );
+
+                    }
+                    else if (
+                        page === 2 ||
+                        page === totalPages - 1
+                    ) {
+
+                        // Çok sayfalı listelerde
+                        // aradaki sayfaları kısalt.
+                        const previous =
+                            pagination.lastElementChild;
+
+                        if (
+                            previous &&
+                            previous.textContent !== '...'
+                        ) {
+
+                            const dots = document.createElement('li');
+
+                            dots.className =
+                                'page-item disabled';
+
+                            const span =
+                                document.createElement('span');
+
+                            span.className = 'page-link';
+
+                            span.textContent = '...';
+
+                            dots.appendChild(span);
+
+                            pagination.appendChild(dots);
+
+                        }
+
+                    }
+
+                }
+
+                createPageButton(
+                    'Sonraki',
+                    currentPage + 1,
+                    currentPage === totalPages
+                );
+
+            }
+
+            // =====================================
+            // RENDER TABLE
+            // =====================================
+
+            function renderTable() {
+
+                const totalRecords = filteredRows.length;
+
+                const totalPages = Math.ceil(
+                    totalRecords / pageSize
+                );
+
+                // Geçerli sayfayı koru.
+                currentPage = Math.min(
+                    Math.max(1, currentPage),
+                    Math.max(1, totalPages)
+                );
+
+                const startIndex =
+                    (currentPage - 1) * pageSize;
+
+                const endIndex = Math.min(
+                    startIndex + pageSize,
+                    totalRecords
+                );
+
+                // Önce bütün satırları gizle.
+                rows.forEach(function (row) {
+                    row.style.display = 'none';
+                });
+
+                // Mevcut sayfanın satırlarını göster.
+                filteredRows
+                    .slice(startIndex, endIndex)
+                    .forEach(function (row, index) {
+
+                        row.style.display = '';
+
+                        // Filtrelenmiş listedeki
+                        // gerçek sıra numarası.
+                        const numberCell =
+                            row.querySelector('.row-number');
+
+                        if (numberCell) {
+                            numberCell.textContent =
+                                startIndex + index + 1;
+                        }
+
+                    });
+
+                // Sonuç bulunamadığında göster.
+                noResults.style.display =
+                    totalRecords === 0
+                        ? 'block'
+                        : 'none';
+
+                table.style.display =
+                    totalRecords === 0
+                        ? 'none'
+                        : '';
+
+                // Bilgilendirme metinleri.
+                searchResultInfo.textContent =
+                    totalRecords + ' kullanıcı bulundu.';
+
+                if (totalRecords === 0) {
+
+                    paginationInfo.textContent =
+                        'Gösterilecek kayıt bulunamadı.';
+
+                }
+                else {
+
+                    paginationInfo.textContent =
+                        (startIndex + 1) +
+                        ' - ' +
+                        endIndex +
+                        ' arası gösteriliyor. Toplam ' +
+                        totalRecords +
+                        ' kayıt.';
+
+                }
+
+                renderPagination(totalPages);
+
+            }
+
+            // =====================================
+            // LIVE SEARCH
+            // =====================================
+
+            searchInput.addEventListener('input', function () {
+
+                const searchValue = normalizeText(
+                    searchInput.value
+                );
+
+                filteredRows = rows.filter(function (row) {
+
+                    return row.dataset.searchText
+                        .includes(searchValue);
+
+                });
+
+                // Yeni arama ilk sayfadan başlar.
+                currentPage = 1;
+
+                renderTable();
+
+            });
+
+            // =====================================
+            // INITIALIZE
+            // =====================================
+
+            renderTable();
+
+        });
+    </script>
+
+}
