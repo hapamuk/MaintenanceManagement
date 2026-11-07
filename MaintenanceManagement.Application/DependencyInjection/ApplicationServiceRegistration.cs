@@ -103,6 +103,10 @@ namespace MaintenanceManagement.Application.DependencyInjection
     IPasswordResetService,
     PasswordResetService>();
 
+            services.AddScoped<
+    IMaterialCategoryService,
+    MaterialCategoryService>();
+
             return services;
         }
     }

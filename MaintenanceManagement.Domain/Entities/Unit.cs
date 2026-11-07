@@ -125,6 +125,9 @@ namespace MaintenanceManagement.Domain.Entities
         public ICollection<AssetMovement> IncomingAssetMovements
         { get; set; } = new HashSet<AssetMovement>();
 
+        public ICollection<MaterialCategoryUnit> MaterialCategoryUnits
+        { get; set; } = new HashSet<MaterialCategoryUnit>();
+
         #endregion
     }
 }

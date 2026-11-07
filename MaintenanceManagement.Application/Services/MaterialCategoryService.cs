@@ -29,6 +29,8 @@ namespace MaintenanceManagement.Application.Services
         private readonly IMaterialCategoryRepository
             _materialCategoryRepository;
 
+        private readonly IMaterialCategoryUnitRepository _materialCategoryUnitRepository;
+
         private readonly IMapper _mapper;
 
         #endregion
@@ -37,12 +39,14 @@ namespace MaintenanceManagement.Application.Services
 
         public MaterialCategoryService(
             IMaterialCategoryRepository materialCategoryRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IMaterialCategoryUnitRepository materialCategoryUnitRepository)
         {
             _materialCategoryRepository =
                 materialCategoryRepository;
 
             _mapper = mapper;
+            _materialCategoryUnitRepository = materialCategoryUnitRepository;
         }
 
         #endregion
@@ -511,12 +515,16 @@ namespace MaintenanceManagement.Application.Services
 
         /// <summary>
         /// Yeni malzeme kategorisi oluşturur.
-        /// Kategori adı benzersiz olmalıdır.
-        /// Yeni kayıt aktif başlatılır.
+        ///
+        /// Seçilen organizasyonlar aynı transaction
+        /// içerisinde kaydedilir.
+        ///
+        /// Organizasyon seçilmezse kategori
+        /// bütün organizasyonlara açık olur.
         /// </summary>
         public async Task<int> CreateAsync(
             CreateMaterialCategoryDto dto,
-            CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
@@ -524,184 +532,195 @@ namespace MaintenanceManagement.Application.Services
             // 1. DTO DOĞRULAMASI
             // =====================================
 
-            ValidateDto(dto);
-
-            // =====================================
-            // 2. KATEGORİ ADINI NORMALİZE ET
-            // =====================================
-
-            string name = ValidateName(
-                dto.Name);
-
-            // =====================================
-            // 3. AÇIKLAMAYI NORMALİZE ET
-            // =====================================
-
-            string? description =
-                NormalizeDescription(
-                    dto.Description);
-
-            // =====================================
-            // 4. KATEGORİ ADI BENZERSİZLİĞİ
-            // =====================================
-
-            bool nameExists =
-                await _materialCategoryRepository
-                    .ExistsNameAsync(
-                        name,
-                        null,
-                        cancellationToken);
-
-            if (nameExists)
-            {
-                throw new ValidationException(
-                    "Bu malzeme kategorisi adı " +
-                    "sistemde zaten kayıtlıdır.");
-            }
-
-            // =====================================
-            // 5. DTO -> ENTITY
-            // =====================================
-
-            var materialCategory =
-                _mapper.Map<MaterialCategory>(dto);
-
-            materialCategory.Name =
-                name;
-
-            materialCategory.Description =
-                description;
-
-            // =====================================
-            // 6. BAŞLANGIÇ DURUMU
-            // =====================================
-
-            materialCategory.IsActive =
-                true;
-
-            // =====================================
-            // 7. REPOSITORY KAYDI
-            // =====================================
-
-            var createdCategory =
-                await _materialCategoryRepository
-                    .CreateAsync(
-                        materialCategory,
-                        cancellationToken);
-
-            // =====================================
-            // 8. KAYIT ID DÖNDÜR
-            // =====================================
-
-            return createdCategory.Id;
-        }
-
-        #endregion
-
-        #region Update
-
-        /// <summary>
-        /// Mevcut malzeme kategorisinin
-        /// adını ve açıklamasını günceller.
-        ///
-        /// Id, IsActive, CreatedAt ve Materials
-        /// özellikleri korunur.
-        /// </summary>
-        public async Task<bool> UpdateAsync(
-            UpdateMaterialCategoryDto dto,
-            CancellationToken cancellationToken = default)
-        {
-            ArgumentNullException.ThrowIfNull(dto);
-
-            // =====================================
-            // 1. DTO DOĞRULAMASI
-            // =====================================
-
-            ValidateDto(dto);
-
-            ValidateId(
-                dto.Id,
-                "Malzeme Kategorisi");
-
-            // =====================================
-            // 2. DEĞERLERİ NORMALİZE ET
-            // =====================================
-
-            string name =
-                ValidateName(dto.Name);
-
-            string? description =
-                NormalizeDescription(dto.Description);
-
-            // =====================================
-            // 3. MEVCUT KATEGORİYİ GETİR
-            // =====================================
-
-            var materialCategory =
-                await _materialCategoryRepository
-                    .GetByIdAsync(
-                        dto.Id,
-                        cancellationToken);
-
-            if (materialCategory == null)
-            {
-                return false;
-            }
-
-            // =====================================
-            // 4. AD BENZERSİZLİĞİ
-            // =====================================
-
-            bool nameExists =
-                await _materialCategoryRepository
-                    .ExistsNameAsync(
-                        name,
-                        dto.Id,
-                        cancellationToken);
-
-            if (nameExists)
-            {
-                throw new ValidationException(
-                    "Bu kategori adı başka bir " +
-                    "kayıt tarafından kullanılmaktadır.");
-            }
-
-            // =====================================
-            // 5. DTO -> MEVCUT ENTITY
-            // =====================================
-
-            _mapper.Map(
+            Validator.ValidateObject(
                 dto,
-                materialCategory);
+                new ValidationContext(dto),
+                validateAllProperties: true);
 
             // =====================================
-            // 6. NORMALİZE DEĞERLER
+            // 2. ORGANİZASYON SEÇİMLERİ
             // =====================================
 
-            materialCategory.Name =
-                name;
+            var selectedIds = (
+                dto.SelectedUnitIds ?? new List<int>())
+                .Distinct()
+                .ToList();
 
-            materialCategory.Description =
-                description;
-
-            // =====================================
-            // 7. GÜNCELLEME TARİHİ
-            // =====================================
-
-            materialCategory.UpdatedAt =
-                DateTime.UtcNow;
+            if (selectedIds.Any(x => x <= 0))
+            {
+                throw new ValidationException(
+                    "Geçersiz organizasyon seçimi.");
+            }
 
             // =====================================
-            // 8. REPOSITORY GÜNCELLEMESİ
+            // 3. KATEGORİ VE İLİŞKİLERİ KAYDET
             // =====================================
 
-            return await _materialCategoryRepository
-                .UpdateAsync(
-                    materialCategory,
+            return await _materialCategoryUnitRepository
+                .ExecuteInTransactionAsync(
+                    async () =>
+                    {
+                        // DTO -> ENTITY
+                        var category =
+                            _mapper.Map<MaterialCategory>(dto);
+
+                        // Başlangıç durumu
+                        category.IsActive = true;
+
+                        // Mevcut kategori repository kaydı
+                        var createdCategory =
+                            await _materialCategoryRepository
+                                .CreateAsync(
+                                    category,
+                                    cancellationToken);
+
+                        // Organizasyon ilişkilerini kaydet
+                        await _materialCategoryUnitRepository
+                            .ReplaceCategoryUnitsAsync(
+                                createdCategory.Id,
+                                selectedIds,
+                                cancellationToken);
+
+                        return createdCategory.Id;
+                    },
                     cancellationToken);
         }
 
         #endregion
+
+
+        #region Update
+
+        /// <summary>
+        /// Malzeme kategorisini ve organizasyon
+        /// seçimlerini birlikte günceller.
+        ///
+        /// Boş organizasyon listesi, kategorinin
+        /// bütün organizasyonlara açılması anlamına gelir.
+        /// </summary>
+        public async Task<bool> UpdateAsync(
+            UpdateMaterialCategoryDto dto,
+    CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            // =====================================
+            // 1. DTO DOĞRULAMASI
+            // =====================================
+
+            Validator.ValidateObject(
+                dto,
+                new ValidationContext(dto),
+                validateAllProperties: true);
+
+            if (dto.Id <= 0)
+            {
+                throw new ArgumentException(
+                    "Geçerli bir malzeme kategorisi seçiniz.");
+            }
+
+            // =====================================
+            // 2. ORGANİZASYON SEÇİMLERİ
+            // =====================================
+
+            var selectedIds = (
+                dto.SelectedUnitIds ?? new List<int>())
+                .Distinct()
+                .ToList();
+
+            if (selectedIds.Any(x => x <= 0))
+            {
+                throw new ValidationException(
+                    "Geçersiz organizasyon seçimi.");
+            }
+
+            // =====================================
+            // 3. TRANSACTION
+            // =====================================
+
+            return await _materialCategoryUnitRepository
+                .ExecuteInTransactionAsync(
+                    async () =>
+                    {
+                        // =================================
+                        // 4. MEVCUT KATEGORİ
+                        // =================================
+
+                        var category =
+                            await _materialCategoryRepository
+                                .GetByIdAsync(
+                                    dto.Id,
+                                    cancellationToken);
+
+                        if (category == null)
+                        {
+                            return false;
+                        }
+
+                        // =================================
+                        // 5. SİSTEM ALANLARINI KORU
+                        // =================================
+
+                        int originalId = category.Id;
+
+                        bool originalIsActive =
+                            category.IsActive;
+
+                        DateTime originalCreatedAt =
+                            category.CreatedAt;
+
+                        // =================================
+                        // 6. DTO -> ENTITY
+                        // =================================
+
+                        _mapper.Map(dto, category);
+
+                        category.Id = originalId;
+
+                        category.IsActive = originalIsActive;
+
+                        category.CreatedAt =
+                            originalCreatedAt;
+
+                        category.UpdatedAt =
+                            DateTime.UtcNow;
+
+                        // =================================
+                        // 7. KATEGORİYİ GÜNCELLE
+                        // =================================
+
+                        bool updated =
+                            await _materialCategoryRepository
+                                .UpdateAsync(
+                                    category,
+                                    cancellationToken);
+
+                        if (!updated)
+                        {
+                            return false;
+                        }
+
+                        // =================================
+                        // 8. ORGANİZASYONLARI GÜNCELLE
+                        // =================================
+
+                        await _materialCategoryUnitRepository
+                            .ReplaceCategoryUnitsAsync(
+                                category.Id,
+                                selectedIds,
+                                cancellationToken);
+
+                        // =================================
+                        // 9. SONUÇ
+                        // =================================
+
+                        return true;
+                    },
+                    cancellationToken);
+        }
+
+        #endregion
+
 
         #region ChangeStatus
 
@@ -1097,6 +1116,26 @@ namespace MaintenanceManagement.Application.Services
             return normalized;
         }
 
+
+
         #endregion
+
+        public async Task<IReadOnlyList<int>>
+    GetSelectedUnitIdsAsync(
+        int materialCategoryId,
+        CancellationToken cancellationToken = default)
+        {
+            if (materialCategoryId <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(materialCategoryId),
+                    "Geçerli bir kategori seçiniz.");
+            }
+
+            return await _materialCategoryUnitRepository
+                .GetUnitIdsByCategoryIdAsync(
+                    materialCategoryId,
+                    cancellationToken);
+        }
     }
 }

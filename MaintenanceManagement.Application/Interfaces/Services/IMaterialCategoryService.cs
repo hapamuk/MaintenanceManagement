@@ -118,17 +118,19 @@ namespace MaintenanceManagement.Application.Interfaces.Services
         /// <summary>
         /// Yeni malzeme kategorisi oluşturur.
         /// Kategori adı benzersiz olmalıdır.
+        /// Organizasyon seçimleri de kaydedilir.
         /// </summary>
         Task<int> CreateAsync(
             CreateMaterialCategoryDto dto,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Kategori adı ve açıklamasını günceller.
+        /// Kategori bilgilerini ve organizasyon
+        /// seçimlerini günceller.
         /// </summary>
         Task<bool> UpdateAsync(
             UpdateMaterialCategoryDto dto,
-            CancellationToken cancellationToken = default);
+    CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Kategoriyi aktif veya pasif yapar.
@@ -184,6 +186,18 @@ namespace MaintenanceManagement.Application.Interfaces.Services
         /// </summary>
         Task<int> GetActiveMaterialCountAsync(
             int categoryId,
+            CancellationToken cancellationToken = default);
+
+        #endregion
+
+        #region GetSelectedUnitIds
+
+        /// <summary>
+        /// Kategoriye atanmış organizasyonların
+        /// ID listesini getirir.
+        /// </summary>
+        Task<IReadOnlyList<int>> GetSelectedUnitIdsAsync(
+            int materialCategoryId,
             CancellationToken cancellationToken = default);
 
         #endregion

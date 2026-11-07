@@ -268,7 +268,8 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
                     unit.OrganizationTypeEnum,
 
                 ParentUnitId =
-                    unit.ParentUnitId
+                    unit.ParentUnitId,
+                IsActive = unit.IsActive
             };
 
             // =====================================

@@ -4,8 +4,239 @@
     ViewData["Title"] = "Birim Yönetimi";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 
-    int rowNumber = 0;
+    int totalUnits = Model?.Count ?? 0;
+    int activeUnits = Model?.Count(x => x.IsActive) ?? 0;
+    int passiveUnits = totalUnits - activeUnits;
+    int rootUnits = Model?.Count(x => !x.ParentUnitId.HasValue) ?? 0;
 }
+
+<style>
+    .organization-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+    }
+
+    .organization-search {
+        flex: 1 1 260px;
+        max-width: 500px;
+    }
+
+    .organization-tree {
+        padding: 8px 0;
+    }
+
+    .organization-node {
+        margin-bottom: 10px;
+    }
+
+    .organization-panel {
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        background: #fff;
+        overflow: hidden;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+        .organization-panel:hover {
+            border-color: #c7d2fe;
+            box-shadow: 0 3px 12px rgba(44,62,80,.06);
+        }
+
+    .organization-node[data-root="true"] > .organization-panel {
+        border-left: 4px solid #4e73df;
+    }
+
+    .organization-panel-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 17px;
+    }
+
+    .organization-toggle {
+        flex: 0 0 30px;
+        width: 30px;
+        height: 30px;
+        border: none;
+        border-radius: 7px;
+        background: #edf2ff;
+        color: #4e73df;
+        cursor: pointer;
+        transition: background .2s;
+    }
+
+        .organization-toggle:hover {
+            background: #dce5ff;
+        }
+
+        .organization-toggle:focus {
+            outline: 2px solid #4e73df;
+            outline-offset: 2px;
+        }
+
+    .organization-toggle-placeholder {
+        flex: 0 0 30px;
+        text-align: center;
+        color: #c4cbd8;
+    }
+
+    .organization-icon {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eef3ff;
+        color: #4e73df;
+        border-radius: 10px;
+        font-size: 19px;
+    }
+
+    .organization-info {
+        flex: 1 1 180px;
+        min-width: 0;
+    }
+
+    .organization-title {
+        font-weight: 700;
+        color: #344054;
+        font-size: 15px;
+        margin-bottom: 4px;
+        overflow-wrap: anywhere;
+    }
+
+    .organization-meta {
+        font-size: 12px;
+        color: #858796;
+    }
+
+        .organization-meta span {
+            margin-right: 12px;
+        }
+
+    .organization-status {
+        flex-shrink: 0;
+    }
+
+    .organization-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .organization-children {
+        margin: 12px 0 4px 28px;
+        padding-left: 20px;
+        border-left: 2px dashed #dce4f5;
+    }
+
+        .organization-children[hidden] {
+            display: none !important;
+        }
+
+    .organization-node.is-match > .organization-panel {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 1px #4e73df22;
+    }
+
+    .organization-count {
+        font-size: 12px;
+        font-weight: 600;
+        color: #4e73df;
+        background: #eef2ff;
+        padding: 4px 9px;
+        border-radius: 20px;
+    }
+
+    .organization-empty {
+        text-align: center;
+        padding: 45px 15px;
+        color: #858796;
+    }
+
+    /* ===================================== */
+    /* PASSIVE UNIT APPEARANCE */
+    /* Only the passive unit's own card is muted. */
+    /* Child units retain their independent status. */
+    /* ===================================== */
+
+    .organization-node.is-passive > .organization-panel {
+        background: #f4f5f8;
+        border-color: #dfe3eb;
+        border-left: 4px solid #b8c0cc;
+        box-shadow: none;
+    }
+
+        .organization-node.is-passive > .organization-panel:hover {
+            background: #eef0f4;
+            border-color: #c9d0da;
+            border-left-color: #9aa4b3;
+            box-shadow: 0 2px 8px rgba(44, 62, 80, .04);
+        }
+
+        .organization-node.is-passive > .organization-panel .organization-title {
+            color: #89919f;
+            font-weight: 600;
+        }
+
+        .organization-node.is-passive > .organization-panel .organization-meta {
+            color: #9da5b1;
+        }
+
+        .organization-node.is-passive > .organization-panel .organization-icon {
+            background: #e8ebf0;
+            color: #a0aab8;
+        }
+
+        .organization-node.is-passive > .organization-panel .organization-toggle {
+            background: #e7eaf0;
+            color: #8995a6;
+        }
+
+    /* Action buttons remain fully visible and clickable. */
+    /* Search highlight still identifies matching passive units. */
+    .organization-node.is-passive.is-match > .organization-panel {
+        border-color: #7e92ca;
+        border-left-color: #7e92ca;
+        box-shadow: 0 0 0 1px rgba(78, 115, 223, .12);
+    }
+
+    @@media(max-width: 991px) {
+        .organization-panel-header {
+            flex-wrap: wrap;
+        }
+
+        .organization-actions {
+            width: 100%;
+            justify-content: flex-start;
+            padding-left: 42px;
+        }
+
+        .organization-children {
+            margin-left: 12px;
+            padding-left: 12px;
+        }
+    }
+
+    @@media(max-width: 576px) {
+        .organization-status {
+            margin-left: 42px;
+        }
+
+        .organization-actions {
+            padding-left: 0;
+        }
+
+            .organization-actions .btn {
+                flex: 1;
+            }
+    }
+</style>
 
 <div class="container-fluid">
 
@@ -26,11 +257,44 @@
            asp-action="Create"
            class="btn btn-primary shadow-sm">
 
-            <i class="fas fa-plus fa-sm text-white-50 mr-1"></i>
+            <i class="fas fa-plus mr-1"></i>
             Yeni Birim Oluştur
         </a>
 
     </div>
+
+    <!-- ===================================== -->
+    <!-- NOTIFICATIONS -->
+    <!-- ===================================== -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle mr-2"></i>
+            @TempData["Success"]
+
+            <button type="button"
+                    class="close"
+                    data-dismiss="alert"
+                    aria-label="Kapat">
+                <span>&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            @TempData["Error"]
+
+            <button type="button"
+                    class="close"
+                    data-dismiss="alert"
+                    aria-label="Kapat">
+                <span>&times;</span>
+            </button>
+        </div>
+    }
 
     <!-- ===================================== -->
     <!-- INFORMATION -->
@@ -40,52 +304,79 @@
 
         <i class="fas fa-info-circle mr-2"></i>
 
-        Organizasyon birimlerinin kayıt,
-        güncelleme ve aktiflik işlemlerini
-        bu ekran üzerinden yönetebilirsiniz.
+        Organizasyon birimlerini hiyerarşik olarak
+        görüntüleyebilirsiniz. Birimlerin solundaki
+        ok simgelerine tıklayarak bağlı alt
+        organizasyonları açıp kapatabilirsiniz.
 
     </div>
 
     <!-- ===================================== -->
-    <!-- SUCCESS MESSAGE -->
+    <!-- SUMMARY CARDS -->
     <!-- ===================================== -->
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show">
 
-            <i class="fas fa-check-circle mr-2"></i>
-            @TempData["Success"]
+    <div class="row">
 
-            <button type="button"
-                    class="close"
-                    data-dismiss="alert">
-                <span>&times;</span>
-            </button>
-
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold
+                        text-primary text-uppercase mb-1">
+                        Toplam Birim
+                    </div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        @totalUnits
+                    </div>
+                </div>
+            </div>
         </div>
-    }
 
-    <!-- ===================================== -->
-    <!-- ERROR MESSAGE -->
-    <!-- ===================================== -->
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show">
-
-            <i class="fas fa-exclamation-circle mr-2"></i>
-            @TempData["Error"]
-
-            <button type="button"
-                    class="close"
-                    data-dismiss="alert">
-                <span>&times;</span>
-            </button>
-
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold
+                        text-success text-uppercase mb-1">
+                        Aktif Birim
+                    </div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        @activeUnits
+                    </div>
+                </div>
+            </div>
         </div>
-    }
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold
+                        text-danger text-uppercase mb-1">
+                        Pasif Birim
+                    </div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        @passiveUnits
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold
+                        text-info text-uppercase mb-1">
+                        Ana Birim
+                    </div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        @rootUnits
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
 
     <!-- ===================================== -->
-    <!-- UNIT LIST CARD -->
+    <!-- ORGANIZATION CARD -->
     <!-- ===================================== -->
 
     <div class="card shadow mb-4">
@@ -94,60 +385,151 @@
             d-flex justify-content-between align-items-center">
 
             <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-list mr-2"></i>
-                Organizasyon Birimleri
+
+                <i class="fas fa-project-diagram mr-2"></i>
+                Organizasyon Hiyerarşisi
+
             </h6>
 
             <span class="badge badge-primary">
-                Toplam: @(Model?.Count ?? 0)
+                Toplam: @totalUnits
             </span>
 
         </div>
 
         <div class="card-body">
 
-            <div class="table-responsive">
+            <!-- ===================================== -->
+            <!-- SEARCH AND TOOLBAR -->
+            <!-- ===================================== -->
 
-                <table class="table table-bordered table-hover"
-                       id="unitTable"
-                       width="100%"
-                       cellspacing="0">
+            <div class="organization-toolbar">
 
-                    <thead class="bg-light">
+                <div class="input-group organization-search">
 
-                        <tr>
-                            <th style="width:60px">#</th>
-                            <th>Birim Adı</th>
-                            <th>Birim Kodu</th>
-                            <th style="width:130px">Durum</th>
-                            <th style="width:330px">İşlemler</th>
-                        </tr>
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </div>
 
-                    </thead>
+                    <input type="search"
+                           id="organizationSearch"
+                           class="form-control"
+                           placeholder="Organizasyon adı, kodu veya türü ara..."
+                           autocomplete="off"
+                           aria-label="Organizasyon birimi ara" />
 
-                    <tbody>
+                </div>
 
-                        @if (Model != null && Model.Any())
-                        {
-                            foreach (var item in Model)
-                            {
-                                rowNumber++;
+                <button type="button"
+                        id="expandAllUnits"
+                        class="btn btn-outline-primary btn-sm">
 
-                                <tr>
+                    <i class="fas fa-angle-double-down mr-1"></i>
+                    Tümünü Aç
 
-                                    <td>@rowNumber</td>
+                </button>
 
-                                    <td>
-                                        <strong>
+                <button type="button"
+                        id="collapseAllUnits"
+                        class="btn btn-outline-secondary btn-sm">
+
+                    <i class="fas fa-angle-double-up mr-1"></i>
+                    Tümünü Kapat
+
+                </button>
+
+            </div>
+
+            <div class="d-flex justify-content-between
+                align-items-center mb-3">
+
+                <small class="text-muted">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Birimler üst-alt organizasyon ilişkisine
+                    göre listelenmektedir.
+                </small>
+
+                <span id="visibleUnitCount"
+                      class="organization-count">
+                    @totalUnits Birim
+                </span>
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- TREE -->
+            <!-- ===================================== -->
+
+            <div id="organizationTree"
+                 class="organization-tree">
+
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model.OrderBy(x => x.Name))
+                    {
+                        <div class="organization-node @(item.IsActive ? "" : "is-passive")"
+                             data-id="@item.Id"
+                             data-parent="@(item.ParentUnitId?.ToString() ?? "")"
+                             data-root="false">
+
+                            <!-- UNIT PANEL -->
+
+                            <div class="organization-panel">
+
+                                <div class="organization-panel-header">
+
+                                    <!-- EXPAND / COLLAPSE -->
+
+                                    <button type="button"
+                                            class="organization-toggle"
+                                            aria-label="Alt birimleri aç veya kapat"
+                                            aria-expanded="false"
+                                            hidden>
+
+                                        <i class="fas fa-chevron-right"></i>
+
+                                    </button>
+
+                                    <span class="organization-toggle-placeholder">
+                                        <i class="fas fa-circle fa-xs"></i>
+                                    </span>
+
+                                    <!-- UNIT ICON -->
+
+                                    <div class="organization-icon">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+
+                                    <!-- UNIT INFO -->
+
+                                    <div class="organization-info">
+
+                                        <div class="organization-title">
                                             @item.Name
-                                        </strong>
-                                    </td>
+                                        </div>
 
-                                    <td>
-                                        <code>@item.Code</code>
-                                    </td>
+                                        <div class="organization-meta">
 
-                                    <td>
+                                            <span>
+                                                <i class="fas fa-tag mr-1"></i>
+                                                @item.Code
+                                            </span>
+
+                                            <span>
+                                                <i class="fas fa-layer-group mr-1"></i>
+                                                @item.OrganizationTypeName
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                    <!-- STATUS -->
+
+                                    <div class="organization-status">
+
                                         @if (item.IsActive)
                                         {
                                             <span class="badge badge-success p-2">
@@ -162,33 +544,45 @@
                                                 Pasif
                                             </span>
                                         }
-                                    </td>
 
-                                    <td>
+                                    </div>
+
+                                    <!-- ACTIONS -->
+
+                                    <div class="organization-actions">
 
                                         <!-- DETAILS -->
+
                                         <a asp-area="Admin"
                                            asp-controller="Unit"
                                            asp-action="Details"
                                            asp-route-id="@item.Id"
-                                           class="btn btn-info btn-sm">
+                                           class="btn btn-info btn-sm"
+                                           title="Detay"
+                                           aria-label="detay">
 
-                                            <i class="fas fa-eye"></i>
-                                            Detay
+                                            <i class="fas fa-eye mr-1"></i>
+
+
                                         </a>
 
                                         <!-- EDIT -->
+
                                         <a asp-area="Admin"
                                            asp-controller="Unit"
                                            asp-action="Edit"
                                            asp-route-id="@item.Id"
-                                           class="btn btn-warning btn-sm">
+                                           class="btn btn-warning btn-sm"
+                                           title="Güncelle"
+                                           aria-label="güncelle">
 
-                                            <i class="fas fa-edit"></i>
-                                            Güncelle
+                                            <i class="fas fa-edit mr-1"></i>
+
+
                                         </a>
 
                                         <!-- CHANGE STATUS -->
+
                                         <form asp-area="Admin"
                                               asp-controller="Unit"
                                               asp-action="ChangeStatus"
@@ -206,48 +600,63 @@
                                                    value="@(item.IsActive ? "false" : "true")" />
 
                                             <button type="submit"
-                                                    class="btn btn-sm @(item.IsActive ? "btn-danger" : "btn-success")"
+                                                    class="btn btn-sm @(item.IsActive ? "btn-outline-danger" : "btn-outline-success")"
+                                                    title="@(item.IsActive ? "Pasifleştir" : "Aktifleştir")"
                                                     onclick="return confirm('Birim durumu değiştirilsin mi?');">
 
                                                 @if (item.IsActive)
                                                 {
-                                                    <i class="fas fa-ban"></i>
-                                                    <span>Pasifleştir</span>
+                                                    <i class="fas fa-ban mr-1"></i>
+                                                    <span></span>
                                                 }
                                                 else
                                                 {
-                                                    <i class="fas fa-check"></i>
-                                                    <span>Aktifleştir</span>
+                                                    <i class="fas fa-check mr-1"></i>
+                                                    <span></span>
                                                 }
 
                                             </button>
 
                                         </form>
 
-                                    </td>
+                                    </div>
 
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="5"
-                                    class="text-center text-muted py-4">
+                                </div>
 
-                                    <i class="fas fa-folder-open fa-2x mb-3"></i>
+                            </div>
 
-                                    <p class="mb-0">
-                                        Kayıtlı organizasyon birimi bulunamadı.
-                                    </p>
+                            <!-- CHILD UNITS -->
+                            <div class="organization-children"
+                                 hidden>
+                            </div>
 
-                                </td>
-                            </tr>
-                        }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="organization-empty">
+                        <i class="fas fa-folder-open fa-3x mb-3"></i>
+                        <h6>Kayıtlı organizasyon birimi bulunamadı.</h6>
+                    </div>
+                }
 
-                    </tbody>
+            </div>
 
-                </table>
+            <!-- NO SEARCH RESULTS -->
+
+            <div id="organizationNoResults"
+                 class="organization-empty"
+                 hidden>
+
+                <i class="fas fa-search fa-3x mb-3"></i>
+
+                <h6>Organizasyon bulunamadı</h6>
+
+                <p class="mb-0">
+                    Arama kriterlerine uygun organizasyon
+                    birimi bulunmamaktadır.
+                </p>
 
             </div>
 
@@ -256,3 +665,397 @@
     </div>
 
 </div>
+
+@section Scripts {
+
+    <script>
+        document.addEventListener(
+            'DOMContentLoaded',
+            function () {
+
+                // =====================================
+                // ELEMENTS
+                // =====================================
+
+                const tree =
+                    document.getElementById(
+                        'organizationTree'
+                    );
+
+                const searchInput =
+                    document.getElementById(
+                        'organizationSearch'
+                    );
+
+                const expandAllButton =
+                    document.getElementById(
+                        'expandAllUnits'
+                    );
+
+                const collapseAllButton =
+                    document.getElementById(
+                        'collapseAllUnits'
+                    );
+
+                const noResults =
+                    document.getElementById(
+                        'organizationNoResults'
+                    );
+
+                const countInfo =
+                    document.getElementById(
+                        'visibleUnitCount'
+                    );
+
+                const nodes = Array.from(
+                    tree.querySelectorAll(
+                        '.organization-node'
+                    )
+                );
+
+                // =====================================
+                // CREATE NODE MAP
+                // =====================================
+
+                const nodeMap = new Map();
+
+                nodes.forEach(function (node) {
+
+                    const id = node.dataset.id;
+
+                    nodeMap.set(id, node);
+
+                });
+
+                // =====================================
+                // CREATE HIERARCHY
+                // =====================================
+
+                nodes.forEach(function (node) {
+
+                    const parentId =
+                        node.dataset.parent;
+
+                    const parentNode =
+                        nodeMap.get(parentId);
+
+                    if (
+                        parentId &&
+                        parentNode &&
+                        parentNode !== node
+                    ) {
+
+                        const childrenContainer =
+                            parentNode.querySelector(
+                                ':scope > .organization-children'
+                            );
+
+                        childrenContainer.appendChild(node);
+
+                        node.dataset.root = 'false';
+
+                    }
+                    else {
+
+                        node.dataset.root = 'true';
+
+                    }
+
+                });
+
+                // =====================================
+                // INITIALIZE TOGGLE BUTTONS
+                // =====================================
+
+                nodes.forEach(function (node) {
+
+                    const childrenContainer =
+                        node.querySelector(
+                            ':scope > .organization-children'
+                        );
+
+                    const hasChildren =
+                        childrenContainer.children.length > 0;
+
+                    const toggleButton =
+                        node.querySelector(
+                            ':scope > .organization-panel ' +
+                            '.organization-toggle'
+                        );
+
+                    const placeholder =
+                        node.querySelector(
+                            ':scope > .organization-panel ' +
+                            '.organization-toggle-placeholder'
+                        );
+
+                    const icon =
+                        node.querySelector(
+                            ':scope > .organization-panel ' +
+                            '.organization-icon i'
+                        );
+
+                    if (!hasChildren) {
+
+                        toggleButton.hidden = true;
+                        placeholder.hidden = false;
+
+                        return;
+                    }
+
+                    toggleButton.hidden = false;
+                    placeholder.hidden = true;
+
+                    // Root birimler başlangıçta açık.
+                    const expanded =
+                        node.dataset.root === 'true';
+
+                    setExpanded(node, expanded);
+
+                    if (expanded) {
+                        icon.className = 'fas fa-sitemap';
+                    }
+
+                });
+
+                // =====================================
+                // SET EXPANDED
+                // =====================================
+
+                function setExpanded(node, expanded) {
+
+                    const childrenContainer =
+                        node.querySelector(
+                            ':scope > .organization-children'
+                        );
+
+                    const toggleButton =
+                        node.querySelector(
+                            ':scope > .organization-panel ' +
+                            '.organization-toggle'
+                        );
+
+                    if (!childrenContainer ||
+                        !childrenContainer.children.length) {
+                        return;
+                    }
+
+                    childrenContainer.hidden = !expanded;
+
+                    toggleButton.setAttribute(
+                        'aria-expanded',
+                        expanded.toString()
+                    );
+
+                    const toggleIcon =
+                        toggleButton.querySelector('i');
+
+                    toggleIcon.className = expanded
+                        ? 'fas fa-chevron-down'
+                        : 'fas fa-chevron-right';
+
+                }
+
+                // =====================================
+                // TOGGLE SINGLE UNIT
+                // =====================================
+
+                tree.addEventListener(
+                    'click',
+                    function (event) {
+
+                        const button =
+                            event.target.closest(
+                                '.organization-toggle'
+                            );
+
+                        if (!button) {
+                            return;
+                        }
+
+                        const node =
+                            button.closest(
+                                '.organization-node'
+                            );
+
+                        const expanded =
+                            button.getAttribute(
+                                'aria-expanded'
+                            ) === 'true';
+
+                        setExpanded(
+                            node,
+                            !expanded
+                        );
+
+                    }
+                );
+
+                // =====================================
+                // EXPAND ALL
+                // =====================================
+
+                expandAllButton.addEventListener(
+                    'click',
+                    function () {
+
+                        nodes.forEach(function (node) {
+
+                            setExpanded(node, true);
+
+                        });
+
+                    }
+                );
+
+                // =====================================
+                // COLLAPSE ALL
+                // =====================================
+
+                collapseAllButton.addEventListener(
+                    'click',
+                    function () {
+
+                        // Aramayı sıfırla.
+                        searchInput.value = '';
+                        filterTree('');
+
+                        nodes.forEach(function (node) {
+
+                            setExpanded(node, false);
+
+                        });
+
+                    }
+                );
+
+                // =====================================
+                // NORMALIZE SEARCH
+                // =====================================
+
+                function normalizeText(text) {
+
+                    return (text || '')
+                        .toLocaleLowerCase('tr-TR')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/ı/g, 'i')
+                        .trim();
+
+                }
+
+                // =====================================
+                // FILTER ORGANIZATIONS
+                // =====================================
+
+                function filterTree(searchValue) {
+
+                    const query =
+                        normalizeText(searchValue);
+
+                    const visibleNodes =
+                        new Set();
+
+                    nodes.forEach(function (node) {
+
+                        node.classList.remove(
+                            'is-match'
+                        );
+
+                        if (!query) {
+                            visibleNodes.add(node);
+                            return;
+                        }
+
+                        const info =
+                            node.querySelector(
+                                '.organization-info'
+                            );
+
+                        const text =
+                            normalizeText(
+                                info.textContent
+                            );
+
+                        if (!text.includes(query)) {
+                            return;
+                        }
+
+                        node.classList.add(
+                            'is-match'
+                        );
+
+                        // Eşleşen birim.
+                        visibleNodes.add(node);
+
+                        // Eşleşen birimin bütün
+                        // üst organizasyonları.
+                        let parent =
+                            node.parentElement.closest(
+                                '.organization-node'
+                            );
+
+                        while (parent) {
+
+                            visibleNodes.add(parent);
+
+                            setExpanded(
+                                parent,
+                                true
+                            );
+
+                            parent =
+                                parent.parentElement.closest(
+                                    '.organization-node'
+                                );
+
+                        }
+
+                    });
+
+                    nodes.forEach(function (node) {
+
+                        node.style.display =
+                            visibleNodes.has(node)
+                                ? ''
+                                : 'none';
+
+                    });
+
+                    const count =
+                        visibleNodes.size;
+
+                    countInfo.textContent =
+                        count + ' Birim';
+
+                    noResults.hidden =
+                        count !== 0;
+
+                }
+
+                // =====================================
+                // LIVE SEARCH
+                // =====================================
+
+                searchInput.addEventListener(
+                    'input',
+                    function () {
+
+                        filterTree(
+                            searchInput.value
+                        );
+
+                    }
+                );
+
+                // =====================================
+                // INITIAL COUNT
+                // =====================================
+
+                countInfo.textContent =
+                    nodes.length + ' Birim';
+
+            }
+        );
+    </script>
+}

@@ -1,9 +1,104 @@
-﻿@model MaintenanceManagement.Application.DTOS.UnitDtos.CreateUnitDto
+﻿
+@model MaintenanceManagement.Application.DTOS.UnitDtos.CreateUnitDto
 
 @{
     ViewData["Title"] = "Yeni Birim Oluştur";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
+
+<style>
+    /* ===================================== */
+    /* UNIT STATUS SWITCH */
+    /* ===================================== */
+
+    .unit-status-box {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        padding: 18px 20px;
+    }
+
+    .unit-status-switch {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 18px;
+    }
+
+    .unit-status-box .custom-switch {
+        padding-left: 3.5rem;
+        min-height: 2rem;
+    }
+
+    .unit-status-box .custom-switch
+    .custom-control-label {
+        cursor: pointer;
+        padding-top: 3px;
+        font-weight: 600;
+        color: #5a5c69;
+    }
+
+    .unit-status-box .custom-switch
+    .custom-control-label::before {
+        width: 2.6rem;
+        height: 1.4rem;
+        left: -3.5rem;
+        top: 0;
+        border-radius: 1rem;
+    }
+
+    .unit-status-box .custom-switch
+    .custom-control-label::after {
+        width: 1rem;
+        height: 1rem;
+        left: calc(-3.5rem + 3px);
+        top: 3px;
+        border-radius: 50%;
+        transition: transform .2s ease;
+    }
+
+    .unit-status-box .custom-switch
+    .custom-control-input:checked
+    ~ .custom-control-label::before {
+        background-color: #1cc88a;
+        border-color: #1cc88a;
+    }
+
+    .unit-status-box .custom-switch
+    .custom-control-input:checked
+    ~ .custom-control-label::after {
+        transform: translateX(1.2rem);
+    }
+
+    .unit-status-badge {
+        min-width: 105px;
+        text-align: center;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 6px;
+    }
+
+    .unit-status-description {
+        color: #858796;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+
+    .unit-status-box.status-active {
+        border-color: #1cc88a;
+        background: #f4fcf8;
+    }
+
+    .unit-status-box.status-passive {
+        border-color: #e74a3b;
+        background: #fff8f7;
+    }
+
+    .unit-status-box.status-invalid {
+        border-color: #e74a3b;
+    }
+</style>
 
 <div class="container-fluid">
 
@@ -61,7 +156,7 @@
                 <i class="fas fa-info-circle mr-2"></i>
 
                 Yeni organizasyon biriminin bağlı olacağı
-                üst birimi seçebilirsiniz.
+                üst birimi ve başlangıç durumunu belirleyebilirsiniz.
 
                 <br />
 
@@ -78,11 +173,13 @@
                   asp-controller="Unit"
                   asp-action="Create"
                   method="post"
-                  autocomplete="off">
+                  autocomplete="off"
+                  id="createUnitForm">
 
                 @Html.AntiForgeryToken()
 
                 <!-- VALIDATION SUMMARY -->
+
                 <div asp-validation-summary="All"
                      class="text-danger mb-3">
                 </div>
@@ -90,7 +187,7 @@
                 <div class="row">
 
                     <!-- ===================================== -->
-                    <!-- ORGANİZASYON TÜRÜ -->
+                    <!-- ORGANIZATION TYPE -->
                     <!-- ===================================== -->
 
                     <div class="col-md-6">
@@ -101,7 +198,6 @@
                                    class="font-weight-bold">
 
                                 Organizasyon Türü
-
                                 <span class="text-danger">*</span>
 
                             </label>
@@ -130,7 +226,7 @@
                     </div>
 
                     <!-- ===================================== -->
-                    <!-- BİRİM ADI -->
+                    <!-- UNIT NAME -->
                     <!-- ===================================== -->
 
                     <div class="col-md-6">
@@ -141,7 +237,6 @@
                                    class="font-weight-bold">
 
                                 Birim Adı
-
                                 <span class="text-danger">*</span>
 
                             </label>
@@ -164,7 +259,7 @@
                     </div>
 
                     <!-- ===================================== -->
-                    <!-- ÜST BİRİM -->
+                    <!-- PARENT UNIT -->
                     <!-- ===================================== -->
 
                     <div class="col-md-12">
@@ -175,7 +270,6 @@
                                    class="font-weight-bold">
 
                                 <i class="fas fa-sitemap text-primary mr-1"></i>
-
                                 Üst Birim
 
                             </label>
@@ -211,7 +305,114 @@
                     </div>
 
                     <!-- ===================================== -->
-                    <!-- AÇIKLAMA -->
+                    <!-- UNIT STATUS -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label class="font-weight-bold d-block"
+                                   id="unitStatusHeading">
+
+                                <i class="fas fa-toggle-on
+                                          text-primary mr-1"></i>
+
+                                Birim Durumu
+
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <!-- Selected value sent to MVC -->
+                            <input type="hidden"
+                                   asp-for="IsActive"
+                                   id="IsActiveValue" />
+
+                            <div class="unit-status-box"
+                                 id="unitStatusBox">
+
+                                <div class="unit-status-switch">
+
+                                    <!-- SWITCH -->
+
+                                    <div class="custom-control custom-switch">
+
+                                        <input type="checkbox"
+                                               class="custom-control-input"
+                                               id="unitStatusSwitch"
+                                               role="switch"
+                                               aria-labelledby="unitStatusHeading"
+                                               aria-describedby="unitStatusHelp"
+                                               aria-checked="false" />
+
+                                        <label class="custom-control-label"
+                                               for="unitStatusSwitch">
+
+                                            Birim Aktif Olsun
+
+                                        </label>
+
+                                    </div>
+
+                                    <!-- STATUS BADGE -->
+
+                                    <span id="unitStatusBadge"
+                                          class="badge badge-secondary
+                                                 unit-status-badge">
+
+                                        <i class="fas fa-minus-circle mr-1"></i>
+                                        Seçilmedi
+
+                                    </span>
+
+                                </div>
+
+                                <!-- DESCRIPTION -->
+
+                                <div id="unitStatusDescription"
+                                     class="unit-status-description">
+
+                                    Başlangıç durumunu belirlemek için
+                                    anahtarı kullanınız.
+
+                                </div>
+
+                            </div>
+
+                            <!-- SERVER VALIDATION -->
+
+                            <span asp-validation-for="IsActive"
+                                  class="text-danger small d-block mt-2">
+                            </span>
+
+                            <!-- CLIENT VALIDATION -->
+
+                            <div id="unitStatusClientError"
+                                 class="text-danger small mt-2"
+                                 role="alert"
+                                 style="display:none;">
+
+                                Birim durumu seçilmelidir.
+
+                            </div>
+
+                            <small class="form-text text-muted"
+                                   id="unitStatusHelp">
+
+                                Anahtar açıkken birim Aktif,
+                                kapalıyken Pasif olarak kaydedilir.
+
+                                İlk kayıtta durum seçimi zorunludur.
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <!-- ===================================== -->
+                    <!-- DESCRIPTION -->
                     <!-- ===================================== -->
 
                     <div class="col-md-12">
@@ -241,21 +442,16 @@
                 </div>
 
                 <!-- ===================================== -->
-                <!-- OTOMATİK BİRİM KODU -->
+                <!-- AUTO UNIT CODE -->
                 <!-- ===================================== -->
-                <!--
-                    Code alanı bu formda bulunmaz.
 
+                <!--
                     Birim kodu kullanıcıdan alınmaz.
 
                     Code hidden olarak gönderilmez.
 
-                    Birim kodu UnitService ve
                     UnitCodeRepository içerisinde
                     kayıt sırasında otomatik oluşturulur.
-
-                    Kullanıcı kaydetmeden geri dönerse
-                    kod numarası artırılmaz.
                 -->
 
                 <hr />
@@ -266,7 +462,6 @@
 
                 <div class="d-flex justify-content-end">
 
-                    <!-- CANCEL -->
                     <a asp-area="Admin"
                        asp-controller="Unit"
                        asp-action="Index"
@@ -277,7 +472,6 @@
 
                     </a>
 
-                    <!-- SAVE -->
                     <button type="submit"
                             class="btn btn-success">
 
@@ -300,4 +494,193 @@
 
     <partial name="_ValidationScriptsPartial" />
 
+    <script>
+        document.addEventListener(
+            'DOMContentLoaded',
+            function () {
+
+                // =====================================
+                // ELEMENTS
+                // =====================================
+
+                const form =
+                    document.getElementById(
+                        'createUnitForm'
+                    );
+
+                const statusSwitch =
+                    document.getElementById(
+                        'unitStatusSwitch'
+                    );
+
+                const statusValue =
+                    document.getElementById(
+                        'IsActiveValue'
+                    );
+
+                const statusBox =
+                    document.getElementById(
+                        'unitStatusBox'
+                    );
+
+                const statusBadge =
+                    document.getElementById(
+                        'unitStatusBadge'
+                    );
+
+                const statusDescription =
+                    document.getElementById(
+                        'unitStatusDescription'
+                    );
+
+                const statusError =
+                    document.getElementById(
+                        'unitStatusClientError'
+                    );
+
+                // =====================================
+                // RENDER STATUS
+                // =====================================
+
+                function renderStatus() {
+
+                    statusBox.classList.remove(
+                        'status-active',
+                        'status-passive',
+                        'status-invalid'
+                    );
+
+                    const value =
+                        statusValue.value.toLowerCase();
+
+                    if (value === 'true') {
+
+                        statusSwitch.checked = true;
+                        statusSwitch.setAttribute(
+                            'aria-checked',
+                            'true'
+                        );
+
+                        statusBox.classList.add(
+                            'status-active'
+                        );
+
+                        statusBadge.className =
+                            'badge badge-success unit-status-badge';
+
+                        statusBadge.innerHTML =
+                            '<i class="fas fa-check-circle mr-1"></i> Aktif';
+
+                        statusDescription.textContent =
+                            'Birim oluşturulduğunda aktif durumda olacaktır.';
+
+                    }
+                    else if (value === 'false') {
+
+                        statusSwitch.checked = false;
+                        statusSwitch.setAttribute(
+                            'aria-checked',
+                            'false'
+                        );
+
+                        statusBox.classList.add(
+                            'status-passive'
+                        );
+
+                        statusBadge.className =
+                            'badge badge-danger unit-status-badge';
+
+                        statusBadge.innerHTML =
+                            '<i class="fas fa-ban mr-1"></i> Pasif';
+
+                        statusDescription.textContent =
+                            'Birim oluşturulduğunda pasif durumda olacaktır.';
+
+                    }
+                    else {
+
+                        statusSwitch.checked = false;
+                        statusSwitch.setAttribute(
+                            'aria-checked',
+                            'false'
+                        );
+
+                        statusBadge.className =
+                            'badge badge-secondary unit-status-badge';
+
+                        statusBadge.innerHTML =
+                            '<i class="fas fa-minus-circle mr-1"></i> Seçilmedi';
+
+                        statusDescription.textContent =
+                            'Başlangıç durumunu belirlemek için anahtarı kullanınız.';
+                    }
+
+                }
+
+                // =====================================
+                // SWITCH CHANGE
+                // =====================================
+
+                statusSwitch.addEventListener(
+                    'change',
+                    function () {
+
+                        // true  = Aktif
+                        // false = Pasif
+
+                        statusValue.value =
+                            statusSwitch.checked
+                                ? 'true'
+                                : 'false';
+
+                        statusError.style.display = 'none';
+
+                        renderStatus();
+
+                    }
+                );
+
+                // =====================================
+                // SUBMIT VALIDATION
+                // =====================================
+
+                form.addEventListener(
+                    'submit',
+                    function (event) {
+
+                        const value =
+                            statusValue.value.toLowerCase();
+
+                        if (
+                            value !== 'true' &&
+                            value !== 'false'
+                        ) {
+
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            statusBox.classList.add(
+                                'status-invalid'
+                            );
+
+                            statusError.style.display =
+                                'block';
+
+                            statusSwitch.focus();
+
+                        }
+
+                    },
+                    true
+                );
+
+                // =====================================
+                // INITIALIZE
+                // =====================================
+
+                renderStatus();
+
+            }
+        );
+    </script>
 }

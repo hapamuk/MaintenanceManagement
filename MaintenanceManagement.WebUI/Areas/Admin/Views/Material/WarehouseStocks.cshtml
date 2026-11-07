@@ -1,0 +1,129 @@
+﻿@model IReadOnlyList<MaintenanceManagement.Application.DTOS.WarehouseStockDtos.ResultWarehouseStockDto>
+
+@using System.Linq
+@using System.Reflection
+@using System.ComponentModel.DataAnnotations
+
+@{
+    ViewData["Title"] = "Ambar Stokları";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    int materialId = (int)ViewBag.MaterialId;
+
+    string materialName = ViewBag.MaterialName as string
+        ?? string.Empty;
+
+    string materialCode = ViewBag.MaterialCode as string
+        ?? string.Empty;
+
+    var properties = typeof(
+        MaintenanceManagement.Application.DTOS.WarehouseStockDtos.ResultWarehouseStockDto
+    ).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+    .Where(p =>
+        p.CanRead &&
+        (
+            p.PropertyType.IsPrimitive ||
+            p.PropertyType == typeof(string) ||
+            p.PropertyType == typeof(decimal) ||
+            p.PropertyType == typeof(decimal?) ||
+            p.PropertyType == typeof(DateTime) ||
+            p.PropertyType == typeof(DateTime?) ||
+            p.PropertyType == typeof(bool?) ||
+            p.PropertyType == typeof(int?)
+        ))
+    .ToList();
+}
+
+<div class="container-fluid">
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800">
+                Ambar Stokları
+            </h1>
+
+            <p class="text-muted mb-0">
+                @materialCode - @materialName
+            </p>
+        </div>
+
+        <a asp-action="Details"
+           asp-route-id="@materialId"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left mr-1"></i>
+            Malzeme Detayı
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-warehouse mr-2"></i>
+                Ambar Stok Kayıtları
+            </h6>
+
+            <span class="badge badge-primary">
+                @(Model?.Count ?? 0) kayıt
+            </span>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-bordered table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            @foreach (var property in properties)
+                            {
+                                var display = property.GetCustomAttribute<DisplayAttribute>();
+
+                                <th>
+                                    @(display?.GetName() ?? property.Name)
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var stock in Model)
+                            {
+                                <tr>
+                                    @foreach (var property in properties)
+                                    {
+                                        object? value = property.GetValue(stock);
+
+                                        <td>
+                                            @if (value is DateTime date)
+                                            {
+                                                @date.ToString("dd.MM.yyyy HH:mm")
+                                            }
+                                            else
+                                            {
+                                                @(value?.ToString() ?? "-")
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="@(Math.Max(1, properties.Count))"
+                                    class="text-center text-muted py-4">
+                                    Bu malzeme için ambar stok kaydı bulunamadı.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+            </div>
+
+        </div>
+    </div>
+</div>

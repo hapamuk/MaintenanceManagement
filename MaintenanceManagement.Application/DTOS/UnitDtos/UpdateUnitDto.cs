@@ -49,5 +49,9 @@ namespace MaintenanceManagement.Application.DTOS.UnitDtos
 
         [StringLength(150)]
         public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Birim durumu zorunludur.")]
+        [Display(Name = "Birim Durumu")]
+        public bool? IsActive { get; set; }
     }
 }

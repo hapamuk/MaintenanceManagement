@@ -159,6 +159,8 @@ namespace MaintenanceManagement.Infrastructure.Data
 
         public DbSet<UnitCodeCounter> UnitCodeCounters { get; set; }
 
+        public DbSet<MaterialCategoryUnit> MaterialCategoryUnits { get; set; }
+
 
         #region OnModelCreating
 

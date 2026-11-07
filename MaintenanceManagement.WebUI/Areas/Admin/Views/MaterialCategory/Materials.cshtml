@@ -1,0 +1,43 @@
+﻿@model IReadOnlyList<MaintenanceManagement.Application.DTOS.MaterialDtos.ResultMaterialDto>
+@{
+    ViewData["Title"] = "Kategori Malzemeleri";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var materials = Model ?? Array.Empty<MaintenanceManagement.Application.DTOS.MaterialDtos.ResultMaterialDto>();
+    int categoryId = ViewBag.CategoryId is int x ? x : 0;
+    string categoryName = ViewBag.CategoryName as string ?? "Kategori";
+    bool onlyActive = ViewBag.OnlyActive is bool a && a;
+}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div><h1 class="h3 mb-1 text-gray-800">Kategori Malzemeleri</h1><p class="text-muted mb-0">@categoryName</p></div>
+        <a asp-action="Details" asp-route-id="@categoryId" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i> Kategori Detayı</a>
+    </div>
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-wrap align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-boxes mr-2"></i>Malzemeler (@materials.Count)</h6>
+            <div><a asp-action="Materials" asp-route-id="@categoryId" asp-route-onlyActive="false" class="btn btn-sm @(onlyActive ? "btn-outline-secondary" : "btn-primary")">Tümü</a><a asp-action="Materials" asp-route-id="@categoryId" asp-route-onlyActive="true" class="btn btn-sm @(onlyActive ? "btn-primary" : "btn-outline-success")">Yalnızca Aktif</a></div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%">
+                    <thead class="thead-light"><tr><th>Malzeme Kodu</th><th>Malzeme Adı</th><th>Minimum Stok</th><th>Durum</th><th>Açıklama</th></tr></thead>
+                    <tbody>@foreach(var item in materials) {
+                        <tr><td class="font-weight-bold">@item.MaterialCode</td><td>@item.Name</td><td>@item.MinimumStockLevel.ToString("N2")</td><td>@if(item.IsActive) {
+                            <span class="badge badge-success">Aktif</span>
+                        } else
+                        {
+
+                            <span class="badge badge-secondary">Pasif</span>
+                        }
+                    </td><td>@(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (!materials.Any())
+    {
+        <p class="text-center text-muted py-4 mb-0">Bu kategoride görüntülenecek malzeme bulunamadı.</p>
+    }
+</div>
+</div>
+</div>

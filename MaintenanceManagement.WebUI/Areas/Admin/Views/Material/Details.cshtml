@@ -1,0 +1,229 @@
+﻿@model MaintenanceManagement.Application.DTOS.MaterialDtos.GetByIdMaterialDto
+
+@{
+    ViewData["Title"] = "Malzeme Detayları";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+
+        <div>
+            <h1 class="h3 mb-1 text-gray-800">
+                Malzeme Detayları
+            </h1>
+            <p class="text-muted mb-0">
+                @Model.MaterialCode - @Model.Name
+            </p>
+        </div>
+
+        <div>
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn btn-primary btn-sm mr-2">
+                <i class="fas fa-edit mr-1"></i>
+                Güncelle
+            </a>
+
+            <a asp-action="Index"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left mr-1"></i>
+                Listeye Dön
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="row">
+
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Malzeme Bilgileri
+                    </h6>
+                </div>
+
+                <div class="card-body">
+
+                    <dl class="row">
+
+                        <dt class="col-sm-4">Malzeme Kodu</dt>
+                        <dd class="col-sm-8">
+                            <strong>@Model.MaterialCode</strong>
+                        </dd>
+
+                        <dt class="col-sm-4">Malzeme Adı</dt>
+                        <dd class="col-sm-8">@Model.Name</dd>
+
+                        <dt class="col-sm-4">Ölçü Birimi</dt>
+                        <dd class="col-sm-8">
+                            @Model.MeasurementUnitName
+                            @if (!string.IsNullOrWhiteSpace(Model.MeasurementUnitSymbol))
+                            {
+                                <span class="text-muted">
+                                    (@Model.MeasurementUnitSymbol)
+                                </span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Malzeme Kategorisi</dt>
+                        <dd class="col-sm-8">
+                            @(Model.MaterialCategoryName ?? "Belirtilmedi")
+                        </dd>
+
+                        <dt class="col-sm-4">Açıklama</dt>
+                        <dd class="col-sm-8">
+                            @(string.IsNullOrWhiteSpace(Model.Description)
+                                ? "Açıklama girilmemiş."
+                                : Model.Description)
+                        </dd>
+
+                        <dt class="col-sm-4">Durum</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge @(Model.IsActive ? "badge-success" : "badge-secondary") p-2">
+                                @Model.IsActiveName
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4">Oluşturulma Tarihi</dt>
+                        <dd class="col-sm-8">
+                            @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                        </dd>
+
+                        <dt class="col-sm-4">Güncellenme Tarihi</dt>
+                        <dd class="col-sm-8">
+                            @(Model.UpdatedAt?.ToString("dd.MM.yyyy HH:mm") ?? "-")
+                        </dd>
+
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Minimum Stok Seviyesi
+                    </h6>
+                </div>
+
+                <div class="card-body">
+
+                    <form asp-area="Admin"
+                          asp-controller="Material"
+                          asp-action="UpdateMinimumStockLevel"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="row align-items-end">
+
+                            <div class="col-md-6 form-group mb-md-0">
+                                <label for="minimumStockLevel">
+                                    Minimum Stok
+                                </label>
+
+                                <input type="number"
+                                       id="minimumStockLevel"
+                                       name="minimumStockLevel"
+                                       class="form-control"
+                                       min="0"
+                                       max="999999999.999"
+                                       step="0.001"
+                                       value="@Model.MinimumStockLevel.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                       required />
+                            </div>
+
+                            <div class="col-md-6">
+                                <button type="submit"
+                                        class="btn btn-primary">
+                                    <i class="fas fa-save mr-1"></i>
+                                    Stok Seviyesini Güncelle
+                                </button>
+                            </div>
+
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-lg-4">
+
+            <div class="card border-left-primary shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                        Ambar Stok Kayıtları
+                    </div>
+
+                    <div class="h4 mb-0 font-weight-bold text-gray-800">
+                        @Model.WarehouseStockCount
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-left-info shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                        Stok Hareketleri
+                    </div>
+
+                    <div class="h4 mb-0 font-weight-bold text-gray-800">
+                        @Model.StockMovementCount
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-left-success shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                        İş Emri Malzeme Kayıtları
+                    </div>
+
+                    <div class="h4 mb-0 font-weight-bold text-gray-800">
+                        @Model.WorkOrderMaterialCount
+                    </div>
+                </div>
+            </div>
+
+            <a asp-action="WarehouseStocks"
+               asp-route-id="@Model.Id"
+               class="btn btn-outline-primary btn-block mb-3">
+                <i class="fas fa-warehouse mr-1"></i>
+                Ambar Stoklarını Görüntüle
+            </a>
+
+            <div class="card border-left-info shadow-sm mb-4">
+                <div class="card-body small text-muted">
+                    Organizasyon erişim yetkileri malzemeden
+                    bağımsız olarak kategori yönetiminde
+                    tanımlanır.
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>

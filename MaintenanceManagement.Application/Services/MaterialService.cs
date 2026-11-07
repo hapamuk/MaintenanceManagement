@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -487,45 +488,72 @@ namespace MaintenanceManagement.Application.Services
         /// Kategori ve organizasyon birimi opsiyoneldir.
         /// </summary>
         public async Task<int> CreateAsync(
-            CreateMaterialDto dto,
-            CancellationToken cancellationToken = default)
+    CreateMaterialDto dto,
+    CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
             // =====================================
-            // 1. DTO DOĞRULAMASI
+            // 1. MALZEME KODUNU KONTROL ET
+            // =====================================
+
+            string requestedCode =
+                dto.MaterialCode?.Trim() ?? string.Empty;
+
+            bool validFormat =
+                requestedCode.Length == 6 &&
+                requestedCode.All(c => c >= '0' && c <= '9') &&
+                requestedCode[0] != '0';
+
+            bool codeExists = false;
+
+            if (validFormat)
+            {
+                codeExists = await _materialRepository
+                    .ExistsMaterialCodeAsync(
+                        requestedCode,
+                        null,
+                        cancellationToken);
+            }
+
+            string materialCode;
+
+            if (!validFormat || codeExists)
+            {
+                materialCode = await GenerateUniqueMaterialCodeAsync(
+                    cancellationToken);
+            }
+            else
+            {
+                materialCode = requestedCode;
+            }
+
+            // DTO doğrulamasından önce oluşturulan kodu ata.
+            dto.MaterialCode = materialCode;
+
+            // =====================================
+            // 2. DTO DOĞRULAMASI
             // =====================================
 
             ValidateDto(dto);
 
             // =====================================
-            // 2. MALZEME KODU
-            // =====================================
-
-            string materialCode =
-                ValidateRequiredText(
-                    dto.MaterialCode,
-                    "Malzeme Kodu");
-
-            // =====================================
             // 3. MALZEME ADI
             // =====================================
 
-            string name =
-                ValidateRequiredText(
-                    dto.Name,
-                    "Malzeme Adı");
+            string name = ValidateRequiredText(
+                dto.Name,
+                "Malzeme Adı");
 
             // =====================================
             // 4. AÇIKLAMA
             // =====================================
 
             string? description =
-                NormalizeOptionalText(
-                    dto.Description);
+                NormalizeOptionalText(dto.Description);
 
             // =====================================
-            // 5. MİNİMUM STOK SEVİYESİ
+            // 5. MİNİMUM STOK
             // =====================================
 
             ValidateMinimumStockLevel(
@@ -538,42 +566,24 @@ namespace MaintenanceManagement.Application.Services
             await ValidateRelationsAsync(
                 dto.MeasurementUnitId,
                 dto.MaterialCategoryId,
-                dto.UnitId,
+                null,
                 cancellationToken);
 
             // =====================================
-            // 7. MALZEME KODU BENZERSİZLİĞİ
+            // 7. DTO -> ENTITY
             // =====================================
 
-            bool codeExists =
-                await _materialRepository
-                    .ExistsMaterialCodeAsync(
-                        materialCode,
-                        null,
-                        cancellationToken);
-
-            if (codeExists)
-            {
-                throw new ValidationException(
-                    "Bu malzeme kodu sistemde " +
-                    "zaten kullanılmaktadır.");
-            }
+            var material = _mapper.Map<Material>(dto);
 
             // =====================================
-            // 8. DTO -> ENTITY
+            // 8. MALZEME BİLGİLERİ
             // =====================================
 
-            var material =
-                _mapper.Map<Material>(dto);
+            material.MaterialCode = materialCode;
 
-            material.MaterialCode =
-                materialCode;
+            material.Name = name;
 
-            material.Name =
-                name;
-
-            material.Description =
-                description;
+            material.Description = description;
 
             material.MeasurementUnitId =
                 dto.MeasurementUnitId;
@@ -581,30 +591,25 @@ namespace MaintenanceManagement.Application.Services
             material.MaterialCategoryId =
                 dto.MaterialCategoryId;
 
-            material.UnitId =
-                dto.UnitId;
+            // Organizasyon doğrudan atanmaz.
+            material.UnitId = null;
 
             material.MinimumStockLevel =
                 dto.MinimumStockLevel;
 
-            // =====================================
-            // 9. BAŞLANGIÇ DURUMU
-            // =====================================
-
             material.IsActive = true;
 
             // =====================================
-            // 10. REPOSITORY KAYDI
+            // 9. KAYDET
             // =====================================
 
-            var createdMaterial =
-                await _materialRepository
-                    .CreateAsync(
-                        material,
-                        cancellationToken);
+            var createdMaterial = await _materialRepository
+                .CreateAsync(
+                    material,
+                    cancellationToken);
 
             // =====================================
-            // 11. KAYIT ID
+            // 10. KAYIT ID
             // =====================================
 
             return createdMaterial.Id;
@@ -622,44 +627,19 @@ namespace MaintenanceManagement.Application.Services
         /// Repository tarafından kontrol edilir.
         /// </summary>
         public async Task<bool> UpdateAsync(
-            UpdateMaterialDto dto,
-            CancellationToken cancellationToken = default)
+    UpdateMaterialDto dto,
+    CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
             // =====================================
-            // 1. DTO DOĞRULAMASI
+            // 1. ID DOĞRULAMASI
             // =====================================
 
-            ValidateDto(dto);
-
-            ValidateId(
-                dto.Id,
-                "Malzeme");
+            ValidateId(dto.Id, "Malzeme");
 
             // =====================================
-            // 2. VERİLERİ NORMALİZE ET
-            // =====================================
-
-            string materialCode =
-                ValidateRequiredText(
-                    dto.MaterialCode,
-                    "Malzeme Kodu");
-
-            string name =
-                ValidateRequiredText(
-                    dto.Name,
-                    "Malzeme Adı");
-
-            string? description =
-                NormalizeOptionalText(
-                    dto.Description);
-
-            ValidateMinimumStockLevel(
-                dto.MinimumStockLevel);
-
-            // =====================================
-            // 3. MEVCUT MALZEMEYİ GETİR
+            // 2. MEVCUT MALZEMEYİ GETİR
             // =====================================
 
             var material = await _materialRepository
@@ -673,64 +653,13 @@ namespace MaintenanceManagement.Application.Services
             }
 
             // =====================================
-            // 4. MALZEME KODU BENZERSİZLİĞİ
+            // 3. KORUNACAK ALANLAR
             // =====================================
 
-            bool codeExists =
-                await _materialRepository
-                    .ExistsMaterialCodeAsync(
-                        materialCode,
-                        material.Id,
-                        cancellationToken);
+            int originalId = material.Id;
 
-            if (codeExists)
-            {
-                throw new ValidationException(
-                    "Malzeme kodu başka bir " +
-                    "kayıt tarafından kullanılmaktadır.");
-            }
-
-            // =====================================
-            // 5. ÖLÇÜ BİRİMİ DEĞİŞİKLİĞİ
-            // =====================================
-
-            bool measurementUnitChanged =
-                material.MeasurementUnitId !=
-                dto.MeasurementUnitId;
-
-            if (measurementUnitChanged)
-            {
-                bool canChange =
-                    await _materialRepository
-                        .CanChangeMeasurementUnitAsync(
-                            material.Id,
-                            cancellationToken);
-
-                if (!canChange)
-                {
-                    throw new InvalidOperationException(
-                        "Malzemeye ait stok veya " +
-                        "işlem geçmişi bulunduğundan " +
-                        "ölçü birimi değiştirilemez.");
-                }
-            }
-
-            // =====================================
-            // 6. İLİŞKİLERİ DOĞRULA
-            // =====================================
-
-            await ValidateRelationsAsync(
-                dto.MeasurementUnitId,
-                dto.MaterialCategoryId,
-                dto.UnitId,
-                cancellationToken);
-
-            // =====================================
-            // 7. KORUNACAK SİSTEM ALANLARI
-            // =====================================
-
-            int originalId =
-                material.Id;
+            string originalMaterialCode =
+                material.MaterialCode;
 
             bool originalIsActive =
                 material.IsActive;
@@ -738,29 +667,80 @@ namespace MaintenanceManagement.Application.Services
             DateTime originalCreatedAt =
                 material.CreatedAt;
 
-            DateTime? originalUpdatedAt =
-                material.UpdatedAt;
+            // Mevcut organizasyon ilişkisi korunur.
+            int? originalUnitId = material.UnitId;
+
+            // =====================================
+            // 4. DTO DOĞRULAMASI
+            // =====================================
+
+            // Kod kullanıcıdan alınmaz.
+            dto.MaterialCode = originalMaterialCode;
+
+            // Organizasyon ekranda seçilmez.
+            dto.UnitId = originalUnitId;
+
+            ValidateDto(dto);
+
+            // =====================================
+            // 5. METİNLERİ NORMALİZE ET
+            // =====================================
+
+            string name = ValidateRequiredText(
+                dto.Name,
+                "Malzeme Adı");
+
+            string? description =
+                NormalizeOptionalText(dto.Description);
+
+            ValidateMinimumStockLevel(
+                dto.MinimumStockLevel);
+
+            // =====================================
+            // 6. ÖLÇÜ BİRİMİ DEĞİŞİKLİĞİ
+            // =====================================
+
+            bool measurementUnitChanged =
+                material.MeasurementUnitId != dto.MeasurementUnitId;
+
+            if (measurementUnitChanged)
+            {
+                bool canChange = await _materialRepository
+                    .CanChangeMeasurementUnitAsync(
+                        material.Id,
+                        cancellationToken);
+
+                if (!canChange)
+                {
+                    throw new InvalidOperationException(
+                        "Malzemeye ait stok veya işlem geçmişi " +
+                        "bulunduğundan ölçü birimi değiştirilemez.");
+                }
+            }
+
+            // =====================================
+            // 7. İLİŞKİLERİ DOĞRULA
+            // =====================================
+
+            await ValidateRelationsAsync(
+                dto.MeasurementUnitId,
+                dto.MaterialCategoryId,
+                originalUnitId,
+                cancellationToken);
 
             // =====================================
             // 8. DTO -> MEVCUT ENTITY
             // =====================================
 
-            _mapper.Map(
-                dto,
-                material);
+            _mapper.Map(dto, material);
 
             // =====================================
             // 9. GÜNCELLENEBİLİR ALANLAR
             // =====================================
 
-            material.MaterialCode =
-                materialCode;
+            material.Name = name;
 
-            material.Name =
-                name;
-
-            material.Description =
-                description;
+            material.Description = description;
 
             material.MeasurementUnitId =
                 dto.MeasurementUnitId;
@@ -768,29 +748,25 @@ namespace MaintenanceManagement.Application.Services
             material.MaterialCategoryId =
                 dto.MaterialCategoryId;
 
-            material.UnitId =
-                dto.UnitId;
-
             material.MinimumStockLevel =
                 dto.MinimumStockLevel;
 
             // =====================================
-            // 10. SİSTEM ALANLARINI KORU
+            // 10. KORUNACAK SİSTEM ALANLARI
             // =====================================
 
-            material.Id =
-                originalId;
+            material.Id = originalId;
 
-            material.IsActive =
-                originalIsActive;
+            // Kod güncellemede asla değişmez.
+            material.MaterialCode = originalMaterialCode;
 
-            material.CreatedAt =
-                originalCreatedAt;
+            material.IsActive = originalIsActive;
 
-            // Önceki güncelleme tarihi yerine
-            // bu işlemin tarihi atanır.
-            material.UpdatedAt =
-                DateTime.UtcNow;
+            material.CreatedAt = originalCreatedAt;
+
+            material.UnitId = originalUnitId;
+
+            material.UpdatedAt = DateTime.UtcNow;
 
             // =====================================
             // 11. REPOSITORY GÜNCELLEMESİ
@@ -1278,6 +1254,49 @@ namespace MaintenanceManagement.Application.Services
                     "Minimum stok seviyesi " +
                     "negatif olamaz.");
             }
+        }
+
+        #endregion
+
+        #region GenerateUniqueMaterialCode
+
+        /// <summary>
+        /// Sistemde kullanılmayan rastgele 6 haneli
+        /// malzeme kodu oluşturur.
+        /// </summary>
+        public async Task<string> GenerateUniqueMaterialCodeAsync(
+            CancellationToken cancellationToken = default)
+        {
+            const int maxAttempts = 100;
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // 100000 dahil, 1000000 hariç.
+                // Böylece her zaman 6 haneli sayı üretilir.
+                int randomNumber = RandomNumberGenerator.GetInt32(
+                    100000,
+                    1000000);
+
+                string materialCode = randomNumber.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture);
+
+                bool exists = await _materialRepository
+                    .ExistsMaterialCodeAsync(
+                        materialCode,
+                        null,
+                        cancellationToken);
+
+                if (!exists)
+                {
+                    return materialCode;
+                }
+            }
+
+            throw new InvalidOperationException(
+                "Benzersiz malzeme kodu oluşturulamadı. " +
+                "Lütfen işlemi tekrar deneyiniz.");
         }
 
         #endregion

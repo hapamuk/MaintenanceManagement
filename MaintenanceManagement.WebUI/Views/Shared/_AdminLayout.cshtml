@@ -11,6 +11,17 @@
 
     bool isRoleManagement = controller == "Role";
 
+    // Malzeme Tanıtımı, Malzeme Kategorileri ve Ölçü Birimleri aynı menüye bağlıdır.
+    bool isMaterialManagement =
+        controller == "Material" ||
+        controller == "MaterialCategory" ||
+        controller == "MeasurementUnit";
+
+    // Ambar Tanıtımı ve Ambar Hareketleri aynı menüye bağlıdır.
+    bool isWarehouseManagement =
+        controller == "Warehouse" ||
+        controller == "StockMovement";
+
     // Birim Yönetimi
     bool isUnitManagement = controller == "Unit";
 
@@ -115,94 +126,211 @@
 
             @* @if (User.IsInRole("Admin"))
             { *@
-                <!-- ===================================== -->
-                <!-- KULLANICI YÖNETİMİ -->
-                <!-- ===================================== -->
+            <!-- ===================================== -->
+            <!-- KULLANICI YÖNETİMİ -->
+            <!-- ===================================== -->
 
-                <li class="nav-item @(isUserManagement ? "active" : "")">
+            <li class="nav-item @(isUserManagement ? "active" : "")">
 
-                    <a class="nav-link"
-                       asp-area="Admin"
-                       asp-controller="User"
-                       asp-action="Index">
+                <a class="nav-link"
+                   asp-area="Admin"
+                   asp-controller="User"
+                   asp-action="Index">
 
-                        <i class="fas fa-fw fa-users"></i>
-                        <span>Kullanıcı Yönetimi</span>
+                    <i class="fas fa-fw fa-users"></i>
+                    <span>Kullanıcı Yönetimi</span>
 
-                    </a>
+                </a>
 
-                </li>
+            </li>
 
-                <!-- ===================================== -->
-                <!-- BİRİM YÖNETİMİ -->
-                <!-- ===================================== -->
+            <!-- ===================================== -->
+            <!-- BİRİM YÖNETİMİ -->
+            <!-- ===================================== -->
 
-                <li class="nav-item @(isUnitManagement ? "active" : "")">
+            <li class="nav-item @(isUnitManagement ? "active" : "")">
 
-                    <a class="nav-link"
-                       asp-area="Admin"
-                       asp-controller="Unit"
-                       asp-action="Index">
+                <a class="nav-link"
+                   asp-area="Admin"
+                   asp-controller="Unit"
+                   asp-action="Index">
 
-                        <i class="fas fa-fw fa-sitemap"></i>
-                        <span>Birim Yönetimi</span>
+                    <i class="fas fa-fw fa-sitemap"></i>
+                    <span>Birim Yönetimi</span>
 
-                    </a>
+                </a>
 
-                </li>
+            </li>
 
-                <!-- ===================================== -->
-                <!-- ROL YÖNETİMİ -->
-                <!-- ===================================== -->
+            <!-- ===================================== -->
+            <!-- ROL YÖNETİMİ -->
+            <!-- ===================================== -->
 
-                <li class="nav-item @(isRoleManagement ? "active" : "")">
+            <li class="nav-item @(isRoleManagement ? "active" : "")">
 
-                    <a class="nav-link @(isRoleManagement ? "" : "collapsed")"
-                       href="#"
-                       data-toggle="collapse"
-                       data-target="#collapseRoles"
-                       aria-expanded="@(isRoleManagement ? "true" : "false")"
-                       aria-controls="collapseRoles">
+                <a class="nav-link @(isRoleManagement ? "" : "collapsed")"
+                   href="#"
+                   data-toggle="collapse"
+                   data-target="#collapseRoles"
+                   aria-expanded="@(isRoleManagement ? "true" : "false")"
+                   aria-controls="collapseRoles">
 
-                        <i class="fas fa-fw fa-user-shield"></i>
-                        <span>Roller</span>
+                    <i class="fas fa-fw fa-user-shield"></i>
+                    <span>Roller</span>
 
-                    </a>
+                </a>
 
-                    <div id="collapseRoles"
-                         class="collapse @(isRoleManagement ? "show" : "")"
-                         data-parent="#accordionSidebar">
+                <div id="collapseRoles"
+                     class="collapse @(isRoleManagement ? "show" : "")"
+                     data-parent="#accordionSidebar">
 
-                        <div class="bg-white py-2 collapse-inner rounded">
+                    <div class="bg-white py-2 collapse-inner rounded">
 
-                            <h6 class="collapse-header">
-                                Rol Yönetimi
-                            </h6>
+                        <h6 class="collapse-header">
+                            Rol Yönetimi
+                        </h6>
 
-                            <a class="collapse-item"
-                               asp-area="Admin"
-                               asp-controller="Role"
-                               asp-action="Index">
+                        <a class="collapse-item"
+                           asp-area="Admin"
+                           asp-controller="Role"
+                           asp-action="Index">
 
-                                Rol Listesi
+                            Rol Listesi
 
-                            </a>
+                        </a>
 
-                            <a class="collapse-item"
-                               asp-area="Admin"
-                               asp-controller="Role"
-                               asp-action="Create">
+                        <a class="collapse-item"
+                           asp-area="Admin"
+                           asp-controller="Role"
+                           asp-action="Create">
 
-                                Yeni Rol Oluştur
+                            Yeni Rol Oluştur
 
-                            </a>
-
-                        </div>
+                        </a>
 
                     </div>
 
-                </li>
-           @*  } *@
+                </div>
+
+            </li>
+
+
+            <!-- ===================================== -->
+            <!-- MALZEME YÖNETİMİ -->
+            <!-- ===================================== -->
+
+            <li class="nav-item @(isMaterialManagement ? "active" : "")">
+
+                <a class="nav-link @(isMaterialManagement ? "" : "collapsed")"
+                   href="#"
+                   data-toggle="collapse"
+                   data-target="#collapseMaterials"
+                   aria-expanded="@(isMaterialManagement ? "true" : "false")"
+                   aria-controls="collapseMaterials">
+
+                    <i class="fas fa-fw fa-boxes"></i>
+                    <span>Malzeme Yönetimi</span>
+
+                </a>
+
+                <div id="collapseMaterials"
+                     class="collapse @(isMaterialManagement ? "show" : "")"
+                     data-parent="#accordionSidebar">
+
+                    <div class="bg-white py-2 collapse-inner rounded">
+
+                        <h6 class="collapse-header">
+                            Malzeme Yönetimi
+                        </h6>
+
+                        <a class="collapse-item @(controller == "Material" ? "active" : "")"
+                           asp-area="Admin"
+                           asp-controller="Material"
+                           asp-action="Index">
+
+                            Malzeme Tanıtımı
+
+                        </a>
+
+                        <a class="collapse-item @(controller == "MaterialCategory" ? "active" : "")"
+                           asp-area="Admin"
+                           asp-controller="MaterialCategory"
+                           asp-action="Index">
+
+                            Malzeme Kategorileri
+
+                        </a>
+
+                        <a class="collapse-item @(controller == "MeasurementUnit" ? "active" : "")"
+                           asp-area="Admin"
+                           asp-controller="MeasurementUnit"
+                           asp-action="Index">
+
+                            Ölçü Birimleri
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </li>
+
+
+            <!-- ===================================== -->
+            <!-- AMBAR YÖNETİMİ -->
+            <!-- ===================================== -->
+
+            <li class="nav-item @(isWarehouseManagement ? "active" : "")">
+
+                <a class="nav-link @(isWarehouseManagement ? "" : "collapsed")"
+                   href="#"
+                   data-toggle="collapse"
+                   data-target="#collapseWarehouses"
+                   aria-expanded="@(isWarehouseManagement ? "true" : "false")"
+                   aria-controls="collapseWarehouses">
+
+                    <i class="fas fa-fw fa-warehouse"></i>
+                    <span>Ambar Yönetimi</span>
+
+                </a>
+
+                <div id="collapseWarehouses"
+                     class="collapse @(isWarehouseManagement ? "show" : "")"
+                     data-parent="#accordionSidebar">
+
+                    <div class="bg-white py-2 collapse-inner rounded">
+
+                        <h6 class="collapse-header">
+                            Ambar Yönetimi
+                        </h6>
+
+                        <a class="collapse-item @(controller == "Warehouse" ? "active" : "")"
+                           asp-area="Admin"
+                           asp-controller="Warehouse"
+                           asp-action="Index">
+
+                            Ambar Tanıtımı
+
+                        </a>
+
+                        <a class="collapse-item @(controller == "StockMovement" ? "active" : "")"
+                           asp-area="Admin"
+                           asp-controller="StockMovement"
+                           asp-action="Index">
+
+                            Ambar Hareketleri
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </li>
+
+
+            @*  } *@
 
             
 
@@ -613,3 +741,4 @@
 </body>
 
 </html>
+

@@ -1,0 +1,66 @@
+﻿@model MaintenanceManagement.Application.DTOS.MaterialCategoryDtos.GetByIdMaterialCategoryDto
+@using MaintenanceManagement.WebUI.Areas.Admin.Models
+@using System.Linq
+@{
+    ViewData["Title"] = "Malzeme Kategorisi Detayı";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var nodes = ViewBag.OrganizationNodes as IReadOnlyList<OrganizationTreeNodeVm> ?? new List<OrganizationTreeNodeVm>();
+    var selected = ViewBag.SelectedUnitIds as IReadOnlyList<int> ?? new List<int>();
+    var chosen = nodes.Where(x => selected.Contains(x.Id)).OrderBy(x => x.Name).ToList();
+}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div><h1 class="h3 mb-1 text-gray-800">Malzeme Kategorisi Detayı</h1><p class="text-muted mb-0">@Model.Name</p></div>
+        <div><a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary btn-sm mr-1"><i class="fas fa-edit mr-1"></i> Düzenle</a><a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i> Listeye Dön</a></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-info-circle mr-2"></i>Kategori Bilgileri</h6></div><div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Kategori Adı</dt>
+                    <dd class="col-sm-8">@Model.Name</dd>
+                    <dt class="col-sm-4">Açıklama</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Description) ? "Açıklama girilmemiş" : Model.Description)</dd>
+                    <dt class="col-sm-4">Durum</dt>
+                    <dd class="col-sm-8">@if (Model.IsActive) {
+                        <span class="badge badge-success p-2">Aktif</span>
+                    } else
+                    {
+
+                        <span class="badge badge-secondary p-2">Pasif</span>
+                    }
+                </dd>
+                <dt class="col-sm-4">Toplam Malzeme</dt>
+                <dd class="col-sm-8">@Model.MaterialCount</dd>
+                <dt class="col-sm-4">Aktif Malzeme</dt>
+                <dd class="col-sm-8">@Model.ActiveMaterialCount</dd>
+                <dt class="col-sm-4">Pasif Malzeme</dt>
+                <dd class="col-sm-8">@Model.PassiveMaterialCount</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+<div class="col-lg-5">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-sitemap mr-2"></i>Organizasyon Kullanım Kapsamı</h6></div><div class="card-body">
+        @if (selected.Count == 0)
+        {
+            <span class="badge badge-success p-2 mb-2">Tüm organizasyonlara açık</span><p class="small text-muted mb-0">Bu kategoriye ait malzemeler, tüm aktif organizasyonların ambarlarına tanıtılabilir.</p>
+        }
+        else
+        {
+
+            <p class="small text-muted">Yalnızca aşağıdaki organizasyonlarda kullanılabilir:</p><ul class="list-group list-group-flush">@foreach(var unit in chosen) {
+            <li class="list-group-item px-0"><i class="fas fa-building text-primary mr-2"></i>@unit.Name</li>
+        }
+    </ul>@if (chosen.Count != selected.Count) {
+    <p class="small text-warning mt-2 mb-0">Bazı kayıtlı organizasyonlar aktif listede bulunmuyor olabilir.</p>
+}
+ }
+</div>
+</div>
+<a asp-area="Admin" asp-controller="MaterialCategory" asp-action="Materials" asp-route-id="@Model.Id" class="btn btn-info btn-block"><i class="fas fa-boxes mr-1"></i> Kategori Malzemelerini Göster</a>
+</div>
+</div>
+</div>

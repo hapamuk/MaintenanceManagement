@@ -15,8 +15,7 @@ namespace MaintenanceManagement.Application.DTOS.MaterialDtos
         /// <summary>
         /// Malzemenin güncel kodudur.
         /// </summary>
-        [Required(
-            ErrorMessage = "Malzeme kodu zorunludur.")]
+        [Required(ErrorMessage = "Malzeme kodu zorunludur.")]
         [StringLength(
             100,
             ErrorMessage = "Malzeme kodu en fazla 100 karakter olabilir.")]
@@ -70,10 +69,11 @@ namespace MaintenanceManagement.Application.DTOS.MaterialDtos
         /// Malzemenin güncel minimum stok seviyesidir.
         /// </summary>
         [Range(
-            typeof(decimal),
-            "0",
-            "999999999.999",
-            ErrorMessage = "Minimum stok seviyesi geçerli aralıkta olmalıdır.")]
+    typeof(decimal),
+    "0",
+    "999999999.999",
+    ParseLimitsInInvariantCulture = true,
+    ErrorMessage = "Minimum stok seviyesi geçerli aralıkta olmalıdır.")]
         [Display(Name = "Minimum Stok Seviyesi")]
         public decimal MinimumStockLevel { get; set; }
 
@@ -85,5 +85,7 @@ namespace MaintenanceManagement.Application.DTOS.MaterialDtos
             ErrorMessage = "Açıklama en fazla 1000 karakter olabilir.")]
         [Display(Name = "Açıklama")]
         public string? Description { get; set; }
+
+
     }
 }

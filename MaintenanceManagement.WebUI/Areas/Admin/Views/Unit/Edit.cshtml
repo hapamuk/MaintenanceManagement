@@ -1,9 +1,98 @@
-﻿@model MaintenanceManagement.Application.DTOS.UnitDtos.UpdateUnitDto
+﻿```
+@model MaintenanceManagement.Application.DTOS.UnitDtos.UpdateUnitDto
 
 @{
     ViewData["Title"] = "Birim Güncelle";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
+
+<style>
+    /* Create ve Edit sayfalarında aynı görünüm */
+    .unit-status-box {
+        background: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        padding: 18px 20px;
+        transition: border-color .2s, background-color .2s;
+    }
+
+    .unit-status-switch {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 18px;
+    }
+
+    .unit-status-box .custom-switch {
+        padding-left: 3.5rem;
+        min-height: 2rem;
+    }
+
+        .unit-status-box .custom-switch .custom-control-label {
+            cursor: pointer;
+            padding-top: 3px;
+            font-weight: 600;
+            color: #5a5c69;
+        }
+
+            .unit-status-box .custom-switch .custom-control-label::before {
+                width: 2.6rem;
+                height: 1.4rem;
+                left: -3.5rem;
+                top: 0;
+                border-radius: 1rem;
+            }
+
+            .unit-status-box .custom-switch .custom-control-label::after {
+                width: 1rem;
+                height: 1rem;
+                left: calc(-3.5rem + 3px);
+                top: 3px;
+                border-radius: 50%;
+                transition: transform .2s ease;
+            }
+
+        .unit-status-box .custom-switch
+        .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: #1cc88a;
+            border-color: #1cc88a;
+        }
+
+        .unit-status-box .custom-switch
+        .custom-control-input:checked ~ .custom-control-label::after {
+            transform: translateX(1.2rem);
+        }
+
+    .unit-status-badge {
+        display: inline-block;
+        min-width: 105px;
+        text-align: center;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 6px;
+    }
+
+    .unit-status-description {
+        color: #858796;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+
+    .unit-status-box.status-active {
+        border-color: #1cc88a;
+        background: #f4fcf8;
+    }
+
+    .unit-status-box.status-passive {
+        border-color: #e74a3b;
+        background: #fff8f7;
+    }
+
+    .unit-status-box.status-invalid {
+        border-color: #e74a3b;
+    }
+</style>
 
 <div class="container-fluid">
 
@@ -12,7 +101,7 @@
     <!-- ===================================== -->
 
     <div class="d-sm-flex align-items-center
-                justify-content-between mb-4">
+        justify-content-between mb-4">
 
         <h1 class="h3 mb-0 text-gray-800">
 
@@ -75,7 +164,8 @@
                   asp-action="Edit"
                   asp-route-id="@Model.Id"
                   method="post"
-                  autocomplete="off">
+                  autocomplete="off"
+                  id="editUnitForm">
 
                 @Html.AntiForgeryToken()
 
@@ -253,6 +343,82 @@
                     </div>
 
                     <!-- ===================================== -->
+                    <!-- UNIT STATUS -->
+                    <!-- ===================================== -->
+
+                    <div class="col-md-12">
+
+                        <div class="form-group">
+
+                            <label class="font-weight-bold d-block"
+                                   id="unitStatusHeading">
+
+                                <i class="fas fa-toggle-on text-primary mr-1"></i>
+                                Birim Durumu
+                                <span class="text-danger">*</span>
+
+                            </label>
+
+                            <!-- MVC modeline gönderilecek gerçek değer -->
+                            <input asp-for="IsActive"
+                                   type="hidden"
+                                   id="IsActiveValue" />
+
+                            <div id="unitStatusBox" class="unit-status-box">
+
+                                <div class="unit-status-switch">
+
+                                    <div class="custom-control custom-switch">
+
+                                        <input type="checkbox"
+                                               id="unitStatusSwitch"
+                                               class="custom-control-input"
+                                               role="switch"
+                                               aria-labelledby="unitStatusHeading"
+                                               aria-describedby="unitStatusHelp" />
+
+                                        <label for="unitStatusSwitch"
+                                               class="custom-control-label">
+                                            Birim Aktif Olsun
+                                        </label>
+
+                                    </div>
+
+                                    <span id="unitStatusBadge"
+                                          class="badge badge-secondary unit-status-badge">
+                                        Seçilmedi
+                                    </span>
+
+                                </div>
+
+                                <div id="unitStatusDescription"
+                                     class="unit-status-description">
+                                    Birimin güncel durumu yükleniyor.
+                                </div>
+
+                            </div>
+
+                            <span asp-validation-for="IsActive"
+                                  class="text-danger small d-block mt-2"></span>
+
+                            <div id="unitStatusClientError"
+                                 class="text-danger small mt-2"
+                                 role="alert"
+                                 style="display:none;">
+                                Birim durumu belirlenmelidir.
+                            </div>
+
+                            <small class="form-text text-muted"
+                                   id="unitStatusHelp">
+                                Anahtar açıkken Aktif, kapalıyken Pasif.
+                                Değişiklik yapmazsanız mevcut durum korunur.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <!-- ===================================== -->
                     <!-- AÇIKLAMA -->
                     <!-- ===================================== -->
 
@@ -323,4 +489,71 @@
 
     <partial name="_ValidationScriptsPartial" />
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('editUnitForm');
+            const statusSwitch = document.getElementById('unitStatusSwitch');
+            const statusValue = document.getElementById('IsActiveValue');
+            const statusBox = document.getElementById('unitStatusBox');
+            const statusBadge = document.getElementById('unitStatusBadge');
+            const statusDescription = document.getElementById('unitStatusDescription');
+            const statusError = document.getElementById('unitStatusClientError');
+
+            function renderStatus() {
+                const value = (statusValue.value || '').toLowerCase();
+
+                statusBox.classList.remove(
+                    'status-active', 'status-passive', 'status-invalid'
+                );
+
+                if (value === 'true') {
+                    statusSwitch.checked = true;
+                    statusSwitch.setAttribute('aria-checked', 'true');
+                    statusBox.classList.add('status-active');
+                    statusBadge.className =
+                        'badge badge-success unit-status-badge';
+                    statusBadge.textContent = '✓ Aktif';
+                    statusDescription.textContent =
+                        'Birim aktif durumda. Anahtarı kapatarak pasifleştirebilirsiniz.';
+                } else if (value === 'false') {
+                    statusSwitch.checked = false;
+                    statusSwitch.setAttribute('aria-checked', 'false');
+                    statusBox.classList.add('status-passive');
+                    statusBadge.className =
+                        'badge badge-danger unit-status-badge';
+                    statusBadge.textContent = '✕ Pasif';
+                    statusDescription.textContent =
+                        'Birim pasif durumda. Anahtarı açarak aktifleştirebilirsiniz.';
+                } else {
+                    statusSwitch.checked = false;
+                    statusSwitch.setAttribute('aria-checked', 'false');
+                    statusBadge.className =
+                        'badge badge-secondary unit-status-badge';
+                    statusBadge.textContent = 'Seçilmedi';
+                    statusDescription.textContent =
+                        'Birim durumu yüklenemedi. Lütfen bir durum seçiniz.';
+                }
+            }
+
+            statusSwitch.addEventListener('change', function () {
+                statusValue.value = statusSwitch.checked ? 'true' : 'false';
+                statusError.style.display = 'none';
+                renderStatus();
+            });
+
+            form.addEventListener('submit', function (event) {
+                const value = (statusValue.value || '').toLowerCase();
+                if (value !== 'true' && value !== 'false') {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    statusBox.classList.add('status-invalid');
+                    statusError.style.display = 'block';
+                    statusSwitch.focus();
+                }
+            }, true);
+
+            // İlk açılışta kayıtlı birimin gerçek durumunu göster.
+            renderStatus();
+        });
+    </script>
 }

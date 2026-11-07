@@ -209,6 +209,8 @@ namespace MaintenanceManagement.Infrastructure.DependencyInjection
 
             services.AddScoped<IUnitCodeRepository, UnitCodeRepository>();
 
+            services.AddScoped<IMaterialCategoryUnitRepository,MaterialCategoryUnitRepository>();
+
             return services;
         }
     }

@@ -6,6 +6,7 @@ using MaintenanceManagement.Domain.Entities;
 using MaintenanceManagement.Domain.Enums;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -211,7 +212,11 @@ namespace MaintenanceManagement.Application.Services
             // Kod otomatik atanacak.
             unit.Code = string.Empty;
 
-            unit.IsActive = true;
+            //unit.IsActive = true;
+
+            unit.IsActive = dto.IsActive
+    ?? throw new ValidationException(
+        "Birim durumu seçilmelidir.");
 
             // =====================================
             // 6. OTOMATİK KOD İLE KAYDET
@@ -299,7 +304,19 @@ namespace MaintenanceManagement.Application.Services
                 cancellationToken);
 
             // =====================================
-            // 6. DTO -> ENTITY
+            // 6. BİRİM DURUMU DOĞRULAMA
+            // =====================================
+
+            // Kullanıcının Aktif veya Pasif durumunu
+            // seçmiş olması zorunludur.
+            if (!dto.IsActive.HasValue)
+            {
+                throw new ValidationException(
+                    "Birim durumu seçilmelidir.");
+            }
+
+            // =====================================
+            // 7. DTO -> ENTITY
             // =====================================
 
             _mapper.Map(dto, existingUnit);
@@ -312,11 +329,23 @@ namespace MaintenanceManagement.Application.Services
             existingUnit.ParentUnitId =
                 dto.ParentUnitId;
 
-            // Eski kod korunur.
+            // Eski birim kodu korunur.
             existingUnit.Code = originalCode;
 
             // =====================================
-            // 7. KAYDET
+            // 8. BİRİM DURUMUNU GÜNCELLE
+            // =====================================
+
+            // true  = Aktif
+            // false = Pasif
+            //
+            // Toggle switch üzerinden gelen değer
+            // mevcut birime atanır.
+
+            existingUnit.IsActive = dto.IsActive.Value;
+
+            // =====================================
+            // 9. KAYDET
             // =====================================
 
             return await _unitRepository

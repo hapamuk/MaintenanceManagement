@@ -29,7 +29,11 @@ namespace MaintenanceManagement.Domain.Entities
         [Display(Name = "Sorumlu Birim")]
         public int? UnitId { get; set; }
 
-        [Range(typeof(decimal), "0", "999999999.999")]
+        [Range(
+     typeof(decimal),
+     "0",
+     "999999999.999",
+     ParseLimitsInInvariantCulture = true)]
         [Display(Name = "Minimum Stok")]
         public decimal MinimumStockLevel { get; set; }
 

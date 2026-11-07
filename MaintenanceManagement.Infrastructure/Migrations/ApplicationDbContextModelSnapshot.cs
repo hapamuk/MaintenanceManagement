@@ -440,6 +440,35 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.ToTable("MaterialCategories");
                 });
 
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.MaterialCategoryUnit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MaterialCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UnitId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialCategoryId");
+
+                    b.HasIndex("UnitId");
+
+                    b.ToTable("MaterialCategoryUnits");
+                });
+
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.MeasurementUnit", b =>
                 {
                     b.Property<int>("Id")
@@ -1941,6 +1970,25 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.Navigation("Unit");
                 });
 
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.MaterialCategoryUnit", b =>
+                {
+                    b.HasOne("MaintenanceManagement.Domain.Entities.MaterialCategory", "MaterialCategory")
+                        .WithMany("MaterialCategoryUnits")
+                        .HasForeignKey("MaterialCategoryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("MaintenanceManagement.Domain.Entities.Unit", "Unit")
+                        .WithMany("MaterialCategoryUnits")
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("MaterialCategory");
+
+                    b.Navigation("Unit");
+                });
+
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.PasswordResetToken", b =>
                 {
                     b.HasOne("MaintenanceManagement.Domain.Entities.User", "User")
@@ -2541,6 +2589,8 @@ namespace MaintenanceManagement.Infrastructure.Migrations
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.MaterialCategory", b =>
                 {
+                    b.Navigation("MaterialCategoryUnits");
+
                     b.Navigation("Materials");
                 });
 
@@ -2596,6 +2646,8 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.Navigation("ChildUnits");
 
                     b.Navigation("IncomingAssetMovements");
+
+                    b.Navigation("MaterialCategoryUnits");
 
                     b.Navigation("Materials");
 

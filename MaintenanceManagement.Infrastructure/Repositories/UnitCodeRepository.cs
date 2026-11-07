@@ -114,7 +114,6 @@ namespace MaintenanceManagement.Infrastructure.Repositories
 
                 unit.Code = generatedCode;
 
-                unit.IsActive = true;
 
                 unit.CreatedAt = DateTime.UtcNow;
 

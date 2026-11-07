@@ -4146,25 +4146,25 @@ namespace MaintenanceManagement.Application.Mapping
             // Yeni malzeme kategorisi oluşturma
             // ===================================================
 
-            CreateMap<CreateMaterialCategoryDto, MaterialCategory>()
+            CreateMap<MaintenanceManagement.Application.DTOS.MaterialCategoryDtos.CreateMaterialCategoryDto, MaterialCategory>()
+    .ForMember(dest => dest.Id, opt => opt.Ignore())
+    .ForMember(dest => dest.IsActive, opt => opt.Ignore())
+    .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+    .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+    .ForMember(dest => dest.Materials, opt => opt.Ignore())
+    .ForMember(
+        dest => dest.MaterialCategoryUnits,
+        opt => opt.Ignore());
+
+            CreateMap<MaintenanceManagement.Application.DTOS.MaterialCategoryDtos.UpdateMaterialCategoryDto, MaterialCategory>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.Materials, opt => opt.Ignore());
-
-
-            // ===================================================
-            // UPDATE
-            // Mevcut malzeme kategorisini güncelleme
-            // ===================================================
-
-            CreateMap<UpdateMaterialCategoryDto, MaterialCategory>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.Materials, opt => opt.Ignore());
+                .ForMember(dest => dest.Materials, opt => opt.Ignore())
+                .ForMember(
+                    dest => dest.MaterialCategoryUnits,
+                    opt => opt.Ignore());
 
 
             // ===================================================
@@ -4172,7 +4172,7 @@ namespace MaintenanceManagement.Application.Mapping
             // Güncelleme formunu doldurma
             // ===================================================
 
-            CreateMap<MaterialCategory, UpdateMaterialCategoryDto>();
+            CreateMap<MaterialCategory, MaintenanceManagement.Application.DTOS.MaterialCategoryDtos.UpdateMaterialCategoryDto>();
 
 
             // ===================================================

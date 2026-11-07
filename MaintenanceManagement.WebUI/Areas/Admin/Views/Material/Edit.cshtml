@@ -1,0 +1,276 @@
+﻿@model MaintenanceManagement.Application.DTOS.MaterialDtos.UpdateMaterialDto
+
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Malzeme Güncelle";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    var measurementUnits =
+        ViewBag.MeasurementUnits as IEnumerable<SelectListItem>
+        ?? Enumerable.Empty<SelectListItem>();
+
+    var categories =
+        ViewBag.MaterialCategories as IEnumerable<SelectListItem>
+        ?? Enumerable.Empty<SelectListItem>();
+
+    bool canChangeMeasurementUnit =
+        ViewBag.CanChangeMeasurementUnit == true;
+
+    // Mevcut ölçü birimi pasif olsa bile,
+    // kayıtta görüntülenebilmesi sağlanır.
+    var unitOptions = measurementUnits.ToList();
+
+    if (Model.MeasurementUnitId > 0 &&
+        !unitOptions.Any(x => x.Value == Model.MeasurementUnitId.ToString()))
+    {
+        unitOptions.Insert(0, new SelectListItem
+        {
+            Value = Model.MeasurementUnitId.ToString(),
+            Text = "Mevcut ölçü birimi (ID: " + Model.MeasurementUnitId + ")"
+        });
+    }
+
+    var categoryOptions = categories.ToList();
+
+    if (Model.MaterialCategoryId.HasValue &&
+        !categoryOptions.Any(x => x.Value == Model.MaterialCategoryId.Value.ToString()))
+    {
+        categoryOptions.Insert(0, new SelectListItem
+        {
+            Value = Model.MaterialCategoryId.Value.ToString(),
+            Text = "Mevcut kategori (ID: " + Model.MaterialCategoryId.Value + ")"
+        });
+    }
+}
+
+<div class="container-fluid">
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800">
+                Malzeme Güncelle
+            </h1>
+            <p class="text-muted mb-0">
+                @Model.MaterialCode - @Model.Name
+            </p>
+        </div>
+
+        <a asp-action="Details"
+           asp-route-id="@Model.Id"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left mr-1"></i>
+            Malzeme Detayı
+        </a>
+    </div>
+
+    <form asp-area="Admin"
+          asp-controller="Material"
+          asp-action="Edit"
+          asp-route-id="@Model.Id"
+          method="post"
+          autocomplete="off">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="Id" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger mb-3"></div>
+
+        <div class="row">
+            <div class="col-lg-8">
+
+                <div class="card shadow-sm mb-4">
+
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-edit mr-2"></i>
+                            Malzeme Bilgileri
+                        </h6>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row">
+
+                            <div class="form-group">
+                                <label asp-for="MaterialCode"
+                                       class="font-weight-bold"></label>
+
+                                <input asp-for="MaterialCode"
+                                       class="form-control bg-light font-weight-bold"
+                                       readonly />
+
+                                <span asp-validation-for="MaterialCode"
+                                      class="text-danger small"></span>
+
+                                <small class="form-text text-muted">
+                                    Malzeme kodu oluşturulurken belirlenir
+                                    ve sonradan değiştirilemez.
+                                </small>
+                            </div>
+
+                            <div class="col-md-7">
+                                <div class="form-group">
+                                    <label asp-for="Name"
+                                           class="font-weight-bold"></label>
+                                    <span class="text-danger">*</span>
+
+                                    <input asp-for="Name"
+                                           class="form-control"
+                                           maxlength="200" />
+
+                                    <span asp-validation-for="Name"
+                                          class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+
+                                    <label asp-for="MeasurementUnitId"
+                                           class="font-weight-bold"></label>
+
+                                    @if (canChangeMeasurementUnit)
+                                    {
+                                        <select asp-for="MeasurementUnitId"
+                                                asp-items="unitOptions"
+                                                class="form-control">
+                                            <option value="">Ölçü birimi seçiniz</option>
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <select asp-for="MeasurementUnitId"
+                                                asp-items="unitOptions"
+                                                class="form-control"
+                                                disabled>
+                                        </select>
+
+                                        <input type="hidden"
+                                               asp-for="MeasurementUnitId" />
+
+                                        <small class="form-text text-warning">
+                                            Stok veya işlem geçmişi bulunduğu
+                                            için ölçü birimi değiştirilemez.
+                                        </small>
+                                    }
+
+                                    <span asp-validation-for="MeasurementUnitId"
+                                          class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+
+                                    <label asp-for="MaterialCategoryId"
+                                           class="font-weight-bold"></label>
+
+                                    <select asp-for="MaterialCategoryId"
+                                            asp-items="categoryOptions"
+                                            class="form-control">
+                                        <option value="">Kategori seçiniz (isteğe bağlı)</option>
+                                    </select>
+
+                                    <span asp-validation-for="MaterialCategoryId"
+                                          class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label asp-for="MinimumStockLevel"
+                                   class="font-weight-bold"></label>
+
+                            <input asp-for="MinimumStockLevel"
+                                   class="form-control"
+                                   type="number"
+                                   step="0.001"
+                                   min="0"
+                                   max="999999999.999"
+                                   style="max-width:300px;" />
+
+                            <span asp-validation-for="MinimumStockLevel"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-group mb-0">
+
+                            <label asp-for="Description"
+                                   class="font-weight-bold"></label>
+
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4"
+                                      maxlength="1000"></textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="text-danger small"></span>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-4">
+
+                <div class="card border-left-info shadow-sm mb-4">
+                    <div class="card-body">
+
+                        <h6 class="font-weight-bold text-info">
+                            Organizasyon Yetkilendirmesi
+                        </h6>
+
+                        <p class="text-muted small mb-0">
+                            Malzeme üzerinde organizasyon seçimi
+                            yapılmaz. Organizasyonların bu
+                            malzemeyi kullanabilmesi, seçili
+                            malzeme kategorisinin organizasyon
+                            yetkilerine göre belirlenir.
+                        </p>
+
+                        <a asp-area="Admin"
+                           asp-controller="MaterialCategory"
+                           asp-action="Index"
+                           class="btn btn-outline-primary btn-sm mt-3">
+                            Kategori Yönetimi
+                        </a>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-right">
+
+                <a asp-action="Details"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-outline-secondary mr-2">
+                    Vazgeç
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i>
+                    Değişiklikleri Kaydet
+                </button>
+
+            </div>
+        </div>
+
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

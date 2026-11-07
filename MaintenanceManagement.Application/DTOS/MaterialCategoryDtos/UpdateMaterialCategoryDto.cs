@@ -32,5 +32,9 @@ namespace MaintenanceManagement.Application.DTOS.MaterialCategoryDtos
             ErrorMessage = "Açıklama en fazla 500 karakter olabilir.")]
         [Display(Name = "Açıklama")]
         public string? Description { get; set; }
+
+        [Display(Name = "Yetkili Organizasyonlar")]
+        public List<int> SelectedUnitIds { get; set; }
+            = new List<int>();
     }
 }

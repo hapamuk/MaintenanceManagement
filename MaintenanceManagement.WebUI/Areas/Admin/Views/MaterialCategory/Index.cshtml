@@ -1,0 +1,74 @@
+﻿@model IReadOnlyList<MaintenanceManagement.Application.DTOS.MaterialCategoryDtos.ResultMaterialCategoryDto>
+@{
+    ViewData["Title"] = "Malzeme Kategorileri";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var categories = Model ?? Array.Empty<MaintenanceManagement.Application.DTOS.MaterialCategoryDtos.ResultMaterialCategoryDto>();
+    var searchText = ViewBag.SearchText as string ?? string.Empty;
+    var onlyActive = ViewBag.OnlyActive is bool b && b;
+}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div><h1 class="h3 mb-1 text-gray-800">Malzeme Kategorileri</h1><p class="text-muted mb-0">Kategori ve organizasyon erişim kapsamı yönetimi</p></div>
+        <a asp-area="Admin" asp-controller="MaterialCategory" asp-action="Create" class="btn btn-primary btn-sm shadow-sm"><i class="fas fa-plus mr-1"></i> Yeni Kategori</a>
+    </div>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">@TempData["SuccessMessage"]<button type="button" class="close" data-dismiss="alert" aria-label="Kapat"><span aria-hidden="true">&times;</span></button></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">@TempData["ErrorMessage"]<button type="button" class="close" data-dismiss="alert" aria-label="Kapat"><span aria-hidden="true">&times;</span></button></div>
+    }
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form asp-area="Admin" asp-controller="MaterialCategory" asp-action="Search" method="get" class="form-row align-items-end">
+                <div class="col-lg-6 col-md-6 mb-2"><label for="searchText" class="small font-weight-bold">Kategori Ara</label><input id="searchText" name="searchText" value="@searchText" class="form-control" placeholder="Kategori adını yazın..." /></div>
+                <div class="col-lg-3 col-md-3 mb-2"><div class="custom-control custom-checkbox mt-3"><input type="checkbox" id="onlyActive" name="onlyActive" value="true" checked="@onlyActive" class="custom-control-input" /><label class="custom-control-label" for="onlyActive">Yalnızca aktif</label></div></div>
+                <div class="col-lg-3 col-md-3 mb-2"><button type="submit" class="btn btn-primary mr-1"><i class="fas fa-search"></i> Ara</button><a asp-area="Admin" asp-controller="MaterialCategory" asp-action="Index" class="btn btn-outline-secondary">Temizle</a></div>
+            </form>
+            <div class="mt-2"><a asp-action="Index" asp-area="Admin" class="btn btn-sm btn-outline-secondary mr-1">Tümü</a><a asp-action="Active" asp-area="Admin" class="btn btn-sm btn-outline-success mr-1">Aktifler</a><a asp-action="Inactive" asp-area="Admin" class="btn btn-sm btn-outline-danger">Pasifler</a></div>
+        </div>
+    </div>
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex align-items-center justify-content-between"><h6 class="m-0 font-weight-bold text-primary">Kategori Listesi</h6><span class="badge badge-light border">@categories.Count kayıt</span></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle" id="materialCategoryTable" width="100%">
+                    <thead class="thead-light"><tr><th>Kategori Adı</th><th>Açıklama</th><th>Malzeme Sayısı</th><th>Durum</th><th style="min-width:205px">İşlemler</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in categories)
+                        {
+                            <tr>
+                                <td class="font-weight-bold text-gray-800">@item.Name</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)</td>
+                                <td><a asp-area="Admin" asp-controller="MaterialCategory" asp-action="Materials" asp-route-id="@item.Id" class="badge badge-info p-2">@item.MaterialCount malzeme</a></td>
+                                <td>@if (item.IsActive) {
+                                    <span class="badge badge-success p-2">Aktif</span>
+                                } else
+                                {
+
+                                    <span class="badge badge-secondary p-2">Pasif</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.Id" asp-area="Admin" class="btn btn-sm btn-outline-info mb-1" title="Detay"><i class="fas fa-eye"></i></a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" asp-area="Admin" class="btn btn-sm btn-outline-primary mb-1" title="Düzenle"><i class="fas fa-edit"></i></a>
+                                <form asp-area="Admin" asp-controller="MaterialCategory" asp-action="ChangeStatus" method="post" class="d-inline" onsubmit="return confirm('Kategori durumunu değiştirmek istiyor musunuz?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <input type="hidden" name="isActive" value="@(item.IsActive ? "false" : "true")" />
+                                    <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-outline-warning" : "btn-outline-success") mb-1" title="@(item.IsActive ? "Pasifleştir" : "Aktifleştir")"><i class="fas @(item.IsActive ? "fa-ban" : "fa-check")"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!categories.Any())
+        {
+            <p class="text-center text-muted py-4 mb-0">Görüntülenecek malzeme kategorisi bulunamadı.</p>
+        }
+    </div>
+</div>
+</div>

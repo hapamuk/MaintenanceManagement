@@ -21,5 +21,8 @@ namespace MaintenanceManagement.Domain.Entities
 
         public ICollection<Material> Materials { get; set; } =
             new HashSet<Material>();
+
+        public ICollection<MaterialCategoryUnit> MaterialCategoryUnits
+        { get; set; } = new HashSet<MaterialCategoryUnit>();
     }
 }

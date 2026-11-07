@@ -175,5 +175,8 @@ namespace MaintenanceManagement.Application.Interfaces.Services
             CancellationToken cancellationToken = default);
 
         #endregion
+
+        Task<string> GenerateUniqueMaterialCodeAsync(
+    CancellationToken cancellationToken = default);
     }
 }
