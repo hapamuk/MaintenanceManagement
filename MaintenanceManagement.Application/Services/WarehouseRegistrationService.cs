@@ -313,28 +313,31 @@ namespace MaintenanceManagement.Application.Services
         #region GetEligiblePersonnel
 
         /// <summary>
-        /// Seçilen organizasyondaki aktif
-        /// personelleri getirir.
+        /// Yalnızca Genel Müdürlük veya Daire Başkanlığı
+        /// seçimine göre, kendisi ve aktif alt birimlerindeki
+        /// aktif personelleri listeler.
         /// </summary>
         public async Task<IReadOnlyList<WarehousePersonnelCandidateDto>>
             GetEligiblePersonnelAsync(
                 int unitId,
                 CancellationToken cancellationToken = default)
         {
-            await ValidateUnitAsync(
-                unitId,
-                cancellationToken);
+            await ValidateUnitAsync(unitId, cancellationToken);
 
-            var personnel =
-                await _warehouseRegistrationRepository
-                    .GetEligiblePersonnelByUnitAsync(
-                        unitId,
-                        cancellationToken);
+            var allowedUnitIds = await GetUnitTreeIdsAsync(
+                unitId, cancellationToken);
+
+            var personnel = await _warehouseRegistrationRepository
+                .GetEligiblePersonnelByUnitIdsAsync(
+                    allowedUnitIds,
+                    cancellationToken);
 
             return personnel
                 .Where(x =>
                     x.IsActive &&
-                    x.UnitId == unitId)
+                    allowedUnitIds.Contains(x.UnitId))
+                .GroupBy(x => x.UserId)
+                .Select(x => x.First())
                 .OrderBy(x => x.FullName)
                 .ToList();
         }
@@ -426,7 +429,8 @@ namespace MaintenanceManagement.Application.Services
         #region ValidateUnit
 
         /// <summary>
-        /// Birimin mevcut ve aktif olduğunu doğrular.
+        /// Ambar yalnızca aktif Genel Müdürlük veya aktif
+        /// Daire Başkanlığı için tanımlanabilir.
         /// </summary>
         private async Task<int> ValidateUnitAsync(
             int? unitId,
@@ -441,17 +445,40 @@ namespace MaintenanceManagement.Application.Services
             var activeUnits = await _unitService
                 .GetActiveAsync(cancellationToken);
 
-            bool unitExists = activeUnits.Any(
+            var unit = activeUnits.FirstOrDefault(
                 x => x.Id == unitId.Value);
 
-            if (!unitExists)
+            if (unit == null)
             {
                 throw new ValidationException(
-                    "Seçilen organizasyon bulunamadı " +
-                    "veya aktif değildir.");
+                    "Seçilen organizasyon bulunamadı veya aktif değildir.");
             }
 
-            return unitId.Value;
+            // Geçici uyumluluk: mevcut birim adlarına göre kontrol.
+            // OrganizationTypeEnum üyeleri kesinleştiğinde bu kontrol,
+            // birim adına değil organizasyon türüne bağlanmalıdır.
+            string name = unit.Name?.Trim() ?? string.Empty;
+
+            bool isHeadOffice = name.Equals(
+                "Genel Müdürlük",
+                StringComparison.OrdinalIgnoreCase);
+
+            bool isDepartment =
+                name.EndsWith(
+                    "Daire Başkanlığı",
+                    StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith(
+                    "Dairesi Başkanlığı",
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (!isHeadOffice && !isDepartment)
+            {
+                throw new ValidationException(
+                    "Ambar yalnızca Genel Müdürlük veya " +
+                    "Daire Başkanlıkları için tanımlanabilir.");
+            }
+
+            return unit.Id;
         }
 
         #endregion
@@ -459,8 +486,8 @@ namespace MaintenanceManagement.Application.Services
         #region ValidatePersonnel
 
         /// <summary>
-        /// Seçilen personellerin tamamının
-        /// ilgili organizasyonda aktif olduğunu kontrol eder.
+        /// Seçilen personelin ambar organizasyonunda veya
+        /// onun aktif alt birimlerinde çalıştığını doğrular.
         /// </summary>
         private async Task ValidatePersonnelAsync(
             int unitId,
@@ -473,29 +500,25 @@ namespace MaintenanceManagement.Application.Services
                     "Ambara en az bir görevli personel seçiniz.");
             }
 
-            var eligiblePersonnel =
-                await _warehouseRegistrationRepository
-                    .GetEligiblePersonnelByUnitAsync(
-                        unitId,
-                        cancellationToken);
+            var allowedUnitIds = await GetUnitTreeIdsAsync(
+                unitId, cancellationToken);
 
-            var eligibleIds = eligiblePersonnel
-                .Where(x =>
-                    x.IsActive &&
-                    x.UnitId == unitId)
+            var personnel = await _warehouseRegistrationRepository
+                .GetEligiblePersonnelByUnitIdsAsync(
+                    allowedUnitIds, cancellationToken);
+
+            var eligibleIds = personnel
+                .Where(x => x.IsActive &&
+                    allowedUnitIds.Contains(x.UnitId))
                 .Select(x => x.UserId)
                 .ToHashSet();
 
-            var invalidIds = personnelIds
-                .Where(x => !eligibleIds.Contains(x))
-                .ToList();
-
-            if (invalidIds.Count > 0)
+            if (personnelIds.Any(x => !eligibleIds.Contains(x)))
             {
                 throw new ValidationException(
-                    "Seçilen personellerden en az biri " +
-                    "ilgili organizasyonda görevli değildir " +
-                    "veya aktif değildir.");
+                    "Seçilen personellerin tamamı, ilgili " +
+                    "organizasyonda veya aktif alt birimlerinde " +
+                    "görevli ve aktif olmalıdır.");
             }
         }
 
@@ -561,5 +584,49 @@ namespace MaintenanceManagement.Application.Services
         }
 
         #endregion
+
+        #region GetUnitTreeIds
+
+        /// <summary>
+        /// Seçilen birim ve aktif alt organizasyonların ID'leri.
+        /// </summary>
+        private async Task<HashSet<int>> GetUnitTreeIdsAsync(
+            int rootUnitId,
+            CancellationToken cancellationToken = default)
+        {
+            var units = await _unitService
+                .GetActiveAsync(cancellationToken);
+
+            var result = new HashSet<int>();
+            var pending = new Queue<int>();
+
+            pending.Enqueue(rootUnitId);
+
+            while (pending.Count > 0)
+            {
+                int currentId = pending.Dequeue();
+
+                if (!result.Add(currentId))
+                {
+                    continue;
+                }
+
+                var childIds = units
+                    .Where(x => x.ParentUnitId == currentId)
+                    .Select(x => x.Id);
+
+                foreach (int childId in childIds)
+                {
+                    if (!result.Contains(childId))
+                    {
+                        pending.Enqueue(childId);
+                    }
+                }
+            }
+
+            return result;
+        }
+        #endregion
+
     }
 }

@@ -169,11 +169,23 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            ViewBag.AssignedPersonnelIds =
-                await _warehouseRegistrationService
-                    .GetAssignedPersonnelIdsAsync(
-                        id,
-                        cancellationToken);
+            var assignedIds = await _warehouseRegistrationService
+                .GetAssignedPersonnelIdsAsync(id, cancellationToken);
+            ViewBag.AssignedPersonnelIds = assignedIds;
+
+            if (warehouse.UnitId.HasValue &&
+                await IsSelectableWarehouseUnitAsync(warehouse.UnitId, cancellationToken))
+            {
+                var candidates = await _warehouseRegistrationService
+                    .GetEligiblePersonnelAsync(warehouse.UnitId.Value, cancellationToken);
+                var unitRows = await _unitService.GetActiveAsync(cancellationToken);
+                var unitNames = unitRows.ToDictionary(x => x.Id, x => x.Name);
+                ViewBag.AssignedPersonnelNames = candidates
+                    .Where(x => assignedIds.Contains(x.UserId))
+                    .ToDictionary(x => x.UserId, x => x.FullName + " — " +
+                        (unitNames.TryGetValue(x.UnitId, out var unitName)
+                            ? unitName : "Birim adı bulunamadı"));
+            }
 
             return View(warehouse);
         }
@@ -199,6 +211,7 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             var model = new CreateWarehouseDto
             {
                 Code = warehouseCode,
+                IsActive = false,
 
                 SelectedPersonnelIds = new List<int>()
             };
@@ -227,6 +240,15 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
                 ModelState.AddModelError(
                     nameof(model.UnitId),
                     "Ambar için bir organizasyon seçiniz.");
+            }
+
+            if (model.UnitId.HasValue && model.UnitId.Value > 0 &&
+                !await IsSelectableWarehouseUnitAsync(
+                    model.UnitId, cancellationToken))
+            {
+                ModelState.AddModelError(
+                    nameof(model.UnitId),
+                    "Ambar yalnızca Genel Müdürlük veya Daire Başkanlığına tanımlanabilir.");
             }
 
             if (!ModelState.IsValid)
@@ -447,6 +469,15 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
                     ModelState.AddModelError(
                         nameof(model.UnitId),
                         "Ambar için bir organizasyon seçiniz.");
+                }
+
+                if (model.UnitId.HasValue && model.UnitId.Value > 0 &&
+                    !await IsSelectableWarehouseUnitAsync(
+                        model.UnitId, cancellationToken))
+                {
+                    ModelState.AddModelError(
+                        nameof(model.UnitId),
+                        "Ambar yalnızca Genel Müdürlük veya Daire Başkanlığına tanımlanabilir.");
                 }
 
                 if (!ModelState.IsValid)
@@ -717,30 +748,54 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
         #region GetPersonnelByUnit
 
         /// <summary>
-        /// Seçilen organizasyondaki uygun
-        /// personelleri JSON olarak getirir.
+        /// Yalnızca Genel Müdürlük veya Daire Başkanlığı seçilirse
+        /// ilgili birim ve aktif alt birimlerinin personel adaylarını getirir.
+        /// Alt birim kapsamı WarehouseRegistrationService tarafından sağlanır.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetPersonnelByUnit(
             int unitId,
             CancellationToken cancellationToken = default)
         {
-            if (unitId <= 0)
+            if (!await IsSelectableWarehouseUnitAsync(
+                    unitId, cancellationToken))
             {
-                return BadRequest();
+                return BadRequest(new
+                {
+                    message = "Personel seçimi için Genel Müdürlük veya Daire Başkanlığı seçiniz."
+                });
             }
 
-            var personnel =
-                await _warehouseRegistrationService
+            try
+            {
+                var personnel = await _warehouseRegistrationService
                     .GetEligiblePersonnelAsync(
                         unitId,
                         cancellationToken);
 
-            return Json(personnel.Select(x => new
+                // Personelin bağlı olduğu alt birimin adını da gönder.
+                // Böylece Razor kartlarında "Birim #2" gibi ID gösterilmez.
+                var units = await _unitService.GetActiveAsync(cancellationToken);
+                var unitNames = units.ToDictionary(x => x.Id, x => x.Name);
+
+                return Json(personnel.Select(x => new
+                {
+                    id = x.UserId,
+                    name = x.FullName,
+                    unitId = x.UnitId,
+                    unitName = unitNames.TryGetValue(x.UnitId, out var unitName)
+                        ? unitName
+                        : "Birim adı bulunamadı"
+                }));
+            }
+            catch (ValidationException ex)
             {
-                id = x.UserId,
-                name = x.FullName
-            }));
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         #endregion
@@ -801,25 +856,109 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
 
         #endregion
 
+        #region IsWarehouseOrganizationName
+
+        /// <summary>
+        /// Şimdilik mevcut isimlendirme standardına göre ambar açılabilecek
+        /// birimleri belirler. Kalıcı çözüm OrganizationType üzerinden olmalıdır.
+        /// </summary>
+        private static bool IsWarehouseOrganizationName(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return false;
+            }
+
+            string normalizedName = name.Trim();
+
+            return normalizedName.Equals(
+                       "Genel Müdürlük",
+                       StringComparison.OrdinalIgnoreCase)
+                   || normalizedName.EndsWith(
+                       "Dairesi Başkanlığı",
+                       StringComparison.OrdinalIgnoreCase)
+                   || normalizedName.EndsWith(
+                       "Daire Başkanlığı",
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        #endregion
+
+        #region IsSelectableWarehouseUnit
+
+        /// <summary>
+        /// Ambar tanıtımında seçilebilecek aktif birimi kontrol eder.
+        /// Kullanıcı yalnızca istemci tarafındaki filtreye güvenemez.
+        /// </summary>
+        private async Task<bool> IsSelectableWarehouseUnitAsync(
+            int? unitId,
+            CancellationToken cancellationToken = default)
+        {
+            if (!unitId.HasValue || unitId.Value <= 0)
+            {
+                return false;
+            }
+
+            var units = await _unitService
+                .GetActiveAsync(cancellationToken);
+
+            return units.Any(x =>
+                x.Id == unitId.Value &&
+                IsWarehouseOrganizationName(x.Name));
+        }
+
+        #endregion
+
         #region LoadOrganizations
 
         /// <summary>
-        /// Birim Yönetimi'ndeki merkezi organizasyon
-        /// hiyerarşisini sayfaya aktarır.
+        /// Ambar sahibi olabilecek aktif Genel Müdürlük ve Daire Başkanlıkları.
+        /// ParentUnitId, yalnızca seçilebilir üst ataya bağlanarak korunur.
+        /// Müdürlük/şeflik ambar sahibi olarak listelenmez.
         /// </summary>
         private async Task LoadOrganizationsAsync(
             CancellationToken cancellationToken = default)
         {
-            var units = await _unitService
-                .GetActiveAsync(cancellationToken);
+            var allUnits = (await _unitService
+                .GetActiveAsync(cancellationToken)).ToList();
 
-            ViewBag.OrganizationNodes = units
+            var selectable = allUnits
+                .Where(x => IsWarehouseOrganizationName(x.Name))
+                .ToList();
+
+            var selectableIds = selectable
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            var byId = allUnits.ToDictionary(x => x.Id);
+
+            int? FindSelectableParent(int id)
+            {
+                var visited = new HashSet<int> { id };
+                var parentId = byId[id].ParentUnitId;
+
+                while (parentId.HasValue &&
+                       visited.Add(parentId.Value) &&
+                       byId.TryGetValue(parentId.Value, out var parent))
+                {
+                    if (selectableIds.Contains(parent.Id))
+                        return parent.Id;
+
+                    parentId = parent.ParentUnitId;
+                }
+
+                return null;
+            }
+
+            ViewBag.OrganizationNodes = selectable
                 .Select(x => new OrganizationTreeNodeVm
                 {
                     Id = x.Id,
-                    ParentUnitId = x.ParentUnitId,
-                    Name = x.Name
+                    Name = x.Name,
+                    ParentUnitId = FindSelectableParent(x.Id)
                 })
+                .OrderBy(x => x.ParentUnitId.HasValue ? 1 : 0)
+                .ThenBy(x => x.Name)
                 .ToList();
         }
 
@@ -833,13 +972,19 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
         {
             await LoadOrganizationsAsync(cancellationToken);
 
-            if (model.UnitId.HasValue)
+            if (await IsSelectableWarehouseUnitAsync(
+                    model.UnitId, cancellationToken))
             {
                 ViewBag.EligiblePersonnel =
                     await _warehouseRegistrationService
                         .GetEligiblePersonnelAsync(
-                            model.UnitId.Value,
+                            model.UnitId!.Value,
                             cancellationToken);
+            }
+            else
+            {
+                ViewBag.EligiblePersonnel =
+                    Array.Empty<WarehousePersonnelCandidateDto>();
             }
         }
 
@@ -853,13 +998,19 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
         {
             await LoadOrganizationsAsync(cancellationToken);
 
-            if (model.UnitId.HasValue)
+            if (await IsSelectableWarehouseUnitAsync(
+                    model.UnitId, cancellationToken))
             {
                 ViewBag.EligiblePersonnel =
                     await _warehouseRegistrationService
                         .GetEligiblePersonnelAsync(
-                            model.UnitId.Value,
+                            model.UnitId!.Value,
                             cancellationToken);
+            }
+            else
+            {
+                ViewBag.EligiblePersonnel =
+                    Array.Empty<WarehousePersonnelCandidateDto>();
             }
         }
 

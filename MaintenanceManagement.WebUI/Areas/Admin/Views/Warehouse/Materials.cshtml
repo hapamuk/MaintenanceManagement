@@ -1,0 +1,13 @@
+@model IReadOnlyList<MaintenanceManagement.Application.DTOS.MaterialDtos.ResultMaterialDto>
+@{
+    ViewData["Title"] = "Ambardaki Malzemeler";
+    var items = Model?.Cast<object>().ToList() ?? new List<object>();
+    var properties = typeof(MaintenanceManagement.Application.DTOS.MaterialDtos.ResultMaterialDto).GetProperties()
+        .Where(p => p.CanRead && (p.PropertyType.IsPrimitive || p.PropertyType == typeof(string) || p.PropertyType == typeof(decimal) || p.PropertyType == typeof(decimal?) || p.PropertyType == typeof(DateTime) || p.PropertyType == typeof(DateTime?) || p.PropertyType == typeof(bool?) || p.PropertyType.IsEnum))
+        .Take(9).ToList();
+    int warehouseId = ViewBag.WarehouseId is int i ? i : 0;
+}
+@{ Layout = "~/Views/Shared/_AdminLayout.cshtml"; }
+@section Styles { <link rel="stylesheet" href="~/css/warehouse-wizard.css" asp-append-version="true" /> }
+<div class="container-fluid wh-page"><div class="wh-header d-flex justify-content-between align-items-center flex-wrap"><div><h1 class="wh-title"><i class="fas fa-cubes text-primary mr-2"></i>Ambardaki Malzemeler</h1><p class="wh-subtitle">@ViewBag.WarehouseName</p></div><a asp-action="Details" asp-route-id="@warehouseId" class="btn btn-outline-secondary mt-2">Ambar Detayına Dön</a></div>
+<div class="wh-tile"><div class="wh-tile-header"><i class="fas fa-list"></i>Ambardaki Malzemeler <span class="badge badge-light ml-2">@items.Count kayıt</span></div><div class="wh-tile-body"><div class="table-responsive"><table class="table table-hover table-bordered"><thead class="thead-light"><tr>@foreach(var p in properties){<th>@(Attribute.GetCustomAttribute(p, typeof(System.ComponentModel.DataAnnotations.DisplayAttribute)) is System.ComponentModel.DataAnnotations.DisplayAttribute d ? (d.Name ?? p.Name) : p.Name)</th>}</tr></thead><tbody>@foreach(var item in items){<tr>@foreach(var p in properties){<td>@(p.GetValue(item)?.ToString() ?? "—")</td>}</tr>}@if(!items.Any()){<tr><td colspan="@Math.Max(properties.Count,1)" class="text-center text-muted py-4">Kayıt bulunamadı.</td></tr>}</tbody></table></div></div></div></div>

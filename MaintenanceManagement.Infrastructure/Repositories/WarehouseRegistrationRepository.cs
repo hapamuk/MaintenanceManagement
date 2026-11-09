@@ -49,7 +49,7 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                     UnitId = unitId,
                     Location = TrimOrNull(dto.Location),
                     Description = TrimOrNull(dto.Description),
-                    IsActive = true,
+                    IsActive = dto.IsActive,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -185,6 +185,34 @@ namespace MaintenanceManagement.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        /// <summary>
+        /// Birim ve alt birimlerindeki aktif personelleri getirir.
+        /// </summary>
+        public async Task<IReadOnlyList<WarehousePersonnelCandidateDto>>
+            GetEligiblePersonnelByUnitIdsAsync(
+                IReadOnlyCollection<int> unitIds,
+                CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(unitIds);
+
+            var ids = unitIds.Where(x => x > 0).Distinct().ToArray();
+            if (ids.Length == 0)
+                return new List<WarehousePersonnelCandidateDto>();
+
+            return await _context.Users.AsNoTracking()
+                .Where(x => x.IsActive && ids.Contains(x.PrimaryUnitId))
+                .OrderBy(x => x.FirstName)
+                .ThenBy(x => x.LastName)
+                .Select(x => new WarehousePersonnelCandidateDto
+                {
+                    UserId = x.Id,
+                    FullName = x.FirstName + " " + x.LastName,
+                    UnitId = x.PrimaryUnitId,
+                    IsActive = x.IsActive
+                })
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<IReadOnlyList<int>> GetAssignedPersonnelIdsAsync(
             int warehouseId,
             CancellationToken cancellationToken = default)
@@ -202,10 +230,22 @@ namespace MaintenanceManagement.Infrastructure.Repositories
 
         private async Task EnsureActiveUnitAsync(int unitId, CancellationToken ct)
         {
-            bool exists = await _context.Units.AsNoTracking()
-                .AnyAsync(x => x.Id == unitId && x.IsActive, ct);
-            if (!exists)
+            var unit = await _context.Units.AsNoTracking()
+                .Where(x => x.Id == unitId && x.IsActive)
+                .Select(x => new { x.Name })
+                .SingleOrDefaultAsync(ct);
+
+            if (unit == null)
                 throw new ValidationException("Seçilen organizasyon bulunamadı veya pasif.");
+
+            var name = unit.Name?.Trim() ?? string.Empty;
+            bool allowed = name.Equals("Genel Müdürlük", StringComparison.OrdinalIgnoreCase)
+                || name.EndsWith("Daire Başkanlığı", StringComparison.OrdinalIgnoreCase)
+                || name.EndsWith("Dairesi Başkanlığı", StringComparison.OrdinalIgnoreCase);
+
+            if (!allowed)
+                throw new ValidationException(
+                    "Ambar yalnızca Genel Müdürlük veya Daire Başkanlıklarına bağlanabilir.");
         }
 
         private async Task EnsureEligiblePersonnelAsync(
@@ -214,9 +254,33 @@ namespace MaintenanceManagement.Infrastructure.Repositories
             if (ids.Count == 0)
                 throw new ValidationException("En az bir görevli personel seçiniz.");
 
+            // Ambar birimi + bütün aktif alt birimlerini bul.
+            var activeUnits = await _context.Units.AsNoTracking()
+                .Where(x => x.IsActive)
+                .Select(x => new { x.Id, x.ParentUnitId })
+                .ToListAsync(ct);
+
+            var allowedUnitIds = new HashSet<int>();
+            var pending = new Queue<int>();
+            pending.Enqueue(unitId);
+
+            while (pending.Count > 0)
+            {
+                int currentId = pending.Dequeue();
+                if (!allowedUnitIds.Add(currentId)) continue;
+
+                foreach (int childId in activeUnits
+                    .Where(x => x.ParentUnitId == currentId)
+                    .Select(x => x.Id))
+                {
+                    if (!allowedUnitIds.Contains(childId))
+                        pending.Enqueue(childId);
+                }
+            }
+
             int matched = await _context.Users.AsNoTracking()
                 .CountAsync(x => ids.Contains(x.Id) &&
-                    x.PrimaryUnitId == unitId && x.IsActive, ct);
+                    allowedUnitIds.Contains(x.PrimaryUnitId) && x.IsActive, ct);
 
             if (matched != ids.Count)
                 throw new ValidationException(

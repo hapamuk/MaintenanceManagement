@@ -1,0 +1,128 @@
+@model MaintenanceManagement.Application.DTOS.WarehouseDtos.CreateWarehouseDto
+@using MaintenanceManagement.WebUI.Areas.Admin.Models
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Yeni Ambar Tanıtımı";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var orgs = (ViewBag.OrganizationNodes as IEnumerable<OrganizationTreeNodeVm> ?? Enumerable.Empty<OrganizationTreeNodeVm>()).ToList();
+    var selectedIds = Model.SelectedPersonnelIds ?? new List<int>();
+    var selectedJson = JsonSerializer.Serialize(selectedIds);
+    var isEdit = false;
+}
+@section Styles { <link rel="stylesheet" href="~/css/warehouse-gif.css" asp-append-version="true" /> }
+<div class="container-fluid wh2-page" id="warehouseWizardV2"
+     data-personnel-url="@Url.Action("GetPersonnelByUnit", "Warehouse", new { area = "Admin" })"
+     data-org-id="@Model.UnitId" data-selected-ids="@selectedJson"
+     data-server-error="@(ViewData.ModelState.ErrorCount > 0 ? "true" : "false")"
+     data-is-edit="@(isEdit ? "true" : "false")">
+    <header class="wh2-heading">
+        <div class="wh2-breadcrumb"><a asp-controller="Warehouse" asp-action="Index" asp-area="Admin">Stok ve Ambar</a> <i class="fas fa-chevron-right"></i> Ambar Tanıtımı</div>
+        <div class="wh2-title-row">
+            <span class="wh2-title-icon"><i class="fas fa-warehouse"></i></span>
+            <div><h1>Yeni Ambar Tanıtımı</h1><p>Ambar bilgileri, organizasyon bağlantısı ve personel yetkilendirmesi</p></div>
+        </div>
+    </header>
+    <div class="row wh2-layout">
+      <main class="col-xl-9 col-lg-8 wh2-main">
+        <div class="wh2-steps" aria-label="Ambar kayıt aşamaları">
+          <div class="wh2-step" data-step-mark="0"><span class="wh2-step-circle">1</span><span>Ambar Bilgileri</span></div>
+          <div class="wh2-step" data-step-mark="1"><span class="wh2-step-circle">2</span><span>Bağlı Organizasyon</span></div>
+          <div class="wh2-step" data-step-mark="2"><span class="wh2-step-circle">3</span><span>Personel Yetkilendirmesi</span></div>
+          <div class="wh2-step" data-step-mark="3"><span class="wh2-step-circle">4</span><span>Önizleme ve Kaydet</span></div>
+        </div>
+        <div class="wh2-info"><i class="fas fa-info-circle"></i> Ambar kodu sistem tarafından otomatik oluşturulur ve kullanıcı tarafından değiştirilemez.</div>
+        <div asp-validation-summary="All" class="text-danger small mb-3" id="wh2ServerErrors"></div>
+        <form asp-area="Admin" asp-controller="Warehouse" asp-action="Create"  method="post" autocomplete="off" id="wh2Form" novalidate>
+          @Html.AntiForgeryToken()
+          
+          <input asp-for="UnitId" type="hidden" id="wh2UnitId" />
+          <div id="wh2SelectedHidden"></div>
+          <section class="wh2-stage" data-stage="0">
+            <div class="wh2-stage-card">
+              <div class="wh2-card-head"><div class="wh2-card-head-title"><span class="wh2-round-number">1</span><div><h2>Ambar Bilgileri</h2><p>Yeni ambarın temel bilgilerini girin.</p></div></div></div>
+              <div class="wh2-field-grid">
+                <div class="wh2-field"><label asp-for="Code">Ambar Kodu</label><div class="wh2-readonly"><i class="fas fa-lock"></i><input asp-for="Code" id="wh2Code" readonly aria-readonly="true" /></div><small>Sistem kodudur; değiştirilemez.</small><span asp-validation-for="Code" class="text-danger small"></span></div>
+                <div class="wh2-field"><label asp-for="Name">Ambar Adı <span class="text-danger">*</span></label><input asp-for="Name" id="wh2Name" class="form-control" maxlength="150" placeholder="Örn. Bilgi İşlem Dairesi Ambarı" /><span asp-validation-for="Name" class="text-danger small"></span></div>
+                <div class="wh2-field"><label asp-for="Location">Ambar Konumu</label><input asp-for="Location" id="wh2Location" class="form-control" maxlength="250" placeholder="Örn. A Blok, Zemin Kat" /></div>
+                <div class="wh2-field wh2-field-wide"><label asp-for="Description">Açıklama</label><textarea asp-for="Description" id="wh2Description" class="form-control" rows="3" maxlength="500" placeholder="Ambar hakkında kısa açıklama..."></textarea></div>
+                <div class="wh2-field wh2-field-wide">
+                  <label asp-for="IsActive">Ambar Durumu <span class="text-danger">*</span></label>
+                  <div class="wh2-status-switch-box" id="wh2StatusBox">
+                    <div class="wh2-status-switch-line">
+                      <div class="custom-control custom-switch">
+                        <input asp-for="IsActive" type="checkbox" class="custom-control-input" id="wh2IsActive" />
+                        <label class="custom-control-label" for="wh2IsActive">Ambar Aktif Olsun</label>
+                      </div>
+                      <span class="wh2-status-badge" id="wh2StatusBadge" aria-live="polite">Pasif</span>
+                    </div>
+                    <small class="wh2-status-note" id="wh2StatusHelp">Ambar pasif olarak oluşturulacaktır.</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="wh2-stage" data-stage="1" hidden>
+            <div class="wh2-stage-card">
+              <div class="wh2-card-head"><div class="wh2-card-head-title"><span class="wh2-round-number">2</span><div><h2>Bağlı Organizasyon</h2><p>Ambarın bağlı olacağı organizasyonu seçin.</p></div></div></div>
+              <div class="wh2-field"><label for="wh2OrgSearch">Organizasyon Ara</label><div class="wh2-search"><i class="fas fa-search"></i><input type="search" class="form-control" id="wh2OrgSearch" placeholder="Genel Müdürlük veya Daire Başkanlığı ara..." /></div></div>
+              <div class="wh2-org-list wh2-org-tree" role="radiogroup" aria-label="Ambar organizasyonu">
+                @foreach (var org in orgs)
+                {
+                  bool isChild = org.ParentUnitId.HasValue;
+                  <button type="button"
+                          class="wh2-org-item @(isChild ? "wh2-org-child" : "wh2-org-root") @(Model.UnitId == org.Id ? "is-selected" : "")"
+                          data-org-option data-unit-id="@org.Id" data-unit-name="@org.Name"
+                          role="radio" aria-checked="@(Model.UnitId == org.Id ? "true" : "false")">
+                    <span class="wh2-org-tree-branch" aria-hidden="true">@(isChild ? "└" : "")</span>
+                    <span class="wh2-radio-dot" aria-hidden="true"></span>
+                    <i class="fas @(isChild ? "fa-building" : "fa-sitemap") wh2-org-symbol"></i>
+                    <span class="wh2-org-name">@org.Name</span>
+                    <span class="wh2-org-selected"><i class="fas fa-check-circle"></i> Seçildi</span>
+                  </button>
+                }
+                @if (!orgs.Any()) { <p class="wh2-empty">Seçilebilir Genel Müdürlük veya Daire Başkanlığı bulunamadı.</p> }
+              </div>
+              <span asp-validation-for="UnitId" class="text-danger small"></span>
+              <div class="wh2-hint"><i class="fas fa-info-circle"></i> Yalnızca Genel Müdürlük ve Daire Başkanlıkları için ambar tanımlanabilir. Alt birimlerde çalışan personeller sonraki aşamada seçilebilir.</div>
+            </div>
+          </section>
+          <section class="wh2-stage" data-stage="2" hidden>
+            <div class="wh2-stage-card">
+              <div class="wh2-card-head"><div class="wh2-card-head-title"><span class="wh2-round-number">3</span><div><h2>Personel Yetkilendirmesi</h2><p>Seçilen organizasyon ve alt birimlerinde çalışan personellerden yetkilileri belirleyin.</p></div></div></div>
+              <div class="wh2-transfer">
+                <div class="wh2-transfer-column">
+                  <h3><i class="fas fa-users"></i> Uygun Personeller <span class="wh2-count" data-available-count>0</span></h3>
+                  <div class="wh2-search"><i class="fas fa-search"></i><input id="wh2PeopleSearch" class="form-control" placeholder="Personel ara..." /></div>
+                  <div class="wh2-person-list" id="wh2AvailablePeople" aria-live="polite"></div>
+                </div>
+                <div class="wh2-transfer-symbols" aria-hidden="true"><span><i class="fas fa-arrow-right"></i></span><span><i class="fas fa-arrow-left"></i></span></div>
+                <div class="wh2-transfer-column">
+                  <h3><i class="fas fa-user-shield"></i> Seçilen Yetkililer <span class="wh2-count" data-selected-count>0</span></h3>
+                  <div class="wh2-person-list wh2-person-list-selected" id="wh2SelectedPeople" aria-live="polite"></div>
+                </div>
+              </div>
+              <div class="wh2-hint"><i class="fas fa-shield-alt"></i> Bir personelin alt birimde çalışması otomatik yetki vermez. Yalnızca seçtiğiniz kişiler ambara atanır.</div>
+            </div>
+          </section>
+          <section class="wh2-stage" data-stage="3" hidden>
+            <div class="wh2-stage-card">
+              <div class="wh2-card-head"><div class="wh2-card-head-title"><span class="wh2-round-number">4</span><div><h2>Önizleme ve Kaydet</h2><p>Tüm bilgileri gözden geçirin ve kayıt işlemini tamamlayın.</p></div></div></div>
+              <div class="wh2-review-section"><h3><i class="fas fa-warehouse"></i> Ambar Bilgileri</h3><div class="wh2-review-row"><span>Kod</span><strong data-code-preview></strong></div><div class="wh2-review-row"><span>Ambar Adı</span><strong data-name-preview></strong></div><div class="wh2-review-row"><span>Konum</span><strong data-location-preview></strong></div><div class="wh2-review-row"><span>Açıklama</span><strong data-description-preview></strong></div><div class="wh2-review-row"><span>Durum</span><strong data-status-preview>Pasif</strong></div></div>
+              <div class="wh2-review-section"><h3><i class="fas fa-sitemap"></i> Bağlı Organizasyon</h3><strong data-org-preview></strong></div>
+              <div class="wh2-review-section"><h3><i class="fas fa-user-shield"></i> Yetkili Personeller (<span data-selected-count>0</span>)</h3><div id="wh2PreviewPeople"></div></div>
+              <div class="wh2-hint wh2-hint-green"><i class="fas fa-check-circle"></i> Bilgiler doğruysa “Kaydet” butonuyla ambarı oluşturabilirsiniz. Ambar, seçtiğiniz aktif/pasif durumuyla kaydedilecektir.</div>
+            </div>
+          </section>
+          <div class="wh2-error" id="wh2Error" role="alert" aria-live="assertive" hidden></div>
+          <div class="wh2-actions"><div><button type="button" class="btn btn-outline-secondary" id="wh2Prev" hidden><i class="fas fa-arrow-left mr-2"></i> Geri</button></div><div class="wh2-actions-right"><a class="btn btn-light border" asp-action="Index" asp-controller="Warehouse" asp-area="Admin">Vazgeç</a><button type="button" class="btn wh2-primary" id="wh2Next">İleri <i class="fas fa-arrow-right ml-2"></i></button><button type="submit" class="btn btn-success" id="wh2Save" hidden><i class="fas fa-save mr-2"></i> Kaydet</button></div></div>
+        </form>
+      </main>
+      <aside class="col-xl-3 col-lg-4 wh2-aside-col"><div class="wh2-aside">
+        <div class="wh2-warehouse-art"><img src="~/images/warehouse-wizard-illustration.svg" alt="Ambar çizimi" /></div>
+        <h2>Ambar Tanıtım Sihirbazı</h2><p>Ambarı tanımlamak için adımları sırayla tamamlayın.</p>
+        <ol class="wh2-aside-steps"><li data-aside-step="0"><span class="wh2-aside-index">1</span><div><b>Ambar Bilgileri</b><small>Temel bilgiler ve durum.</small></div></li><li data-aside-step="1"><span class="wh2-aside-index">2</span><div><b>Bağlı Organizasyon</b><small>Genel Müdürlük veya daire.</small></div></li><li data-aside-step="2"><span class="wh2-aside-index">3</span><div><b>Personel Yetkilendirmesi</b><small>Alt birimler de dahil.</small></div></li><li data-aside-step="3"><span class="wh2-aside-index">4</span><div><b>Önizleme ve Kaydet</b><small>Kayıt öncesi son kontrol.</small></div></li></ol>
+        <div class="wh2-aside-summary"><h3><i class="fas fa-clipboard-list"></i> Özet Bilgiler</h3><div><small>Seçili Organizasyon</small><strong data-org-preview>Henüz seçilmedi</strong></div><div><small>Seçilen Personel</small><strong><span data-selected-count>0</span> Yetkili</strong></div></div>
+      </div></aside>
+    </div>
+</div>
+@section Scripts { <script src="~/js/warehouse-gif.js" asp-append-version="true"></script> }
