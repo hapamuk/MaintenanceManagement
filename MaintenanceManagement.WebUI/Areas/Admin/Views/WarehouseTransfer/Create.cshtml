@@ -1,0 +1,30 @@
+@model MaintenanceManagement.Application.DTOs.WarehouseOperations.WarehousePageVm
+@{ Layout="~/Views/Shared/_AdminLayout.cshtml"; ViewData["Title"]="Ambarlar Arası Transfer"; }
+@section Styles {<link rel="stylesheet" href="~/css/stock-management.css" asp-append-version="true" />}
+<div class="container-fluid sm-page">
+<div class="sm-heading"><div class="sm-heading-icon"><i class="fas fa-exchange-alt"></i></div><div><h1>Ambarlar Arası Transfer</h1><p>Kaynakta yetkiniz olmalı; hedef ambar kategori kapsamına uygun olmalı.</p></div></div>
+<partial name="~/Areas/Admin/Views/StockMovement/_Menu.cshtml" />
+<div class="row"><div class="col-lg-8"><div class="sm-card p-4">
+<form method="post" asp-area="Admin" asp-controller="WarehouseTransfer" asp-action="Create">
+@Html.AntiForgeryToken()
+<div asp-validation-summary="All" class="text-danger mb-3"></div>
+<div class="form-group"><label class="font-weight-bold">Kaynak Ambar — Yetkili olduğunuz ambarlar</label>
+<select name="SourceWarehouseId" id="transferSource" class="form-control" required data-material-url="@Url.Action("MaterialsByWarehouse","StockMovement",new {area="Admin"})" data-selected-material="@Model.TransferInput.MaterialId">
+<option value="">Kaynak ambar seçiniz...</option>
+@foreach(var group in Model.Warehouses.GroupBy(x=>x.OrganizationPath))
+{
+<optgroup label="@group.Key">@foreach(var w in group){<option value="@w.Id" selected="@(Model.TransferInput.SourceWarehouseId==w.Id)">@w.Text</option>}</optgroup>
+}
+</select></div>
+<div class="form-group"><label class="font-weight-bold">Malzeme — Kaynak ambardaki uygun ve stoklu malzemeler</label>
+<select name="MaterialId" id="transferMaterial" class="form-control" required><option value="">Önce kaynak ambarı seçiniz...</option></select></div>
+<div class="form-group"><label class="font-weight-bold">Hedef Ambar — Bütün organizasyonlardan uygun ambarlar</label>
+<select name="TargetWarehouseId" id="transferTarget" class="form-control" required data-target-url="@Url.Action("Targets","WarehouseTransfer",new {area="Admin"})" data-selected-target="@Model.TransferInput.TargetWarehouseId"><option value="">Önce malzeme seçiniz...</option></select>
+<small class="text-muted">Hedef ambara personel atamanız gerekmez. Kategorisi uygun olmayan ambarlar listelenmez.</small></div>
+<div id="transferScopeError" class="text-danger small mb-2" role="alert"></div>
+<div class="form-group"><label class="font-weight-bold">Miktar</label><input name="Quantity" type="number" class="form-control" min="0.0001" max="999999999" step="0.0001" value="@(Model.TransferInput.Quantity>0?Model.TransferInput.Quantity.ToString(System.Globalization.CultureInfo.InvariantCulture):"")" required /></div>
+<div class="form-group"><label class="font-weight-bold">Açıklama</label><textarea name="Description" maxlength="300" class="form-control" rows="3">@Model.TransferInput.Description</textarea></div>
+<div class="text-right"><a asp-action="Index" class="btn btn-light border mr-2">Vazgeç</a><button class="btn btn-primary" type="submit" onclick="return confirm('Transfer kaydedilsin mi?');">Transferi Tamamla</button></div>
+</form></div></div><div class="col-lg-4"><div class="sm-card p-4"><h6 class="font-weight-bold">Transfer Kuralları</h6><p class="text-muted small">Kaynak ambarda görevli olmalısınız. Hedef ambar farklı daireye bağlı olabilir, ancak malzeme kategorisinin organizasyon kapsamına uymalıdır.</p><p class="text-muted small">Kaynak çıkışı ve hedef girişi tek transaction içinde kaydedilir.</p></div></div></div>
+</div>
+@section Scripts {<script src="~/js/warehouse-scope.js" asp-append-version="true"></script>}

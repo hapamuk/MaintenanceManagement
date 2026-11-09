@@ -1,0 +1,12 @@
+@{ Layout="~/Views/Shared/_AdminLayout.cshtml"; }
+@section Styles {<link rel="stylesheet" href="~/css/stock-management.css" asp-append-version="true" />}
+
+@model MaintenanceManagement.Application.DTOs.WarehouseOperations.WarehousePageVm
+@{ ViewData["Title"]="Ambar Transferleri"; }
+<div class="container-fluid sm-page">
+<div class="sm-heading"><div class="sm-heading-icon"><i class="fas fa-exchange-alt"></i></div><div><h1>Ambar Transferleri</h1><p>Kaynak ve hedef ambar hareketlerini ortak referansla izleyin.</p></div></div>
+
+@if(TempData["SuccessMessage"]!=null){<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+<partial name="~/Areas/Admin/Views/StockMovement/_Menu.cshtml" />
+<div class="text-right mb-3"><a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus mr-1"></i>Yeni Transfer</a></div>
+<div class="sm-card"><div class="sm-card-title">Transfer Hareketleri</div><partial name="~/Areas/Admin/Views/StockMovement/_Movements.cshtml" model="Model.Movements" /></div></div>

@@ -1,4 +1,4 @@
-﻿@{
+@{
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
     var action = ViewContext.RouteData.Values["action"]?.ToString();
 
@@ -20,7 +20,9 @@
     // Ambar Tanıtımı ve Ambar Hareketleri aynı menüye bağlıdır.
     bool isWarehouseManagement =
         controller == "Warehouse" ||
-        controller == "StockMovement";
+        controller == "StockMovement" ||
+        controller == "WarehouseTransfer" ||
+        controller == "WarehouseStock";
 
     // Birim Yönetimi
     bool isUnitManagement = controller == "Unit";
@@ -66,6 +68,11 @@
     <link href="~/tema/css/sb-admin-2.min.css"
           rel="stylesheet">
 
+    <style>
+      /* Yalnızca Ambar Yönetimi menüsü: uzun metinler taşmasın. */
+      #collapseWarehouses .collapse-inner { max-width: 100%; }
+      #collapseWarehouses .collapse-item { white-space: normal; line-height: 1.35; padding-top: .55rem; padding-bottom: .55rem; }
+    </style>
     @RenderSection("Styles", required: false)
 </head>
 
@@ -305,33 +312,45 @@
                             Ambar Yönetimi
                         </h6>
 
-                        <a class="collapse-item"
+                        <a class="collapse-item @(controller == "Warehouse" ? "active" : "")"
                            asp-area="Admin"
                            asp-controller="Warehouse"
                            asp-action="Index">
-
-                            Ambar Listesi
-
-                        </a>
-
-                        <a class="collapse-item"
-                           asp-area="Admin"
-                           asp-controller="Warehouse"
-                           asp-action="Create">
 
                             Ambar Tanıtımı
 
                         </a>
 
-                        <a class="collapse-item @(controller == "StockMovement" ? "active" : "")"
-                           asp-area="Admin"
-                           asp-controller="StockMovement"
-                           asp-action="Index">
-
-                            Ambar Hareketleri
-
+                        <a class="collapse-item @(controller == "StockMovement" && action == "Index" ? "active" : "")"
+                           asp-area="Admin" asp-controller="StockMovement" asp-action="Index">
+                            <i class="fas fa-th-large fa-fw mr-1"></i> Ambar Hareketleri
                         </a>
-
+                        <div class="pl-3" style="border-left:2px solid #e8ecf5;margin-left:17px;">
+                            <a class="collapse-item @(controller=="StockMovement" && action=="CreateIn" ? "active" : "")"
+                               asp-area="Admin" asp-controller="StockMovement" asp-action="CreateIn">
+                                <i class="fas fa-box-open fa-fw mr-1 text-success"></i> Stok Girişi
+                            </a>
+                            <a class="collapse-item @(controller=="StockMovement" && action=="CreateOut" ? "active" : "")"
+                               asp-area="Admin" asp-controller="StockMovement" asp-action="CreateOut">
+                                <i class="fas fa-dolly fa-fw mr-1 text-danger"></i> Stok Çıkışı
+                            </a>
+                            <a class="collapse-item @(controller=="WarehouseTransfer" ? "active" : "")"
+                               asp-area="Admin" asp-controller="WarehouseTransfer" asp-action="Index">
+                                <i class="fas fa-exchange-alt fa-fw mr-1 text-primary"></i> Ambarlar Arası Transfer
+                            </a>
+                            <a class="collapse-item @(controller=="StockMovement" && action=="History" ? "active" : "")"
+                               asp-area="Admin" asp-controller="StockMovement" asp-action="History">
+                                <i class="fas fa-history fa-fw mr-1"></i> Hareket Geçmişi
+                            </a>
+                            <a class="collapse-item @(controller=="StockMovement" && action=="WorkOrderUsages" ? "active" : "")"
+                               asp-area="Admin" asp-controller="StockMovement" asp-action="WorkOrderUsages">
+                                <i class="fas fa-clipboard-list fa-fw mr-1"></i> İş Emri Malzeme Kullanımları
+                            </a>
+                        </div>
+                        <a class="collapse-item @(controller == "WarehouseStock" ? "active" : "")"
+                           asp-area="Admin" asp-controller="WarehouseStock" asp-action="Index">
+                            <i class="fas fa-chart-bar fa-fw mr-1"></i> Stok Raporları
+                        </a>
                     </div>
 
                 </div>
@@ -341,7 +360,7 @@
 
             @*  } *@
 
-            
+
 
 
             <hr class="sidebar-divider d-none d-md-block">
@@ -750,4 +769,3 @@
 </body>
 
 </html>
-

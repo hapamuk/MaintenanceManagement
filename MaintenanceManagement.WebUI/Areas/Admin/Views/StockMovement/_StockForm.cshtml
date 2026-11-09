@@ -1,0 +1,28 @@
+@model MaintenanceManagement.Application.DTOs.WarehouseOperations.WarehousePageVm
+@{
+    bool isIn=(bool)(ViewData["IsIn"]??false);
+    string action=isIn?"CreateIn":"CreateOut";
+}
+<div class="sm-card p-4">
+<form asp-area="Admin" asp-controller="StockMovement" asp-action="@action" method="post">
+@Html.AntiForgeryToken()
+<div asp-validation-summary="All" class="text-danger small mb-3"></div>
+<div class="form-group"><label class="font-weight-bold">Ambar (Organizasyon Ağacı)</label>
+<select name="WarehouseId" id="stockWarehouse" class="form-control" required data-material-url="@Url.Action("MaterialsByWarehouse","StockMovement",new {area="Admin"})" data-current-material="@Model.StockInput.MaterialId" data-only-stocked="@((!isIn).ToString().ToLowerInvariant())">
+<option value="">Ambar seçiniz...</option>
+@foreach(var group in Model.Warehouses.GroupBy(x=>x.OrganizationPath))
+{
+<optgroup label="@group.Key">
+@foreach(var w in group){<option value="@w.Id" selected="@(Model.StockInput.WarehouseId==w.Id)">@w.Text</option>}
+</optgroup>
+}
+</select></div>
+<div class="form-group"><label class="font-weight-bold">Malzeme (Kategori kapsamına uygun)</label>
+<select name="MaterialId" id="stockMaterial" class="form-control" required><option value="">Önce ambar seçiniz...</option></select>
+<small class="text-muted">Yalnızca seçilen ambarın organizasyonuna uygun kategoriler görüntülenir.</small></div>
+<div id="stockScopeError" role="alert" class="small text-danger mb-2"></div>
+<div class="form-group"><label class="font-weight-bold">Miktar</label>
+<input name="Quantity" type="number" min="0.0001" max="999999999" step="0.0001" value="@(Model.StockInput.Quantity>0?Model.StockInput.Quantity.ToString(System.Globalization.CultureInfo.InvariantCulture):"")" class="form-control" required /></div>
+<div class="form-group"><label class="font-weight-bold">Açıklama</label><textarea name="Description" maxlength="300" class="form-control" rows="3">@Model.StockInput.Description</textarea></div>
+<div class="d-flex justify-content-end"><a asp-action="Index" class="btn btn-light border mr-2">Vazgeç</a><button type="submit" class="btn @(isIn?"btn-success":"btn-danger")" onclick="return confirm('Stok hareketi kaydedilsin mi?');"><i class="fas fa-save mr-1"></i> Kaydet</button></div>
+</form></div>

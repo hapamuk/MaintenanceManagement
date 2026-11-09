@@ -1,0 +1,17 @@
+@{ Layout="~/Views/Shared/_AdminLayout.cshtml"; }
+@section Styles {<link rel="stylesheet" href="~/css/stock-management.css" asp-append-version="true" />}
+
+@model MaintenanceManagement.Application.DTOs.WarehouseOperations.WarehousePageVm
+@{ ViewData["Title"]="Ambar Hareketleri"; }
+<div class="container-fluid sm-page">
+<div class="sm-heading"><div class="sm-heading-icon"><i class="fas fa-warehouse"></i></div><div><h1>Ambar Hareketleri</h1><p>Stok giriş, çıkış ve transfer işlemlerini tek merkezden yönetin.</p></div></div>
+
+@if(TempData["SuccessMessage"]!=null){<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+<partial name="_Menu" />
+<div class="row">
+<div class="col-md-4 mb-3"><a class="sm-action" asp-action="CreateIn"><i class="fas fa-box-open text-success"></i><strong>Stok Girişi</strong><small>Ambarınıza malzeme ekleyin</small></a></div>
+<div class="col-md-4 mb-3"><a class="sm-action" asp-action="CreateOut"><i class="fas fa-dolly text-danger"></i><strong>Stok Çıkışı</strong><small>Mevcut stoktan düşüm yapın</small></a></div>
+<div class="col-md-4 mb-3"><a class="sm-action" asp-controller="WarehouseTransfer" asp-action="Create"><i class="fas fa-exchange-alt text-primary"></i><strong>Ambar Transferi</strong><small>Ambarlar arasında aktarım yapın</small></a></div>
+</div>
+<div class="sm-card"><div class="sm-card-title d-flex justify-content-between"><span>Son Hareketler</span><a asp-action="History" class="btn btn-outline-primary btn-sm">Tümünü Gör</a></div><partial name="_Movements" model="Model.Movements" /></div>
+</div>

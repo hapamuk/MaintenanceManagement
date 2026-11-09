@@ -215,6 +215,10 @@ namespace MaintenanceManagement.Infrastructure.DependencyInjection
     IWarehouseRegistrationRepository,
     WarehouseRegistrationRepository>();
 
+            services.AddScoped<
+    IWarehouseOperationsService,
+    WarehouseOperationsService>();
+
             return services;
         }
     }

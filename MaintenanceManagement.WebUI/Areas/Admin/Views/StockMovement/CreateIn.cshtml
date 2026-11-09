@@ -1,0 +1,10 @@
+@{ Layout="~/Views/Shared/_AdminLayout.cshtml"; }
+@section Styles {<link rel="stylesheet" href="~/css/stock-management.css" asp-append-version="true" />}
+@model MaintenanceManagement.Application.DTOs.WarehouseOperations.WarehousePageVm
+@{ ViewData["Title"]="Stok Girişi"; ViewData["IsIn"]=true; }
+<div class="container-fluid sm-page">
+<div class="sm-heading"><div class="sm-heading-icon"><i class="fas fa-box-open"></i></div><div><h1>Stok Girişi</h1><p>Yetkili olduğunuz ambar için malzeme hareketi oluşturun.</p></div></div>
+<partial name="_Menu" />
+<div class="row"><div class="col-lg-8"><partial name="_StockForm" model="Model" /></div><div class="col-lg-4"><div class="sm-card p-4"><h6 class="font-weight-bold">İşlem Bilgisi</h6><p class="text-muted small">Miktar sıfırdan büyük olmalıdır. Çıkış işlemi mevcut stok miktarını aşamaz. Yalnızca yetkili olduğunuz aktif ambarlarda işlem yapabilirsiniz.</p></div></div></div></div>
+
+@section Scripts {<script src="~/js/warehouse-scope.js" asp-append-version="true"></script>}
