@@ -10,12 +10,7 @@
 <div class="form-group"><label class="font-weight-bold">Ambar (Organizasyon Ağacı)</label>
 <select name="WarehouseId" id="stockWarehouse" class="form-control" required data-material-url="@Url.Action("MaterialsByWarehouse","StockMovement",new {area="Admin"})" data-current-material="@Model.StockInput.MaterialId" data-only-stocked="@((!isIn).ToString().ToLowerInvariant())">
 <option value="">Ambar seçiniz...</option>
-@foreach(var group in Model.Warehouses.GroupBy(x=>x.OrganizationPath))
-{
-<optgroup label="@group.Key">
-@foreach(var w in group){<option value="@w.Id" selected="@(Model.StockInput.WarehouseId==w.Id)">@w.Text</option>}
-</optgroup>
-}
+@foreach(var w in Model.Warehouses.OrderBy(x => x.Text)) { <option value="@w.Id" selected="@(Model.StockInput.WarehouseId==w.Id)">@w.Text</option> }
 </select></div>
 <div class="form-group"><label class="font-weight-bold">Malzeme (Kategori kapsamına uygun)</label>
 <select name="MaterialId" id="stockMaterial" class="form-control" required><option value="">Önce ambar seçiniz...</option></select>

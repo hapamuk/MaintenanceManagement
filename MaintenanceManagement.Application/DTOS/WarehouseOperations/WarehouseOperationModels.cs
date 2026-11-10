@@ -22,6 +22,37 @@ namespace MaintenanceManagement.Application.DTOs.WarehouseOperations
         public decimal Quantity {get;set;}
         [StringLength(300)] public string? Description {get;set;}
     }
+    // Çoklu transfer sepeti: tek kayıt isteğinde birden fazla malzeme.
+    public sealed class WarehouseTransferCartInput
+    {
+        [Range(1, int.MaxValue)] public int SourceWarehouseId { get; set; }
+        [Range(1, int.MaxValue)] public int TargetWarehouseId { get; set; }
+        [StringLength(300)] public string? Description { get; set; }
+        [Required, MinLength(1, ErrorMessage = "Sepete en az bir malzeme ekleyiniz.")]
+        public List<WarehouseTransferCartItemInput> Items { get; set; } = new();
+    }
+    public sealed class WarehouseTransferCartItemInput
+    {
+        [Range(1, int.MaxValue)] public int MaterialId { get; set; }
+        [Range(typeof(decimal), "0.0001", "999999999", ParseLimitsInInvariantCulture = true)]
+        public decimal Quantity { get; set; }
+    }
+    public sealed class TransferMaterialOption
+    {
+        public int Id { get; set; }
+        public string Text { get; set; } = string.Empty;
+        public decimal AvailableQuantity { get; set; }
+        public string Unit { get; set; } = string.Empty;
+    }
+    public sealed class WorkOrderMaterialUsageInput
+    {
+        [Range(1,int.MaxValue)] public int WorkOrderId { get; set; }
+        [Range(1,int.MaxValue)] public int WarehouseId { get; set; }
+        [Range(1,int.MaxValue)] public int MaterialId { get; set; }
+        [Range(typeof(decimal),"0.0001","999999999",ParseLimitsInInvariantCulture=true)]
+        public decimal Quantity { get; set; }
+        [StringLength(300)] public string? Description { get; set; }
+    }
     public sealed class OptionRow
     {
         public int Id {get;set;}
@@ -35,6 +66,9 @@ namespace MaintenanceManagement.Application.DTOs.WarehouseOperations
         public int Id {get;set;}
         public DateTime Date {get;set;}
         public string Warehouse {get;set;}=string.Empty;
+        public string SourceWarehouse {get;set;}=string.Empty;
+        public string TargetWarehouse {get;set;}=string.Empty;
+        public string Operation {get;set;}=string.Empty;
         public string Material {get;set;}=string.Empty;
         public string Unit {get;set;}=string.Empty;
         public string Reference {get;set;}=string.Empty;

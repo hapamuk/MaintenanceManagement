@@ -6,7 +6,7 @@
 <div class="sm-heading"><div class="sm-heading-icon"><i class="fas fa-chart-bar"></i></div><div><h1>Stok Raporları</h1><p>Ambarların mevcut stok bakiyelerini görüntüleyin.</p></div></div>
 
 <partial name="~/Areas/Admin/Views/StockMovement/_Menu.cshtml" />
-<div class="sm-card p-3 mb-3"><form method="get" class="form-inline"><select name="warehouseId" class="form-control mr-2 mb-2"><option value="">Tüm yetkili ambarlar</option>@foreach(var group in Model.Warehouses.GroupBy(x=>x.OrganizationPath)){<optgroup label="@group.Key">@foreach(var w in group){<option value="@w.Id" selected="@(Model.WarehouseId==w.Id)">@w.Text</option>}</optgroup>}</select><button class="btn btn-primary mb-2">Filtrele</button></form><div class="mt-2"><a asp-action="Index" class="btn btn-sm btn-outline-primary">Tüm Stoklar</a><a asp-action="CriticalStocks" class="btn btn-sm btn-outline-danger ml-1">Kritik Stoklar</a></div></div>
+<div class="sm-card p-3 mb-3"><form method="get" class="form-inline"><select name="warehouseId" class="form-control mr-2 mb-2"><option value="">Tüm yetkili ambarlar</option>@foreach(var w in Model.Warehouses.OrderBy(x => x.Text)) { <option value="@w.Id" selected="@(Model.WarehouseId==w.Id)">@w.Text</option> }</select><button class="btn btn-primary mb-2">Filtrele</button></form><div class="mt-2"><a asp-action="Index" class="btn btn-sm btn-outline-primary">Tüm Stoklar</a><a asp-action="CriticalStocks" class="btn btn-sm btn-outline-danger ml-1">Kritik Stoklar</a></div></div>
 <div class="sm-card"><div class="sm-card-title">Stok Durumu</div>
 
 <div class="table-responsive"><table class="table table-hover sm-table"><thead><tr><th>Ambar</th><th>Malzeme</th><th>Mevcut Stok</th><th>Minimum</th><th>Durum</th></tr></thead><tbody>

@@ -344,6 +344,7 @@ namespace MaintenanceManagement.Infrastructure.Services
             await EnsureMaterialAsync(input.MaterialId, ct);
             await EnsureCategoryAllowedAsync(input.SourceWarehouseId, input.MaterialId, ct);
             await EnsureCategoryAllowedAsync(input.TargetWarehouseId, input.MaterialId, ct);
+            // Hem kaynak hem hedef kategori organizasyon kapsamına uygun olmalı.
 
             string reference = NewReference("TRF");
 
@@ -362,6 +363,144 @@ namespace MaintenanceManagement.Infrastructure.Services
                 input.Quantity, StockMovementTypeEnum.In,
                 reference, input.Description);
 
+            await _db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            return reference;
+        }
+
+        // Kaynak stokta bulunan ve hedef organizasyonda kullanılabilecek aktif malzemeler.
+        public async Task<IReadOnlyList<TransferMaterialOption>> GetTransferableMaterialsAsync(
+            int sourceWarehouseId, int targetWarehouseId, int userId, CancellationToken ct = default)
+        {
+            if (sourceWarehouseId == targetWarehouseId)
+                throw new ValidationException("Kaynak ve hedef ambar farklı olmalıdır.");
+            await RequirePermissionAsync(sourceWarehouseId, userId, ct);
+            await RequireActiveWarehouseAsync(targetWarehouseId, ct);
+
+            var source = await _db.Warehouses.AsNoTracking()
+                .Where(x => x.Id == sourceWarehouseId)
+                .Select(x => new { x.UnitId }).SingleAsync(ct);
+            var target = await _db.Warehouses.AsNoTracking()
+                .Where(x => x.Id == targetWarehouseId)
+                .Select(x => new { x.UnitId }).SingleAsync(ct);
+            var stock = await _db.WarehouseStocks.AsNoTracking()
+                .Where(x => x.WarehouseId == sourceWarehouseId && x.Quantity > 0 && x.Material.IsActive)
+                .Select(x => new {
+                    x.MaterialId, x.Quantity, x.Material.MaterialCategoryId,
+                    x.Material.MaterialCode, x.Material.Name,
+                    Unit = x.Material.MeasurementUnit.Symbol
+                }).OrderBy(x => x.Name).ToListAsync(ct);
+            var result = new List<TransferMaterialOption>();
+            var sourceAllowed = new Dictionary<int, bool>();
+            var targetAllowed = new Dictionary<int, bool>();
+            foreach (var item in stock)
+            {
+                int? categoryId = item.MaterialCategoryId;
+                if (!categoryId.HasValue || categoryId.Value <= 0) continue;
+                int cat = categoryId.Value;
+                if (!sourceAllowed.TryGetValue(cat, out var allowedSource))
+                {
+                    allowedSource = await CategoryAllowsWarehouseAsync(cat, source.UnitId, ct);
+                    sourceAllowed[cat] = allowedSource;
+                }
+                if (!targetAllowed.TryGetValue(cat, out var allowedTarget))
+                {
+                    allowedTarget = await CategoryAllowsWarehouseAsync(cat, target.UnitId, ct);
+                    targetAllowed[cat] = allowedTarget;
+                }
+                if (allowedSource && allowedTarget)
+                    result.Add(new TransferMaterialOption {
+                        Id = item.MaterialId,
+                        Text = item.MaterialCode + " - " + item.Name,
+                        AvailableQuantity = item.Quantity,
+                        Unit = item.Unit
+                    });
+            }
+            return result;
+        }
+
+        // Sepetteki bütün kalemler tek Serializable transaction içinde transfer edilir.
+        public async Task<string> TransferCartAsync(
+            WarehouseTransferCartInput input, int userId, CancellationToken ct = default)
+        {
+            ArgumentNullException.ThrowIfNull(input);
+            if (input.SourceWarehouseId <= 0 || input.TargetWarehouseId <= 0 ||
+                input.SourceWarehouseId == input.TargetWarehouseId)
+                throw new ValidationException("Farklı ve geçerli iki ambar seçiniz.");
+            if (input.Items == null || input.Items.Count == 0 || input.Items.Count > 100)
+                throw new ValidationException("Sepette 1 ile 100 arasında malzeme bulunmalıdır.");
+            if (input.Items.Any(x => x.MaterialId <= 0) ||
+                input.Items.Select(x => x.MaterialId).Distinct().Count() != input.Items.Count)
+                throw new ValidationException("Aynı malzeme sepette bir kez bulunabilir.");
+            foreach (var item in input.Items) CheckQuantity(item.Quantity);
+
+            await using var transaction = await _db.Database
+                .BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            await RequirePermissionAsync(input.SourceWarehouseId, userId, ct);
+            await RequireActiveWarehouseAsync(input.TargetWarehouseId, ct);
+            string reference = NewReference("TRF");
+            foreach (var item in input.Items)
+            {
+                await EnsureMaterialAsync(item.MaterialId, ct);
+                await EnsureCategoryAllowedAsync(input.SourceWarehouseId, item.MaterialId, ct);
+                await EnsureCategoryAllowedAsync(input.TargetWarehouseId, item.MaterialId, ct);
+                await ChangeStockAsync(input.SourceWarehouseId, item.MaterialId, -item.Quantity, ct);
+                await ChangeStockAsync(input.TargetWarehouseId, item.MaterialId, item.Quantity, ct);
+                AddMovement(input.SourceWarehouseId, item.MaterialId, userId,
+                    item.Quantity, StockMovementTypeEnum.Out, reference, input.Description);
+                AddMovement(input.TargetWarehouseId, item.MaterialId, userId,
+                    item.Quantity, StockMovementTypeEnum.In, reference, input.Description);
+            }
+            await _db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            return reference;
+        }
+
+        // İş emrinde fiilen kullanılan malzeme: stok düşümü, hareket ve
+        // WorkOrderMaterial ilişkilendirmesi tek transaction içinde yapılır.
+        // İş emri ekranındaki "Malzeme Kullan" butonu bu metodu çağırmalıdır.
+        public async Task<string> ConsumeForWorkOrderAsync(
+            WorkOrderMaterialUsageInput input, int userId,
+            CancellationToken ct = default)
+        {
+            ArgumentNullException.ThrowIfNull(input);
+            CheckQuantity(input.Quantity);
+            if (input.WorkOrderId <= 0 ||
+                !await _db.WorkOrders.AsNoTracking()
+                    .AnyAsync(x => x.Id == input.WorkOrderId, ct))
+                throw new ValidationException("Geçerli bir iş emri bulunamadı.");
+
+            await using var transaction = await _db.Database
+                .BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            await RequirePermissionAsync(input.WarehouseId, userId, ct);
+            await EnsureMaterialAsync(input.MaterialId, ct);
+            await EnsureCategoryAllowedAsync(input.WarehouseId, input.MaterialId, ct);
+            await ChangeStockAsync(input.WarehouseId, input.MaterialId, -input.Quantity, ct);
+
+            string reference = NewReference("ISE");
+            var now = DateTime.UtcNow;
+            var movement = new StockMovement
+            {
+                WarehouseId = input.WarehouseId,
+                MaterialId = input.MaterialId,
+                PerformedByUserId = userId,
+                Quantity = input.Quantity,
+                MovementType = StockMovementTypeEnum.Out,
+                ReferenceNumber = reference,
+                Description = "İş emri #" + input.WorkOrderId + " - " + (input.Description ?? "Malzeme kullanımı"),
+                MovementDate = now,
+                CreatedAt = now
+            };
+            _db.StockMovements.Add(movement);
+            _db.WorkOrderMaterials.Add(new WorkOrderMaterial
+            {
+                WorkOrderId = input.WorkOrderId,
+                WarehouseId = input.WarehouseId,
+                MaterialId = input.MaterialId,
+                Quantity = input.Quantity,
+                StockMovement = movement,
+                CreatedAt = now
+            });
             await _db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
             return reference;
@@ -456,7 +595,8 @@ namespace MaintenanceManagement.Infrastructure.Services
             return result;
         }
 
-        // Hedef için kullanıcı ataması gerekmez; kategori uyumluluğu zorunludur.
+        // Hedef için ne personel ataması ne kategori kapsamı aranır.
+        // Kaynak ambar yetkisi ve kaynak malzeme organizasyon kapsamı korunur.
         public async Task<IReadOnlyList<OptionRow>> GetTransferTargetsAsync(
             int sourceWarehouseId, int materialId, int userId,
             CancellationToken ct = default)
@@ -464,18 +604,19 @@ namespace MaintenanceManagement.Infrastructure.Services
             await RequirePermissionAsync(sourceWarehouseId, userId, ct);
             await EnsureMaterialAsync(materialId, ct);
             await EnsureCategoryAllowedAsync(sourceWarehouseId, materialId, ct);
+
+            // Hedef birimle kategori kapsamı uyumlu olan aktif ambarlar.
             var all = await GetWarehousesAsync(userId, ct);
             var categoryId = await _db.Materials.AsNoTracking()
                 .Where(x => x.Id == materialId)
                 .Select(x => (int?)x.MaterialCategoryId).SingleAsync(ct);
-            if (!categoryId.HasValue) return Array.Empty<OptionRow>();
-            var result = new List<OptionRow>();
+            if (!categoryId.HasValue || categoryId.Value <= 0) return Array.Empty<OptionRow>();
+            var results = new List<OptionRow>();
             foreach (var w in all.Where(x => x.Id != sourceWarehouseId))
             {
-                if (await CategoryAllowsWarehouseAsync(categoryId.Value, w.UnitId, ct))
-                    result.Add(w);
+                if (await CategoryAllowsWarehouseAsync(categoryId.Value, w.UnitId, ct)) results.Add(w);
             }
-            return result;
+            return results;
         }
 
         #endregion
@@ -531,7 +672,7 @@ namespace MaintenanceManagement.Infrastructure.Services
                     x.Material.Name.Contains(term));
             }
 
-            return await query
+            var history = await query
                 .OrderByDescending(x => x.MovementDate)
                 .ThenByDescending(x => x.Id)
                 .Take(500)
@@ -552,6 +693,36 @@ namespace MaintenanceManagement.Infrastructure.Services
                                 x.PerformedByUser.LastName
                 })
                 .ToListAsync(ct);
+
+            // Her hareketin karşı ambarını ortak TRF referansından çöz.
+            // Sayfalama dışında kalan karşı hareketleri de ayrıca getirir.
+            var refs = history.Where(x => x.Reference.StartsWith("TRF-"))
+                .Select(x => x.Reference).Distinct().ToList();
+            if (refs.Count > 0)
+            {
+                var pairs = await _db.StockMovements.AsNoTracking()
+                    .Where(x => refs.Contains(x.ReferenceNumber))
+                    .Select(x => new
+                    {
+                        x.Id, x.ReferenceNumber, x.MovementType,
+                        Warehouse = x.Warehouse.Name
+                    }).ToListAsync(ct);
+
+                foreach (var item in history.Where(x => x.Reference.StartsWith("TRF-")))
+                {
+                    item.Operation = "Transfer";
+                    var counterpart = pairs.FirstOrDefault(x =>
+                        x.ReferenceNumber == item.Reference && x.Id != item.Id &&
+                        x.MovementType != (item.Direction == "Giriş"
+                            ? StockMovementTypeEnum.In : StockMovementTypeEnum.Out));
+                    if (counterpart != null)
+                    {
+                        if (item.Direction == "Çıkış") item.TargetWarehouse = counterpart.Warehouse;
+                        else item.SourceWarehouse = counterpart.Warehouse;
+                    }
+                }
+            }
+            return history;
         }
 
         #endregion

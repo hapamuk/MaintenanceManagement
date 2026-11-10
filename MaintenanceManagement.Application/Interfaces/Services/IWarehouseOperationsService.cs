@@ -9,6 +9,9 @@ namespace MaintenanceManagement.Application.Interfaces.Services
     {
         Task<string> StockInAsync(StockOperationInput input,int userId,CancellationToken ct=default);
         Task<string> StockOutAsync(StockOperationInput input,int userId,CancellationToken ct=default);
+        Task<string> ConsumeForWorkOrderAsync(WorkOrderMaterialUsageInput input,int userId,CancellationToken ct=default);
+        Task<string> TransferCartAsync(WarehouseTransferCartInput input, int userId, CancellationToken ct = default);
+        Task<IReadOnlyList<TransferMaterialOption>> GetTransferableMaterialsAsync(int sourceWarehouseId, int targetWarehouseId, int userId, CancellationToken ct = default);
         Task<string> TransferAsync(WarehouseTransferInput input,int userId,CancellationToken ct=default);
         Task<IReadOnlyList<OptionRow>> GetWarehousesAsync(int userId,CancellationToken ct=default);
         Task<IReadOnlyList<OptionRow>> GetAuthorizedWarehousesAsync(int userId,CancellationToken ct=default);

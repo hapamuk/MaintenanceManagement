@@ -1,30 +1,104 @@
 @model MaintenanceManagement.Application.DTOs.WarehouseOperations.WarehousePageVm
-@{ Layout="~/Views/Shared/_AdminLayout.cshtml"; ViewData["Title"]="Ambarlar Arası Transfer"; }
-@section Styles {<link rel="stylesheet" href="~/css/stock-management.css" asp-append-version="true" />}
-<div class="container-fluid sm-page">
-<div class="sm-heading"><div class="sm-heading-icon"><i class="fas fa-exchange-alt"></i></div><div><h1>Ambarlar Arası Transfer</h1><p>Kaynakta yetkiniz olmalı; hedef ambar kategori kapsamına uygun olmalı.</p></div></div>
-<partial name="~/Areas/Admin/Views/StockMovement/_Menu.cshtml" />
-<div class="row"><div class="col-lg-8"><div class="sm-card p-4">
-<form method="post" asp-area="Admin" asp-controller="WarehouseTransfer" asp-action="Create">
-@Html.AntiForgeryToken()
-<div asp-validation-summary="All" class="text-danger mb-3"></div>
-<div class="form-group"><label class="font-weight-bold">Kaynak Ambar — Yetkili olduğunuz ambarlar</label>
-<select name="SourceWarehouseId" id="transferSource" class="form-control" required data-material-url="@Url.Action("MaterialsByWarehouse","StockMovement",new {area="Admin"})" data-selected-material="@Model.TransferInput.MaterialId">
-<option value="">Kaynak ambar seçiniz...</option>
-@foreach(var group in Model.Warehouses.GroupBy(x=>x.OrganizationPath))
-{
-<optgroup label="@group.Key">@foreach(var w in group){<option value="@w.Id" selected="@(Model.TransferInput.SourceWarehouseId==w.Id)">@w.Text</option>}</optgroup>
+@using MaintenanceManagement.Application.DTOs.WarehouseOperations
+@using System.Linq
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Ambarlar Arası Transfer";
+    var sources = Model.Warehouses.OrderBy(x => x.Text).ToList();
+    var targets = (ViewBag.TargetWarehouses as IReadOnlyList<OptionRow> ?? new List<OptionRow>())
+        .OrderBy(x => x.Text).ToList();
+    var selectedSource = Model.TransferInput.SourceWarehouseId > 0
+        ? Model.TransferInput.SourceWarehouseId : sources.FirstOrDefault()?.Id ?? 0;
 }
-</select></div>
-<div class="form-group"><label class="font-weight-bold">Malzeme — Kaynak ambardaki uygun ve stoklu malzemeler</label>
-<select name="MaterialId" id="transferMaterial" class="form-control" required><option value="">Önce kaynak ambarı seçiniz...</option></select></div>
-<div class="form-group"><label class="font-weight-bold">Hedef Ambar — Bütün organizasyonlardan uygun ambarlar</label>
-<select name="TargetWarehouseId" id="transferTarget" class="form-control" required data-target-url="@Url.Action("Targets","WarehouseTransfer",new {area="Admin"})" data-selected-target="@Model.TransferInput.TargetWarehouseId"><option value="">Önce malzeme seçiniz...</option></select>
-<small class="text-muted">Hedef ambara personel atamanız gerekmez. Kategorisi uygun olmayan ambarlar listelenmez.</small></div>
-<div id="transferScopeError" class="text-danger small mb-2" role="alert"></div>
-<div class="form-group"><label class="font-weight-bold">Miktar</label><input name="Quantity" type="number" class="form-control" min="0.0001" max="999999999" step="0.0001" value="@(Model.TransferInput.Quantity>0?Model.TransferInput.Quantity.ToString(System.Globalization.CultureInfo.InvariantCulture):"")" required /></div>
-<div class="form-group"><label class="font-weight-bold">Açıklama</label><textarea name="Description" maxlength="300" class="form-control" rows="3">@Model.TransferInput.Description</textarea></div>
-<div class="text-right"><a asp-action="Index" class="btn btn-light border mr-2">Vazgeç</a><button class="btn btn-primary" type="submit" onclick="return confirm('Transfer kaydedilsin mi?');">Transferi Tamamla</button></div>
-</form></div></div><div class="col-lg-4"><div class="sm-card p-4"><h6 class="font-weight-bold">Transfer Kuralları</h6><p class="text-muted small">Kaynak ambarda görevli olmalısınız. Hedef ambar farklı daireye bağlı olabilir, ancak malzeme kategorisinin organizasyon kapsamına uymalıdır.</p><p class="text-muted small">Kaynak çıkışı ve hedef girişi tek transaction içinde kaydedilir.</p></div></div></div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/stock-management.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/warehouse-transfer-cart.css" asp-append-version="true" />
+}
+<div class="container-fluid sm-page transfer-page">
+    <div class="sm-heading">
+        <div class="sm-heading-icon"><i class="fas fa-exchange-alt"></i></div>
+        <div><h1>Ambarlar Arası Transfer</h1>
+        <p>Hedef ambarı seçin, uygun malzemeleri sepete ekleyin ve tek işlemde aktarın.</p></div>
+    </div>
+    <partial name="~/Areas/Admin/Views/StockMovement/_Menu.cshtml" />
+    <form asp-area="Admin" asp-controller="WarehouseTransfer" asp-action="Create"
+          method="post" id="transferCartForm" novalidate>
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+        <div class="sm-card p-4 mb-3">
+            <div class="d-flex align-items-center justify-content-between flex-wrap mb-3">
+                <h5 class="font-weight-bold mb-1"><i class="fas fa-map-marked-alt text-primary mr-2"></i>Transfer Güzergâhı</h5>
+                <span class="transfer-step">1 / 2 — Ambarları seçin</span>
+            </div>
+            <div class="row align-items-end">
+                <div class="col-lg-5 form-group mb-lg-0">
+                    <label for="transferSource" class="font-weight-bold">Kaynak ambar (görevli olduğunuz)</label>
+                    <select id="transferSource" name="SourceWarehouseId" class="form-control" required>
+                        @foreach(var w in sources) {
+                            <option value="@w.Id" selected="@(w.Id == selectedSource)">@w.Text</option>
+                        }
+                    </select>
+                    <small class="text-muted">Varsayılan kaynak otomatik seçilir; birden fazla yetkiniz varsa değiştirebilirsiniz.</small>
+                </div>
+                <div class="col-lg-2 text-center transfer-arrow"><i class="fas fa-long-arrow-alt-right fa-2x text-primary"></i></div>
+                <div class="col-lg-5 form-group mb-lg-0">
+                    <label for="transferTarget" class="font-weight-bold">Hedef ambar</label>
+                    <select id="transferTarget" name="TargetWarehouseId" class="form-control" required
+                            data-materials-url="@Url.Action("AvailableMaterials", "WarehouseTransfer", new { area = "Admin" })">
+                        <option value="">Hedef ambar seçiniz...</option>
+                        @foreach(var w in targets) {
+                            <option value="@w.Id" selected="@(w.Id == Model.TransferInput.TargetWarehouseId)">@w.Text</option>
+                        }
+                    </select>
+                    <small class="text-muted">Tüm aktif ambarlar; uygunluk malzeme bazında kontrol edilir.</small>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xl-7 mb-3">
+                <div class="sm-card p-4 transfer-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="font-weight-bold mb-1">Uygun Malzemeler</h5>
+                            <small class="text-muted">Kaynakta stoklu ve hedef kategorisine uygun</small>
+                        </div>
+                        <span class="transfer-counter" id="transferAvailableCount">0 malzeme</span>
+                    </div>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+                        <input id="transferSearch" type="search" class="form-control" placeholder="Kod veya malzeme adı ara..." aria-label="Malzeme ara" />
+                    </div>
+                    <div id="transferCatalog" class="transfer-catalog" aria-live="polite">
+                        <div class="transfer-empty"><i class="fas fa-warehouse"></i><p>Önce hedef ambarı seçiniz.</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-5 mb-3">
+                <div class="sm-card p-4 transfer-panel transfer-cart-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div><h5 class="font-weight-bold mb-1"><i class="fas fa-shopping-basket text-primary mr-2"></i>Transfer Sepeti</h5>
+                        <small class="text-muted">Aktarılacak miktarları belirleyin</small></div>
+                        <span id="transferCartCount" class="transfer-counter">0 kalem</span>
+                    </div>
+                    <div id="transferBasket" class="transfer-basket" aria-live="polite">
+                        <div class="transfer-empty"><i class="fas fa-shopping-basket"></i><p>Henüz malzeme eklenmedi.</p></div>
+                    </div>
+                    <div id="transferHiddenItems"></div>
+                    <div class="form-group mt-3">
+                        <label for="transferDescription" class="font-weight-bold">Transfer açıklaması</label>
+                        <textarea id="transferDescription" name="Description" class="form-control" rows="2" maxlength="300"
+                                  placeholder="İsteğe bağlı açıklama...">@Model.TransferInput.Description</textarea>
+                    </div>
+                    <div id="transferScopeError" class="text-danger small mb-2" role="alert"></div>
+                    <button type="submit" id="transferSubmit" class="btn btn-primary btn-block" disabled>
+                        <i class="fas fa-paper-plane mr-2"></i>Transferi Tamamla
+                    </button>
+                    <small class="d-block text-muted mt-2">Stok çıkışı ve giriş, tek veritabanı işleminde kaydedilir.</small>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
-@section Scripts {<script src="~/js/warehouse-scope.js" asp-append-version="true"></script>}
+@section Scripts {
+    <script src="~/js/warehouse-transfer-cart.js" asp-append-version="true"></script>
+}

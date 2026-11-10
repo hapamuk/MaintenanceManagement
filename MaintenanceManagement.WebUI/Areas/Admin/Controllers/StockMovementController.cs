@@ -48,6 +48,25 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
         }
         [HttpGet] public async Task<IActionResult> History(int? warehouseId,string? search,CancellationToken ct=default)
         {var vm=await Page(ct);vm.WarehouseId=warehouseId;vm.Search=search;vm.Movements=await _service.GetMovementsAsync(CurrentUserId,warehouseId,search,ct);return View(vm);}
+        // İş emri detay ekranından POST edilir. JSON veya klasik form ile uyumludur.
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> UseForWorkOrder(
+            WorkOrderMaterialUsageInput input, CancellationToken ct = default)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            try
+            {
+                string reference = await _service.ConsumeForWorkOrderAsync(input, CurrentUserId, ct);
+                TempData["SuccessMessage"] = "İş emri malzeme kullanımı kaydedildi: " + reference;
+                return RedirectToAction(nameof(WorkOrderUsages));
+            }
+            catch (Exception ex) when (ex is ValidationException ||
+                ex is UnauthorizedAccessException || ex is InvalidOperationException)
+            {
+                ModelState.AddModelError("", ex.Message);
+                return BadRequest(ModelState);
+            }
+        }
         [HttpGet] public async Task<IActionResult> WorkOrderUsages(string? search,CancellationToken ct=default)
         {var vm=await Page(ct);vm.Search=search;vm.WorkOrders=await _service.GetWorkOrderUsesAsync(CurrentUserId,search,ct);return View(vm);}
     }

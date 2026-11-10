@@ -10,7 +10,7 @@
 <partial name="_Menu" />
 <div class="sm-card p-3 mb-3"><form method="get" class="form-row align-items-end">
 <div class="col-md-4 mb-2"><label>Ambar</label><select name="warehouseId" class="form-control"><option value="">Tüm yetkili ambarlar</option>
-@foreach(var group in Model.Warehouses.GroupBy(x=>x.OrganizationPath)){<optgroup label="@group.Key">@foreach(var w in group){<option value="@w.Id" selected="@(Model.WarehouseId==w.Id)">@w.Text</option>}</optgroup>}</select></div>
+@foreach(var w in Model.Warehouses.OrderBy(x => x.Text)) { <option value="@w.Id" selected="@(Model.WarehouseId==w.Id)">@w.Text</option> }</select></div>
 <div class="col-md-5 mb-2"><label>Malzeme / Referans</label><input class="form-control" name="search" value="@Model.Search" placeholder="Arama..." /></div>
 <div class="col-md-3 mb-2"><button class="btn btn-primary">Filtrele</button><a asp-action="History" class="btn btn-outline-secondary ml-1">Temizle</a></div>
 </form></div><div class="sm-card"><div class="sm-card-title">Hareket Kayıtları</div><partial name="_Movements" model="Model.Movements" /></div></div>
