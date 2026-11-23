@@ -1,0 +1,123 @@
+@model MaintenanceManagement.Application.DTOs.AssetWizard.AssetWizardPageVm
+@using System.Text.Json
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Demirbaş Tanıtımı";
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+}
+@section Styles {
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="~/css/asset-wizard.css" asp-append-version="true" />
+}
+<div class="container-fluid aw-page" id="assetWizard">
+  <div class="aw-title"><div class="aw-title-icon"><i class="fas fa-laptop"></i></div><div><h1>Demirbaş Tanıtımı</h1><p>6 adımda demirbaş kaydı ve ön izleme</p></div></div>
+  <div class="aw-steps" aria-label="Kayıt adımları">
+    @foreach (var label in new[]{"Temel Bilgiler","Kategori / Model","Organizasyonlar","Konum / Zimmet","Durum / Açıklama","Ön İzleme"}) { <div class="aw-step"><span class="aw-step-circle">@(Array.IndexOf(new[]{"Temel Bilgiler","Kategori / Model","Organizasyonlar","Konum / Zimmet","Durum / Açıklama","Ön İzleme"},label)+1)</span><small>@label</small></div> }
+  </div>
+  <div class="row mt-4"><div class="col-xl-9 col-lg-8"><div class="aw-card">
+    <form asp-area="Admin" asp-controller="AssetWizard" asp-action="Create" method="post" id="assetWizardForm" novalidate>
+      @Html.AntiForgeryToken()
+      <div asp-validation-summary="All" class="text-danger mb-3"></div>
+      <section class="aw-panel" data-step="0"><h4><i class="fas fa-id-card"></i> Temel Bilgiler</h4><p>Demirbaşın kimlik bilgilerini girin.</p>
+        <div class="form-group"><label>Demirbaş Kodu</label><input type="text" value="Kaydedildiğinde otomatik oluşturulacak" class="form-control bg-light" readonly aria-label="Demirbaş kodu kayıt sonrası otomatik oluşturulur" /><small class="text-muted"><i class="fas fa-lock mr-1"></i> Kod, kayıt sırasında SQL Server tarafından üretilen demirbaş kimliğinden oluşturulur.</small></div>
+        <div class="form-group"><label asp-for="Input.Name">Demirbaş Adı *</label><input asp-for="Input.Name" class="form-control" required maxlength="200" /></div>
+        <div class="form-group"><label asp-for="Input.BarcodeNumber">Barkod Numarası</label><input asp-for="Input.BarcodeNumber" class="form-control" maxlength="100" /></div>
+      </section>
+      <section class="aw-panel" data-step="1" hidden><h4><i class="fas fa-layer-group"></i> Kategori, Marka ve Model</h4><p>Seçimler birbirine bağlıdır.</p>
+        <div class="form-group"><label>Kategori *</label><select asp-for="Input.AssetCategoryId" class="form-control" id="aw-category" required><option value="">Kategori seçiniz</option>@foreach(var x in Model.Categories){<option value="@x.Id">@x.Text</option>}</select></div>
+        <!-- Demirbaş türü kullanıcıdan istenmez; servis kategoriye göre otomatik belirler. -->
+        <input asp-for="Input.AssetKindId" type="hidden" id="aw-kind" />
+        <div class="form-row"><div class="form-group col-md-6"><label>Marka *</label><select asp-for="Input.BrandId" class="form-control" id="aw-brand" required><option value="">Marka seçiniz</option>@foreach(var x in Model.Brands){<option value="@x.Id">@x.Text</option>}</select></div><div class="form-group col-md-6"><label>Model *</label><select asp-for="Input.AssetModelId" class="form-control" id="aw-model" required><option value="">Model seçiniz</option>@foreach(var x in Model.Models){<option value="@x.Id" data-group="@x.GroupId">@x.Text</option>}</select></div></div>
+      </section>
+      <section class="aw-panel" data-step="2" hidden>
+        <h4><i class="fas fa-sitemap"></i> Organizasyonlar</h4>
+        <p>Yalnızca aktif Genel Müdürlük ve Daire Başkanlıkları seçilebilir.</p>
+        @foreach(var item in new[]{new {Key="responsible",Title="Sorumlu Organizasyon"},new{Key="using",Title="Kullanılan Organizasyon"}})
+        {
+          <div class="form-group aw-unit-section">
+            <label>@item.Title @(item.Key == "responsible" ? "*" : "(isteğe bağlı)")</label>
+            <div class="aw-unit-toolbar">
+              <input type="search" class="form-control aw-tree-search" data-target="@item.Key" placeholder="Organizasyon adıyla ara..." aria-label="@item.Title ara" />
+              <button type="button" class="btn btn-outline-primary aw-expand-all" data-target="@item.Key">Tümünü Aç</button>
+              <button type="button" class="btn btn-outline-secondary aw-collapse-all" data-target="@item.Key">Tümünü Kapat</button>
+            </div>
+            <div class="aw-tree aw-modern-tree" id="aw-tree-@item.Key" role="tree" aria-label="@item.Title"></div>
+            <div class="aw-unit-selected" id="aw-picked-@item.Key"><i class="fas fa-check-circle"></i> Henüz organizasyon seçilmedi</div>
+            @if (item.Key == "using")
+            {
+              <button type="button" class="btn btn-link btn-sm p-0 mt-2" id="aw-clear-using"><i class="fas fa-times-circle mr-1"></i>Kullanılan organizasyonu temizle</button>
+              <small class="d-block text-muted mt-1">Boş bırakılabilir. İlk zimmet verecekseniz kullanılan organizasyonu seçin.</small>
+            }
+          </div>
+        }
+        <input type="hidden" asp-for="Input.ResponsibleUnitId" id="aw-responsible" />
+        <input type="hidden" asp-for="Input.UsingUnitId" id="aw-using" />
+      </section>
+      <section class="aw-panel" data-step="3" hidden>
+        <h4><i class="fas fa-map-marked-alt"></i> Konum ve İlk Zimmet</h4>
+        <p>Bina seçin, ardından o binaya ait kat ve oda listesinden demirbaşın yerini belirleyin.</p>
+        <div class="aw-section-card mb-3">
+          <div class="d-flex justify-content-between flex-wrap align-items-center mb-2">
+            <strong><i class="fas fa-building text-primary mr-1"></i> Kayıtlı Binalar — Ücretsiz OpenStreetMap</strong>
+            <a class="btn btn-outline-primary btn-sm" asp-area="Admin" asp-controller="AssetPlaces" asp-action="Index" target="_blank" rel="noopener"><i class="fas fa-plus mr-1"></i> Demirbaş Yeri Tanıtımı</a>
+          </div>
+          <div class="aw-geo-panel mb-3" aria-label="Harita il, ilçe ve mahalle filtreleri">
+            <div class="aw-geo-head"><i class="fas fa-search-location text-primary mr-2"></i><strong>Konuma göre bina bul</strong><span class="aw-geo-optional">İsteğe bağlı</span></div>
+            <div class="form-row mb-0">
+              <div class="form-group col-md-4"><label for="aw-province">İl</label><select id="aw-province" class="form-control"><option value="">Tüm iller</option></select></div>
+              <div class="form-group col-md-4"><label for="aw-district">İlçe</label><select id="aw-district" class="form-control" disabled><option value="">Tüm ilçeler</option></select></div>
+              <div class="form-group col-md-4"><label for="aw-neighborhood">Mahalle</label><select id="aw-neighborhood" class="form-control" disabled><option value="">Tüm mahalleler</option></select></div>
+            </div>
+            <div class="aw-geo-bottom">
+              <span id="aw-filter-count" role="status">Kayıtlı binalar hazırlanıyor...</span>
+              <button type="button" class="btn btn-link btn-sm" id="aw-filter-clear"><i class="fas fa-times-circle mr-1"></i>Filtreleri temizle</button>
+            </div>
+            <small class="text-muted d-block">İl Kocaeli ile sınırlıdır. İlçe ve mahalleler adres servisinden gelir. Filtreleri kaldırırsanız bütün kayıtlı binalar görünür. Eski adresi boş binaları, Demirbaş Yeri Tanıtımı ekranından koordinatla eşleştirin.</small>
+          </div>
+          <div id="aw-building-map" class="aw-map" role="region" aria-label="Kayıtlı bina haritası"></div>
+          <div class="aw-map-toolbar mt-2">
+            <button type="button" class="btn btn-outline-primary btn-sm" id="aw-map-fit"><i class="fas fa-compress-arrows-alt mr-1"></i>Tüm binaları göster</button>
+            <small class="text-muted"><i class="fas fa-mouse mr-1"></i>Fare tekerleğiyle yakınlaştırın / uzaklaştırın. Bina işaretine tıklayarak seçin.</small>
+          </div>
+          <div id="aw-map-message" class="small text-muted mt-2" role="status"></div>
+          <div class="form-row mt-3">
+            <div class="form-group col-md-4"><label for="aw-building">Bina</label><select id="aw-building" class="form-control"><option value="">Bina seçiniz...</option></select></div>
+            <div class="form-group col-md-4"><label for="aw-floor">Kat</label><select id="aw-floor" class="form-control" disabled><option value="">Önce bina seçiniz...</option></select></div>
+            <div class="form-group col-md-4"><label for="aw-room">Oda</label><select id="aw-room" class="form-control" disabled><option value="">Önce kat seçiniz...</option></select></div>
+          </div>
+          <div id="aw-location-error" class="small text-danger" role="alert"></div>
+          <select asp-for="Input.SiteLocationId" id="aw-location" class="form-control d-none" aria-label="Seçili kayıtlı konum">
+            <option value="">Konum seçiniz (isteğe bağlı)</option>
+            @foreach(var x in Model.Locations){<option value="@x.Id">@x.Text</option>}
+          </select>
+          <small>Konum seçimi isteğe bağlıdır. Bina, kat ve oda tanımları Demirbaş Yeri Tanıtımı ekranından yönetilir.</small>
+        </div>
+        <div class="aw-section-card">
+          <label for="aw-assignee">İlk Zimmet</label>
+          <select asp-for="Input.AssigneeUserId" class="form-control" id="aw-assignee">
+            <option value="">Şimdilik zimmet verme</option>
+            @foreach(var x in Model.Users){<option value="@x.Id" data-group="@x.GroupId">@x.Text</option>}
+          </select>
+          <small id="aw-assignee-hint">Önce Kullanılan Organizasyonu seçin. Yalnızca bu organizasyon ve alt birimlerindeki aktif personel listelenir.</small>
+        </div>
+      </section>
+      <section class="aw-panel" data-step="4" hidden><h4><i class="fas fa-clipboard-check"></i> Durum ve Açıklama</h4>
+        <div class="form-group"><label>Demirbaş Durumu *</label><div class="aw-statuses"><label><input type="radio" asp-for="Input.Status" value="Active" checked /> Aktif</label><label><input type="radio" asp-for="Input.Status" value="Passive" /> Pasif</label><label><input type="radio" asp-for="Input.Status" value="Scrap" /> Hurda</label></div></div>
+        <div class="form-group"><label>Açıklama</label><textarea asp-for="Input.Description" rows="5" maxlength="500" class="form-control"></textarea></div>
+      </section>
+      <section class="aw-panel" data-step="5" hidden>
+        <div class="aw-preview-title"><div><h4><i class="fas fa-clipboard-check"></i> Demirbaş Kaydı Ön İzleme</h4><p>Bilgileri inceleyin; düzenlemek istediğiniz bölüme geri dönebilirsiniz.</p></div><span class="aw-preview-tag"><i class="fas fa-shield-alt mr-1"></i> Kayıt öncesi kontrol</span></div>
+        <div id="aw-preview" class="aw-preview-modern"></div>
+        <div class="aw-preview-note"><i class="fas fa-info-circle mr-2"></i> Kaydı tamamladıktan sonra demirbaş detay, zimmet ve hareket geçmişi ekranı açılır.</div>
+      </section>
+      <div class="aw-actions"><button type="button" id="aw-prev" class="btn btn-outline-secondary" disabled><i class="fas fa-arrow-left mr-1"></i> Geri</button><button type="button" id="aw-next" class="btn btn-primary">İleri <i class="fas fa-arrow-right ml-1"></i></button><button type="submit" id="aw-submit" class="btn btn-success" hidden><i class="fas fa-save mr-1"></i> Kaydı Tamamla</button></div>
+    </form>
+  </div></div><aside class="col-xl-3 col-lg-4"><div class="aw-card aw-help"><i class="fas fa-magic fa-2x text-primary"></i><h5 class="mt-3">Kayıt Sihirbazı</h5><p>Her adımda yalnızca o bölüme ait alanlar görünür. Geri dönüp düzenleyebilirsiniz.</p><div id="aw-step-hint">Adım 1 / 6</div></div></aside></div>
+</div>
+<script id="aw-unit-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Units, jsonOptions))</script>
+<script id="aw-places-config" type="application/json">@Html.Raw(JsonSerializer.Serialize(new { apiUrl = Url.Action("Hierarchy", "AssetPlaces", new { area = "Admin" }), mapProvider = "openstreetmap" }, jsonOptions))</script>
+@section Scripts {
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="~/js/asset-region.js" asp-append-version="true"></script>
+  <script src="~/js/asset-wizard.js" asp-append-version="true"></script>
+}

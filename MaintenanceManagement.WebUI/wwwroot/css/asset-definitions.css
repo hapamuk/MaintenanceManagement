@@ -1,0 +1,6 @@
+.ad-page{padding:1.4rem 1rem 3rem;background:linear-gradient(135deg,#f3f6ff 0%,#f8fafd 65%,#eef3ff 100%);min-height:calc(100vh - 80px)}
+.ad-heading{display:flex;align-items:center;gap:14px;margin-bottom:22px}.ad-heading h1{font-size:1.6rem;font-weight:700;color:#172d5c;margin:0}.ad-heading p{margin:5px 0;color:#7889a7}.ad-heading-icon{background:#e4edff;color:#3e6fe2;border-radius:14px;width:58px;height:58px;display:grid;place-items:center;font-size:1.4rem}
+.ad-nav{display:flex;gap:8px;flex-wrap:wrap}.ad-card{background:#fff;border:1px solid #dce5f5;border-radius:13px;box-shadow:0 6px 18px rgba(34,67,129,.055);height:100%}.ad-section-title{font-size:1.05rem;color:#193263;font-weight:700;margin-bottom:22px}.ad-unit-tree{border:1px solid #d9e2f2;border-radius:10px;background:#f8faff;max-height:250px;overflow:auto;padding:8px}.ad-unit{display:block;background:#fff;border:1px solid #e4eafa;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer;color:#29406e}.ad-unit:hover{background:#eff5ff}.ad-table thead{background:#f2f6ff;color:#354f81}.ad-table td{vertical-align:middle}
+
+/* Tanım düzenleme */
+.ad-edit{white-space:nowrap;border-radius:8px}.ad-edit:hover{box-shadow:0 3px 9px rgba(64,97,180,.15)}.ad-table th:last-child,.ad-table td:last-child{min-width:105px}.ad-edit-message{border-radius:8px}

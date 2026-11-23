@@ -87,6 +87,104 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.ToTable("Assets");
                 });
 
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetBuilding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("District")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Neighborhood")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Province")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AssetBuildings", (string)null);
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetBuildingFloor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssetBuildingId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetBuildingId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("AssetBuildingFloors", (string)null);
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetBuildingRoom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssetBuildingFloorId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("SiteLocationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SiteLocationId");
+
+                    b.HasIndex("AssetBuildingFloorId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("AssetBuildingRooms", (string)null);
+                });
+
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -116,6 +214,21 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AssetCategories");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetCategoryUnit", b =>
+                {
+                    b.Property<int>("AssetCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UnitId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AssetCategoryId", "UnitId");
+
+                    b.HasIndex("UnitId");
+
+                    b.ToTable("AssetCategoryUnits", (string)null);
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetKind", b =>
@@ -1874,6 +1987,50 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.Navigation("Unit");
                 });
 
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetBuildingFloor", b =>
+                {
+                    b.HasOne("MaintenanceManagement.Domain.Entities.AssetBuilding", "Building")
+                        .WithMany("Floors")
+                        .HasForeignKey("AssetBuildingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Building");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetBuildingRoom", b =>
+                {
+                    b.HasOne("MaintenanceManagement.Domain.Entities.AssetBuildingFloor", "Floor")
+                        .WithMany("Rooms")
+                        .HasForeignKey("AssetBuildingFloorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MaintenanceManagement.Domain.Entities.SiteLocation", "SiteLocation")
+                        .WithMany()
+                        .HasForeignKey("SiteLocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Floor");
+
+                    b.Navigation("SiteLocation");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetCategoryUnit", b =>
+                {
+                    b.HasOne("MaintenanceManagement.Domain.Entities.AssetCategory", null)
+                        .WithMany()
+                        .HasForeignKey("AssetCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MaintenanceManagement.Domain.Entities.Unit", null)
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetKind", b =>
                 {
                     b.HasOne("MaintenanceManagement.Domain.Entities.AssetCategory", "AssetCategory")
@@ -2603,6 +2760,16 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.Navigation("WorkOrders");
 
                     b.Navigation("WorkRequests");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetBuilding", b =>
+                {
+                    b.Navigation("Floors");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetBuildingFloor", b =>
+                {
+                    b.Navigation("Rooms");
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetCategory", b =>

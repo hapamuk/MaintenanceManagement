@@ -1,0 +1,105 @@
+@using System.Text.Json
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Demirbaş Yeri Tanıtımı";
+}
+@section Styles {
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="~/css/asset-wizard.css" rel="stylesheet" asp-append-version="true" />
+}
+<div class="container-fluid aw-page">
+  <div class="aw-title"><div class="aw-title-icon"><i class="fas fa-map-marked-alt"></i></div><div><h1>Demirbaş Yeri Tanıtımı</h1><p>Haritadan bina, ardından kat ve oda tanımlayın.</p></div></div>
+  @if (TempData["AssetPlaceError"] is string errorMessage)
+  {
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+  }
+  @if (TempData["AssetPlaceSuccess"] is string successMessage)
+  {
+    <div class="alert alert-success" role="status">@successMessage</div>
+  }
+  <div class="row">
+    <div class="col-lg-7 mb-3"><div class="aw-card">
+      <h4>Bina Konumu</h4><p>Ücretsiz OpenStreetMap üzerinde bir noktaya tıklayın. Kayıtlı binalar mavi işaretlerle gösterilir.</p>
+      <div id="place-admin-map" class="aw-map" style="height:380px"></div>
+      <div class="text-muted small mt-2" id="place-map-message">API anahtarı veya kredi kartı gerekmez. Harita üzerinde seçtiğiniz gerçek bina koordinatları kaydedilir.</div>
+      <form asp-action="AddBuilding" asp-area="Admin" asp-controller="AssetPlaces" method="post" class="mt-3">
+        @Html.AntiForgeryToken()
+        <div class="form-group"><label for="buildingName">Bina Adı *</label><input id="buildingName" class="form-control" name="name" maxlength="200" required placeholder="Genel Müdürlük A Blok" /></div>
+        <div class="form-row">
+          <div class="form-group col-md-6"><label for="buildingLat">Enlem *</label><input class="form-control" id="buildingLat" name="latitude" type="number" step="any" min="-90" max="90" required /></div>
+          <div class="form-group col-md-6"><label for="buildingLng">Boylam *</label><input class="form-control" id="buildingLng" name="longitude" type="number" step="any" min="-180" max="180" required /></div>
+        </div>
+        <div class="form-row aw-address-fields">
+          <div class="form-group col-md-4"><label for="buildingProvince">İl (isteğe bağlı)</label><select id="buildingProvince" name="province" class="form-control"><option value="Kocaeli" selected>Kocaeli</option></select></div>
+          <div class="form-group col-md-4"><label for="buildingDistrict">İlçe (isteğe bağlı)</label><select id="buildingDistrict" name="district" class="form-control"><option value="">İlçe seçiniz...</option></select></div>
+          <div class="form-group col-md-4"><label for="buildingNeighborhood">Mahalle (isteğe bağlı)</label><select id="buildingNeighborhood" name="neighborhood" class="form-control"><option value="">Mahalle seçiniz...</option></select></div>
+        </div>
+        <small class="d-block text-muted mb-3">İl Kocaeli ile sınırlıdır. İlçe/mahalle seçince harita bölgeye yaklaşır; haritada nokta seçtiğinizde adres otomatik tespit edilmeye çalışılır.</small>
+        <button class="btn btn-primary" type="submit"><i class="fas fa-save mr-1"></i> Binayı Kaydet</button>
+      </form>
+    </div></div>
+    <div class="col-lg-5 mb-3"><div class="aw-card">
+      <h4>Kat ve Oda Tanıtımı</h4><p>Önce bina, ardından kat seçerek odaları ekleyin.</p>
+      <form asp-action="AddFloor" asp-area="Admin" asp-controller="AssetPlaces" method="post" class="mb-4">
+        @Html.AntiForgeryToken()
+        <div class="form-group"><label>Bina</label><select id="place-building" name="buildingId" class="form-control" required><option value="">Bina seçiniz...</option></select></div>
+        <div class="form-group"><label>Kat Adı</label><input name="name" class="form-control" placeholder="2. Kat" maxlength="100" required /></div>
+        <button type="submit" class="btn btn-outline-primary"><i class="fas fa-plus mr-1"></i> Kat Ekle</button>
+      </form>
+      <hr/>
+      <form asp-action="AddRoom" asp-area="Admin" asp-controller="AssetPlaces" method="post">
+        @Html.AntiForgeryToken()
+        <div class="form-group"><label>Kat</label><select id="place-floor" name="floorId" class="form-control" required><option value="">Kat seçiniz...</option></select></div>
+        <div class="form-group"><label>Oda Adı</label><input name="name" class="form-control" placeholder="Oda 205" maxlength="100" required /></div>
+        <div class="form-group"><label>Mevcut Konumla Eşleştir (isteğe bağlı)</label><select name="siteLocationId" class="form-control"><option value="">Otomatik yeni konum oluştur (önerilen)</option>@foreach (Microsoft.AspNetCore.Mvc.Rendering.SelectListItem option in ViewBag.Locations){<option value="@option.Value">@option.Text</option>}</select><small>Boş bırakırsanız oda kaydedilirken SiteLocation otomatik oluşturulur ve demirbaşta seçilebilir. Eski bir konumu kullanmak isterseniz listeden seçin.</small></div>
+        <button type="submit" class="btn btn-outline-primary"><i class="fas fa-plus mr-1"></i> Oda Ekle</button>
+      </form>
+      <div class="mt-3 small text-muted">Mevcut demirbaş konum tablolarınız korunur. Oda ekleme ve önceki konumsuz odaları düzenleme sırasında SiteLocation otomatik oluşturulur.</div>
+    </div></div>
+  </div>
+  <div class="aw-card">
+    <h4><i class="fas fa-pen mr-2 text-primary"></i> Kayıtları Düzenle</h4>
+    <p>Tanıtılan binaların koordinatları, kat adları, oda adları ve mevcut konum eşleştirmeleri sonradan değiştirilebilir. Kayıtlar silinmez.</p>
+    <div id="place-admin-list" class="mb-3 small text-muted">Yükleniyor...</div>
+    <div class="row">
+      <div class="col-lg-4 mb-3"><form asp-area="Admin" asp-controller="AssetPlaces" asp-action="UpdateBuilding" method="post" class="border rounded p-3 h-100">
+        @Html.AntiForgeryToken()
+        <h6 class="font-weight-bold">Bina Düzenle</h6>
+        <label>Bina</label><select id="edit-building-id" name="id" class="form-control mb-2" required><option value="">Bina seçiniz...</option></select>
+        <label>Ad</label><input id="edit-building-name" name="name" class="form-control mb-2" required maxlength="200" />
+        <div class="form-row"><div class="col-6"><label>Enlem</label><input id="edit-building-lat" type="number" step="any" name="latitude" class="form-control" required /></div><div class="col-6"><label>Boylam</label><input id="edit-building-lng" type="number" step="any" name="longitude" class="form-control" required /></div></div>
+        <label class="mt-2">İl</label><select id="edit-building-province" name="province" class="form-control mb-2"><option value="Kocaeli">Kocaeli</option></select>
+        <label>İlçe</label><select id="edit-building-district" name="district" class="form-control mb-2"><option value="">İlçe seçiniz...</option></select>
+        <label>Mahalle</label><select id="edit-building-neighborhood" name="neighborhood" class="form-control mb-2"><option value="">Mahalle seçiniz...</option></select>
+        <button type="button" id="edit-building-detect" class="btn btn-outline-info btn-sm mb-2"><i class="fas fa-map-marker-alt mr-1"></i> Koordinattan adresi bul</button>
+        <label class="mt-2"><input id="edit-building-active" type="checkbox" name="isActive" value="true" checked /> Aktif</label>
+        <button type="submit" class="btn btn-outline-primary btn-block">Binayı Güncelle</button>
+      </form></div>
+      <div class="col-lg-4 mb-3"><form asp-area="Admin" asp-controller="AssetPlaces" asp-action="UpdateFloor" method="post" class="border rounded p-3 h-100">
+        @Html.AntiForgeryToken()
+        <h6 class="font-weight-bold">Kat Düzenle</h6>
+        <label>Kat</label><select id="edit-floor-id" name="id" class="form-control mb-2" required><option value="">Kat seçiniz...</option></select>
+        <label>Ad</label><input id="edit-floor-name" name="name" class="form-control mb-2" required maxlength="100" />
+        <label><input id="edit-floor-active" type="checkbox" name="isActive" value="true" checked /> Aktif</label>
+        <button type="submit" class="btn btn-outline-primary btn-block">Katı Güncelle</button>
+      </form></div>
+      <div class="col-lg-4 mb-3"><form asp-area="Admin" asp-controller="AssetPlaces" asp-action="UpdateRoom" method="post" class="border rounded p-3 h-100">
+        @Html.AntiForgeryToken()
+        <h6 class="font-weight-bold">Oda Düzenle</h6>
+        <label>Oda</label><select id="edit-room-id" name="id" class="form-control mb-2" required><option value="">Oda seçiniz...</option></select>
+        <label>Ad</label><input id="edit-room-name" name="name" class="form-control mb-2" required maxlength="100" />
+        <label>Konum eşleştirmesi</label><select id="edit-room-location" name="siteLocationId" class="form-control mb-2"><option value="">Mevcut bağlantıyı koru / bağlantı yoksa otomatik oluştur</option>@foreach(Microsoft.AspNetCore.Mvc.Rendering.SelectListItem option in ViewBag.Locations){<option value="@option.Value">@option.Text</option>}</select>
+        <label><input id="edit-room-active" type="checkbox" name="isActive" value="true" checked /> Aktif</label>
+        <button type="submit" class="btn btn-outline-primary btn-block">Odayı Güncelle</button>
+      </form></div>
+    </div>
+    <small class="text-muted">Odaya bağlanan SiteLocation kaydı, demirbaşın gerçek konum ilişkisidir. Eski demirbaşların konum geçmişi ayrıca AssetMovement kayıtlarında tutulmalıdır.</small>
+  </div>
+</div>
+<script id="place-admin-config" type="application/json">@Html.Raw(JsonSerializer.Serialize(new { apiUrl = Url.Action("Hierarchy", "AssetPlaces", new { area = "Admin" }), mapProvider = "openstreetmap" }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))</script>
+@section Scripts {
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="~/js/asset-region.js" asp-append-version="true"></script>
+  <script src="~/js/asset-places.js" asp-append-version="true"></script>
+  <script src="~/js/asset-region-admin.js" asp-append-version="true"></script>
+}

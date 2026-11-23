@@ -62,6 +62,10 @@ namespace MaintenanceManagement.Infrastructure.Data
         public DbSet<AssetCategory> AssetCategories
         { get; set; } = null!;
 
+        // Demirbaş kategori - organizasyon kullanım kapsamı
+        public DbSet<AssetCategoryUnit> AssetCategoryUnits
+        { get; set; } = null!;
+
         public DbSet<AssetKind> AssetKinds
         { get; set; } = null!;
 
@@ -75,6 +79,20 @@ namespace MaintenanceManagement.Infrastructure.Data
         { get; set; } = null!;
 
         #endregion
+
+        #region Demirbaş Konum Yönetimi (Bina / Kat / Oda)
+
+        public DbSet<AssetBuilding> AssetBuildings
+        { get; set; } = null!;
+
+        public DbSet<AssetBuildingFloor> AssetBuildingFloors
+        { get; set; } = null!;
+
+        public DbSet<AssetBuildingRoom> AssetBuildingRooms
+        { get; set; } = null!;
+
+        #endregion
+
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
         #region İş Türü ve İş Talebi Yönetimi
@@ -210,6 +228,35 @@ namespace MaintenanceManagement.Infrastructure.Data
                 entity.HasOne(x => x.PrimaryUnit)
                     .WithMany(x => x.Users)
                     .HasForeignKey(x => x.PrimaryUnitId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            #endregion
+
+
+            #region AssetCategoryUnit Fluent API
+
+            // Mevcut AssetCategory ve Unit kayıtlarına bağlanır.
+            // AssetCategoryUnit entity'sinde Id bulunmadığı için
+            // AssetCategoryId + UnitId birlikte birincil anahtardır.
+            modelBuilder.Entity<AssetCategoryUnit>(entity =>
+            {
+                entity.ToTable("AssetCategoryUnits");
+
+                entity.HasKey(x => new
+                {
+                    x.AssetCategoryId,
+                    x.UnitId
+                });
+
+                entity.HasOne<AssetCategory>()
+                    .WithMany()
+                    .HasForeignKey(x => x.AssetCategoryId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne<Unit>()
+                    .WithMany()
+                    .HasForeignKey(x => x.UnitId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -652,6 +699,72 @@ namespace MaintenanceManagement.Infrastructure.Data
 
             #endregion
 
+
+
+            #region Demirbaş Konum Yönetimi Fluent API
+
+            // Binalar: haritada işaretlenecek kayıtlı yerler.
+            modelBuilder.Entity<AssetBuilding>(entity =>
+            {
+                entity.ToTable("AssetBuildings");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Name)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                // İl / ilçe / mahalle isteğe bağlı adres filtreleri (V6.4)
+                entity.Property(x => x.Province)
+                    .HasMaxLength(120);
+
+                entity.Property(x => x.District)
+                    .HasMaxLength(120);
+
+                entity.Property(x => x.Neighborhood)
+                    .HasMaxLength(120);
+            });
+
+            // Her binaya birden çok kat bağlanabilir.
+            modelBuilder.Entity<AssetBuildingFloor>(entity =>
+            {
+                entity.ToTable("AssetBuildingFloors");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Name)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.HasIndex(x => new { x.AssetBuildingId, x.Name })
+                    .IsUnique();
+
+                entity.HasOne(x => x.Building)
+                    .WithMany(x => x.Floors)
+                    .HasForeignKey(x => x.AssetBuildingId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Her kata birden çok oda bağlanır; oda mevcut SiteLocation'a bağlanabilir.
+            modelBuilder.Entity<AssetBuildingRoom>(entity =>
+            {
+                entity.ToTable("AssetBuildingRooms");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Name)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.HasIndex(x => new { x.AssetBuildingFloorId, x.Name })
+                    .IsUnique();
+
+                entity.HasOne(x => x.Floor)
+                    .WithMany(x => x.Rooms)
+                    .HasForeignKey(x => x.AssetBuildingFloorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.SiteLocation)
+                    .WithMany()
+                    .HasForeignKey(x => x.SiteLocationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            #endregion
 
             #region SQL Server Cascade Delete Prevention
 

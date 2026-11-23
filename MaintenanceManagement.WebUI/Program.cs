@@ -3,6 +3,7 @@ using MaintenanceManagement.Application.Interfaces.Services;
 using MaintenanceManagement.Application.Mapping;
 using MaintenanceManagement.Infrastructure.Data;
 using MaintenanceManagement.Infrastructure.DependencyInjection;
+using MaintenanceManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +28,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 });
 
 
+builder.Services.AddScoped<
+    IAssetWizardService,
+    AssetWizardService>();
 
+// Demirbaş Kategori, Marka ve Model Tanıtımı
+builder.Services.AddScoped<
+    IAssetDefinitionService,
+    AssetDefinitionService>();
 
 // =====================================
 // 3. APPLICATION KATMANI

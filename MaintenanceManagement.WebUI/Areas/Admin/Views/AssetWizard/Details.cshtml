@@ -1,0 +1,39 @@
+@model MaintenanceManagement.Application.DTOs.AssetWizard.AssetDetailPageVm
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Demirbaş Detayı";
+}
+@section Styles { <link rel="stylesheet" href="~/css/asset-wizard.css" asp-append-version="true" /> }
+<div class="container-fluid aw-page">
+  <div class="aw-title"><div class="aw-title-icon"><i class="fas fa-desktop"></i></div><div><h1>Demirbaş Detayı</h1><p>Demirbaşın güncel bilgileri ve tüm geçmiş kayıtları</p></div></div>
+  @if(TempData["SuccessMessage"]!=null){<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+  <div class="aw-card mb-3">
+    <div class="aw-detail-head"><div><h3 class="font-weight-bold">@Model.Code — @Model.Name</h3><span class="badge badge-success">@Model.Status</span></div><div><a asp-action="Create" class="btn btn-outline-primary"><i class="fas fa-plus mr-1"></i> Yeni Demirbaş</a></div></div>
+    <div class="row mt-4">
+      <div class="col-md-3 mb-3"><small>Kategori</small><div class="font-weight-bold">@Model.Category</div></div>
+      <div class="col-md-3 mb-3"><small>Marka / Model</small><div class="font-weight-bold">@Model.BrandModel</div></div>
+      <div class="col-md-3 mb-3"><small>Barkod</small><div class="font-weight-bold">@Model.Barcode</div></div>
+      <div class="col-md-3 mb-3"><small>Konum</small><div class="font-weight-bold">@Model.Location</div></div>
+      <div class="col-md-6"><small>Sorumlu Organizasyon</small><div class="font-weight-bold">@Model.ResponsibleUnit</div></div>
+      <div class="col-md-6"><small>Kullanan Organizasyon</small><div class="font-weight-bold">@Model.UsingUnit</div></div>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-4 mb-2"><div class="aw-stat"><small>İş Emri Sayısı</small><strong>@Model.WorkOrders.Count</strong></div></div>
+    <div class="col-md-4 mb-2"><div class="aw-stat"><small>Zimmet Kayıtları</small><strong>@Model.Assignments.Count</strong></div></div>
+    <div class="col-md-4 mb-2"><div class="aw-stat"><small>Hareket Kaydı</small><strong>@Model.History.Count</strong></div></div>
+  </div>
+  <div class="aw-card">
+    <div class="aw-tabs" role="tablist" aria-label="Demirbaş detay sekmeleri">
+      <button type="button" class="active" data-tab="info">Genel Bilgiler</button>
+      <button type="button" data-tab="assignments">Zimmet Geçmişi</button>
+      <button type="button" data-tab="orders">İş Emri Geçmişi</button>
+      <button type="button" data-tab="history">Hareket Geçmişi</button>
+    </div>
+    <section data-pane="info" class="pt-4"><h5>Genel Bilgiler</h5><p><b>Kayıt tarihi:</b> @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p><p><b>Açıklama:</b> @Model.Description</p></section>
+    <section data-pane="assignments" class="pt-4" hidden><h5>Zimmet Geçmişi</h5><div class="table-responsive"><table class="table table-hover aw-history-table"><thead><tr><th>Personel</th><th>Başlangıç</th><th>Bitiş</th><th>Durum</th></tr></thead><tbody>@foreach(var x in Model.Assignments){<tr><td>@x.User</td><td>@x.Start.ToString("dd.MM.yyyy HH:mm")</td><td>@(x.End?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td><td>@(x.IsCurrent ? "Mevcut zimmet" : "Geçmiş")</td></tr>}@if(Model.Assignments.Count==0){<tr><td colspan="4">Zimmet kaydı bulunamadı.</td></tr>}</tbody></table></div></section>
+    <section data-pane="orders" class="pt-4" hidden><h5>İş Emri Geçmişi</h5><div class="table-responsive"><table class="table table-hover aw-history-table"><thead><tr><th>Tarih</th><th>İş Emri</th><th>Açıklama</th></tr></thead><tbody>@foreach(var x in Model.WorkOrders){<tr><td>@x.Date.ToString("dd.MM.yyyy HH:mm")</td><td>@x.Reference</td><td>@x.Description</td></tr>}@if(Model.WorkOrders.Count==0){<tr><td colspan="3">İş emri bulunamadı.</td></tr>}</tbody></table></div></section>
+    <section data-pane="history" class="pt-4" hidden><div class="d-flex flex-wrap justify-content-between"><h5>Demirbaş Hareket Geçmişi</h5><div class="form-inline"><select id="aw-history-type" class="form-control mr-2 mb-2"><option value="">Tüm hareketler</option>@foreach(var name in Model.History.Select(x=>x.Type).Distinct()){<option>@name</option>}</select><input id="aw-history-search" class="form-control mb-2" placeholder="Açıklama veya referans ara..." /></div></div><div class="table-responsive"><table class="table table-hover aw-history-table"><thead><tr><th>Tarih / Saat</th><th>Hareket Türü</th><th>Açıklama</th><th>İlgili Kayıt</th><th>İşlemi Yapan</th></tr></thead><tbody>@foreach(var x in Model.History.OrderByDescending(x=>x.Date)){<tr data-history-type="@x.Type"><td>@x.Date.ToString("dd.MM.yyyy HH:mm")</td><td><span class="aw-pill">@x.Type</span></td><td>@x.Description</td><td>@x.Reference</td><td>@x.PerformedBy</td></tr>}@if(Model.History.Count==0){<tr><td colspan="5">Hareket kaydı bulunamadı.</td></tr>}</tbody></table></div></section>
+  </div>
+</div>
+@section Scripts {<script src="~/js/asset-detail.js" asp-append-version="true"></script>}

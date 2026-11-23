@@ -219,6 +219,8 @@ namespace MaintenanceManagement.Infrastructure.DependencyInjection
     IWarehouseOperationsService,
     WarehouseOperationsService>();
 
+            services.AddScoped<IAssetWizardService, AssetWizardService>();
+
             return services;
         }
     }

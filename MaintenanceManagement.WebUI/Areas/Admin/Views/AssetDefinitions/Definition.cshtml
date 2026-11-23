@@ -1,0 +1,86 @@
+@model MaintenanceManagement.Application.DTOs.AssetDefinitions.DefinitionPageVm
+@using System.Text.Json
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = Model.PageTitle;
+    var json = JsonSerializer.Serialize(Model.Units, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/asset-definitions.css" asp-append-version="true" />
+}
+<div class="container-fluid ad-page">
+  <div class="ad-heading"><div class="ad-heading-icon"><i class="fas fa-cubes"></i></div>
+    <div><h1>@Model.PageTitle</h1><p>Demirbaş yönetimi için merkezi tanımlamalar</p></div></div>
+  <div class="ad-nav mb-4">
+    <a asp-action="Categories" class="btn @(Model.Type == "category" ? "btn-primary" : "btn-outline-primary")"><i class="fas fa-sitemap mr-1"></i> Kategoriler</a>
+    <a asp-action="Brands" class="btn @(Model.Type == "brand" ? "btn-primary" : "btn-outline-primary")"><i class="fas fa-tags mr-1"></i> Markalar</a>
+    <a asp-action="Models" class="btn @(Model.Type == "model" ? "btn-primary" : "btn-outline-primary")"><i class="fas fa-laptop mr-1"></i> Modeller</a>
+    <a asp-controller="AssetWizard" asp-action="Create" class="btn btn-outline-secondary ml-auto">Demirbaş Tanıtımı</a>
+  </div>
+  @if(TempData["SuccessMessage"] != null) { <div class="alert alert-success">@TempData["SuccessMessage"]</div> }
+  <div class="row">
+    <div class="col-xl-5 mb-4">
+      <div class="ad-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="ad-section-title mb-0" id="ad-form-title"><i class="fas fa-plus-circle mr-2"></i>Yeni Tanım</h5>
+          <button type="button" id="ad-cancel-edit" class="btn btn-sm btn-outline-secondary" hidden>Vazgeç</button>
+        </div>
+        <div id="ad-edit-message" class="alert alert-info small py-2" hidden></div>
+        @if (Model.Type == "category") {
+          <form asp-action="SaveCategory" method="post" id="categoryForm" data-units-url="@Url.Action("CategoryUnits", "AssetDefinitions", new { area = "Admin" })">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-danger small"></div>
+            <input type="hidden" asp-for="Category.Id" />
+            <div class="form-group"><label>Kategori Adı *</label><input asp-for="Category.Name" class="form-control" required maxlength="150" /></div>
+            <div class="form-group"><label>Organizasyon Kullanım Kapsamı *</label>
+              <small class="form-text text-muted mb-2">Yalnızca Genel Müdürlük ve Daire Başkanlıkları seçilebilir. Alt birimler ilgili kapsamı miras alır.</small>
+              <input type="search" id="ad-unit-search" class="form-control mb-2" placeholder="Organizasyon ara..." />
+              <div id="ad-unit-tree" class="ad-unit-tree" role="group" aria-label="Organizasyon kapsamı"></div>
+              <div id="ad-unit-hidden"></div>
+              <small class="text-danger" id="ad-unit-error"></small>
+            </div>
+            <div class="custom-control custom-switch mb-3"><input asp-for="Category.IsActive" class="custom-control-input" /><label class="custom-control-label" asp-for="Category.IsActive">Aktif</label></div>
+            <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-save mr-1"></i> Kategoriyi Kaydet</button>
+          </form>
+        } else if (Model.Type == "brand") {
+          <form asp-action="SaveBrand" method="post" id="brandForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-danger small"></div>
+            <input type="hidden" asp-for="Brand.Id" />
+            <div class="form-group"><label>Marka Adı *</label><input asp-for="Brand.Name" class="form-control" required maxlength="150" placeholder="Örn: Dell" /></div>
+            <div class="custom-control custom-switch mb-3"><input asp-for="Brand.IsActive" class="custom-control-input" /><label class="custom-control-label" asp-for="Brand.IsActive">Aktif</label></div>
+            <button class="btn btn-primary btn-block" type="submit"><i class="fas fa-save mr-1"></i> Markayı Kaydet</button>
+          </form>
+        } else {
+          <form asp-action="SaveModel" method="post" id="modelForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-danger small"></div>
+            <input type="hidden" asp-for="Model.Id" />
+            <div class="form-group"><label>Marka *</label>
+              <select asp-for="Model.BrandId" class="form-control" required><option value="">Marka seçiniz...</option>
+              @foreach(var brand in Model.Brands.Where(x => x.IsActive)) { <option value="@brand.Id">@brand.Name</option> }
+              </select>
+            </div>
+            <div class="form-group"><label>Model Adı *</label><input asp-for="Model.Name" class="form-control" required maxlength="150" placeholder="Örn: Latitude 5540" /></div>
+            <div class="custom-control custom-switch mb-3"><input asp-for="Model.IsActive" class="custom-control-input" /><label class="custom-control-label" asp-for="Model.IsActive">Aktif</label></div>
+            <button class="btn btn-primary btn-block" type="submit"><i class="fas fa-save mr-1"></i> Modeli Kaydet</button>
+          </form>
+        }
+      </div>
+    </div>
+    <div class="col-xl-7 mb-4">
+      <div class="ad-card p-4"><h5 class="ad-section-title"><i class="fas fa-list-ul mr-2"></i> Kayıtlı Tanımlar</h5>
+        <input type="search" id="ad-filter" class="form-control mb-3" placeholder="Listede ara..." />
+        <div class="table-responsive"><table class="table table-hover ad-table">
+          <thead><tr><th>Ad</th>@if(Model.Type == "model") { <th>Marka</th> } <th>Durum</th><th class="text-right">İşlem</th></tr></thead>
+          <tbody id="ad-rows">
+          @if(Model.Type == "category") { foreach(var r in Model.Categories) {<tr><td>@r.Name</td><td><span class="badge @(r.IsActive?"badge-success":"badge-secondary")">@(r.IsActive?"Aktif":"Pasif")</span></td><td class="text-right"><button type="button" class="btn btn-sm btn-outline-primary ad-edit" data-kind="category" data-id="@r.Id" data-name="@r.Name" data-active="@r.IsActive.ToString().ToLowerInvariant()"><i class="fas fa-edit mr-1"></i>Düzenle</button></td></tr>} }
+          else if(Model.Type == "brand") { foreach(var r in Model.Brands) {<tr><td>@r.Name</td><td><span class="badge @(r.IsActive?"badge-success":"badge-secondary")">@(r.IsActive?"Aktif":"Pasif")</span></td><td class="text-right"><button type="button" class="btn btn-sm btn-outline-primary ad-edit" data-kind="brand" data-id="@r.Id" data-name="@r.Name" data-active="@r.IsActive.ToString().ToLowerInvariant()"><i class="fas fa-edit mr-1"></i>Düzenle</button></td></tr>} }
+          else { foreach(var r in Model.Models) {<tr><td>@r.Name</td><td>@(Model.Brands.FirstOrDefault(x=>x.Id == r.BrandId)?.Name ?? "—")</td><td><span class="badge @(r.IsActive?"badge-success":"badge-secondary")">@(r.IsActive?"Aktif":"Pasif")</span></td><td class="text-right"><button type="button" class="btn btn-sm btn-outline-primary ad-edit" data-kind="model" data-id="@r.Id" data-name="@r.Name" data-brand-id="@r.BrandId" data-active="@r.IsActive.ToString().ToLowerInvariant()"><i class="fas fa-edit mr-1"></i>Düzenle</button></td></tr>} }
+          </tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="application/json" id="ad-units-json">@Html.Raw(json)</script>
+@section Scripts { <script src="~/js/asset-definitions.js" asp-append-version="true"></script> }

@@ -24,6 +24,12 @@
         controller == "WarehouseTransfer" ||
         controller == "WarehouseStock";
 
+    // Demirbaş Tanıtımı, Kategori, Marka ve Model sayfaları.
+    // Demirbaş detay sayfası da AssetWizard controller'ını kullanır.
+    bool isAssetManagement =
+        controller == "AssetWizard" ||
+        controller == "AssetDefinitions";
+
     // Birim Yönetimi
     bool isUnitManagement = controller == "Unit";
 
@@ -69,9 +75,32 @@
           rel="stylesheet">
 
     <style>
-      /* Yalnızca Ambar Yönetimi menüsü: uzun metinler taşmasın. */
-      #collapseWarehouses .collapse-inner { max-width: 100%; }
-      #collapseWarehouses .collapse-item { white-space: normal; line-height: 1.35; padding-top: .55rem; padding-bottom: .55rem; }
+            /* Yalnızca Ambar Yönetimi menüsü: uzun metinler taşmasın. */
+            #collapseWarehouses .collapse-inner {
+                max-width: 100%;
+            }
+
+            #collapseWarehouses .collapse-item {
+                white-space: normal;
+                line-height: 1.35;
+                padding-top: .55rem;
+                padding-bottom: .55rem;
+            }
+            /* Demirbaş alt menüsü de mevcut SB Admin 2 görünümünü kullanır. */
+            #collapseAssets .collapse-inner {
+                max-width: 100%;
+            }
+
+            #collapseAssets .collapse-item {
+                white-space: normal;
+                line-height: 1.35;
+                padding-top: .55rem;
+                padding-bottom: .55rem;
+            }
+
+                #collapseAssets .collapse-item.active {
+                    font-weight: 700;
+                }
     </style>
     @RenderSection("Styles", required: false)
 </head>
@@ -285,6 +314,62 @@
 
 
             <!-- ===================================== -->
+            <!-- DEMİRBAŞ YÖNETİMİ -->
+            <!-- ===================================== -->
+
+            <li class="nav-item @(isAssetManagement ? "active" : "")">
+                <a class="nav-link @(isAssetManagement ? "" : "collapsed")"
+                   href="#"
+                   data-toggle="collapse"
+                   data-target="#collapseAssets"
+                   aria-expanded="@(isAssetManagement ? "true" : "false")"
+                   aria-controls="collapseAssets">
+                    <i class="fas fa-fw fa-laptop"></i>
+                    <span>Demirbaş Yönetimi</span>
+                </a>
+
+                <div id="collapseAssets"
+                     class="collapse @(isAssetManagement ? "show" : "")"
+                     data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Demirbaş Yönetimi</h6>
+
+                        <a class="collapse-item @(controller == "AssetWizard" && action == "Create" ? "active" : "")"
+                           asp-area="Admin"
+                           asp-controller="AssetWizard"
+                           asp-action="Create">
+                            <i class="fas fa-plus-circle fa-fw mr-1 text-primary"></i>
+                            Demirbaş Tanıtımı
+                        </a>
+
+                        <a class="collapse-item @(controller == "AssetDefinitions" && action == "Categories" ? "active" : "")"
+                           asp-area="Admin"
+                           asp-controller="AssetDefinitions"
+                           asp-action="Categories">
+                            <i class="fas fa-layer-group fa-fw mr-1 text-primary"></i>
+                            Demirbaş Kategorileri
+                        </a>
+
+                        <a class="collapse-item @(controller == "AssetDefinitions" && action == "Brands" ? "active" : "")"
+                           asp-area="Admin"
+                           asp-controller="AssetDefinitions"
+                           asp-action="Brands">
+                            <i class="fas fa-tags fa-fw mr-1 text-primary"></i>
+                            Marka Tanıtımı
+                        </a>
+
+                        <a class="collapse-item @(controller == "AssetDefinitions" && action == "Models" ? "active" : "")"
+                           asp-area="Admin"
+                           asp-controller="AssetDefinitions"
+                           asp-action="Models">
+                            <i class="fas fa-laptop-code fa-fw mr-1 text-primary"></i>
+                            Model Tanıtımı
+                        </a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- ===================================== -->
             <!-- AMBAR YÖNETİMİ -->
             <!-- ===================================== -->
 
@@ -326,23 +411,23 @@
                             <i class="fas fa-th-large fa-fw mr-1"></i> Ambar Hareketleri
                         </a>
                         <div class="pl-3" style="border-left:2px solid #e8ecf5;margin-left:17px;">
-                            <a class="collapse-item @(controller=="StockMovement" && action=="CreateIn" ? "active" : "")"
+                            <a class="collapse-item @(controller == "StockMovement" && action == "CreateIn" ? "active" : "")"
                                asp-area="Admin" asp-controller="StockMovement" asp-action="CreateIn">
                                 <i class="fas fa-box-open fa-fw mr-1 text-success"></i> Stok Girişi
                             </a>
-                            <a class="collapse-item @(controller=="StockMovement" && action=="CreateOut" ? "active" : "")"
+                            <a class="collapse-item @(controller == "StockMovement" && action == "CreateOut" ? "active" : "")"
                                asp-area="Admin" asp-controller="StockMovement" asp-action="CreateOut">
                                 <i class="fas fa-dolly fa-fw mr-1 text-danger"></i> Stok Çıkışı
                             </a>
-                            <a class="collapse-item @(controller=="WarehouseTransfer" ? "active" : "")"
+                            <a class="collapse-item @(controller == "WarehouseTransfer" ? "active" : "")"
                                asp-area="Admin" asp-controller="WarehouseTransfer" asp-action="Index">
                                 <i class="fas fa-exchange-alt fa-fw mr-1 text-primary"></i> Ambarlar Arası Transfer
                             </a>
-                            <a class="collapse-item @(controller=="StockMovement" && action=="History" ? "active" : "")"
+                            <a class="collapse-item @(controller == "StockMovement" && action == "History" ? "active" : "")"
                                asp-area="Admin" asp-controller="StockMovement" asp-action="History">
                                 <i class="fas fa-history fa-fw mr-1"></i> Hareket Geçmişi
                             </a>
-                            <a class="collapse-item @(controller=="StockMovement" && action=="WorkOrderUsages" ? "active" : "")"
+                            <a class="collapse-item @(controller == "StockMovement" && action == "WorkOrderUsages" ? "active" : "")"
                                asp-area="Admin" asp-controller="StockMovement" asp-action="WorkOrderUsages">
                                 <i class="fas fa-clipboard-list fa-fw mr-1"></i> İş Emri Malzeme Kullanımları
                             </a>

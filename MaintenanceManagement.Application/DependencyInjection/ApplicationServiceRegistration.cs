@@ -1,4 +1,5 @@
-﻿using MaintenanceManagement.Application.Interfaces.Services;
+﻿
+using MaintenanceManagement.Application.Interfaces.Services;
 using MaintenanceManagement.Application.Mapping;
 using MaintenanceManagement.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -110,6 +111,8 @@ namespace MaintenanceManagement.Application.DependencyInjection
             services.AddScoped<
     IWarehouseRegistrationService,
     WarehouseRegistrationService>();
+
+            
 
             return services;
         }
