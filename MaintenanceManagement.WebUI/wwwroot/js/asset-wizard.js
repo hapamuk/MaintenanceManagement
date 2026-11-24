@@ -8,7 +8,8 @@
   const prev = document.getElementById('aw-prev');
   const next = document.getElementById('aw-next');
   const submit = document.getElementById('aw-submit');
-  let step = 0;
+  const mode = root.dataset.mode || 'create';
+  let step = Number(root.dataset.initialStep || 0);
   const units = JSON.parse(document.getElementById('aw-unit-data').textContent || '[]');
 
   function esc(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -26,9 +27,9 @@
     step = stepNumber;
     panels.forEach((p, i) => p.hidden = i !== step);
     stepItems.forEach((s, i) => { s.classList.toggle('active', i === step); s.classList.toggle('done', i < step); });
-    prev.disabled = step === 0;
-    next.hidden = step === 5;
-    submit.hidden = step !== 5;
+    prev.disabled = mode === 'assign' || step === 0;
+    next.hidden = mode === 'assign' || step === 5;
+    submit.hidden = mode === 'assign' ? step !== 3 : step !== 5;
     document.getElementById('aw-step-hint').textContent = `Adım ${step + 1} / 6`;
     if (step === 5) preview();
     document.dispatchEvent(new CustomEvent('aw:step-change',{detail:{step}}));
@@ -52,16 +53,107 @@
   }
   prev.addEventListener('click', () => active(Math.max(step - 1, 0)));
   next.addEventListener('click', () => { if (validStep()) active(Math.min(step + 1, 5)); });
-  form.addEventListener('submit', event => { if (step !== 5 || !validStep()) { event.preventDefault(); return; } submit.disabled = true; });
+  form.addEventListener('submit', event => {
+    if (mode === 'assign') {
+      if (step !== 3 || !Number(document.getElementById('aw-assignee').value)) { event.preventDefault(); alert('Zimmet verilecek personeli seçiniz.'); return; }
+    } else if (step !== 5 || !validStep()) { event.preventDefault(); return; }
+    submit.disabled = true;
+  });
 
   function filterSelect(select, groupId, reset) {
     [...select.options].forEach(opt => { if (!opt.value) return; opt.hidden = !!opt.dataset.group && opt.dataset.group !== groupId; opt.disabled = opt.hidden; });
     if (reset && select.selectedOptions[0]?.disabled) select.value = '';
   }
   const cat = document.getElementById('aw-category');
+  const kind = document.getElementById('aw-kind');
   const brand = document.getElementById('aw-brand'), model = document.getElementById('aw-model');
+  const kindBrands = JSON.parse(document.getElementById('aw-kind-brand-data')?.textContent || '[]');
+  const kindBrandSet = new Set(kindBrands.map(x => `${x.kindId}:${x.brandId}`));
+  function refreshBrands(reset) {
+    [...brand.options].forEach(o => {
+      if (!o.value) return;
+      o.hidden = !kind.value || !kindBrandSet.has(`${kind.value}:${o.value}`);
+      o.disabled = o.hidden;
+    });
+    if (reset || brand.selectedOptions[0]?.disabled) brand.value = '';
+    filterSelect(model,brand.value,true);
+  }
+  cat.addEventListener('change',()=>{kind.value='';brand.value='';model.value='';filterSelect(kind,cat.value,true);refreshBrands(true);});
+  kind.addEventListener('change',()=>refreshBrands(true));
   brand.addEventListener('change', () => { model.value = ''; filterSelect(model,brand.value,true); });
+  filterSelect(kind,cat.value,false);
+  refreshBrands(false);
   filterSelect(model,brand.value,false);
+
+  // Üst varlık ağacı: Genel Müdürlük > kategori > kaydedilmiş varlıklar > alt varlıklar.
+  const assetNodes = JSON.parse(document.getElementById('aw-asset-tree-data')?.textContent || '[]');
+  const assetCategories = JSON.parse(document.getElementById('aw-category-tree-data')?.textContent || '[]');
+  const parentInput = document.getElementById('aw-parent-id');
+  const parentTree = document.getElementById('aw-parent-tree');
+  const parentSearch = document.getElementById('aw-parent-search');
+  const expandedNodes = new Set();
+  const byAssetId = new Map(assetNodes.map(x => [Number(x.id), x]));
+  const byParentAsset = new Map();
+  assetNodes.forEach(x => {
+    const id = Number(x.id), pid = Number(x.parentAssetId || 0);
+    // Hatalı / döngüsel veriler ağacı kilitlemesin; köke düşür.
+    const parentId = pid && pid !== id && byAssetId.has(pid) ? pid : 0;
+    if (!byParentAsset.has(parentId)) byParentAsset.set(parentId, []);
+    byParentAsset.get(parentId).push(x);
+  });
+  function renderParentTree() {
+    const q = parentSearch.value.trim().toLocaleLowerCase('tr-TR');
+    const match = n => `${n.name} ${n.code}`.toLocaleLowerCase('tr-TR').includes(q);
+    function nodeHtml(node, depth, seen) {
+      const id = Number(node.id);
+      if (seen.has(id) || depth > 25) return '';
+      const newSeen=new Set(seen);newSeen.add(id);
+      const children=(byParentAsset.get(id)||[]).filter(x=>!newSeen.has(Number(x.id)));
+      const hasHit = !q || match(node) || children.some(c=>descendantHit(c,newSeen));
+      if (!hasHit)return '';
+      const open = !!q || expandedNodes.has(id);
+      const selected = Number(parentInput.value)===id;
+      return `<div class="aw-parent-node" role="treeitem" aria-selected="${selected}">
+        <div class="aw-parent-line" style="padding-left:${Math.min(depth,20)*17+9}px">
+          ${children.length?`<button type="button" class="aw-parent-toggle" data-parent-toggle="${id}" aria-label="Alt varlıkları aç/kapat"><i class="fas fa-chevron-${open?'down':'right'}"></i></button>`:'<span class="aw-parent-placeholder"></span>'}
+          <button type="button" class="aw-parent-choice ${selected?'selected':''}" data-parent-choice="${id}"><i class="fas fa-cube mr-2"></i>${esc(node.name)} <small>(${esc(node.code)})</small></button>
+        </div>${open?children.map(x=>nodeHtml(x,depth+1,newSeen)).join(''):''}
+      </div>`;
+    }
+    function descendantHit(n,seen){
+      const id=Number(n.id);if(seen.has(id))return false;
+      if(match(n))return true;
+      const visited=new Set(seen);visited.add(id);
+      return (byParentAsset.get(id)||[]).some(x=>descendantHit(x,visited));
+    }
+    const categoriesHtml=assetCategories.map(category=>{
+      const top=(byParentAsset.get(0)||[]).filter(x=>Number(x.categoryId)===Number(category.id));
+      const matches=top.map(n=>nodeHtml(n,2,new Set())).filter(Boolean);
+      if(!matches.length)return '';
+      return `<div class="aw-parent-category"><div class="aw-parent-category-label"><i class="fas fa-folder-open mr-2"></i>${esc(category.text)}</div>${matches.join('')}</div>`;
+    }).join('');
+    parentTree.innerHTML=`<div class="aw-parent-root"><i class="fas fa-building mr-2"></i>Genel Müdürlük</div>`+(categoriesHtml||'<p class="text-muted p-3">Kayıtlı üst varlık bulunamadı.</p>');
+    parentTree.querySelectorAll('[data-parent-toggle]').forEach(btn=>btn.addEventListener('click',()=>{
+      const id=Number(btn.dataset.parentToggle);expandedNodes.has(id)?expandedNodes.delete(id):expandedNodes.add(id);renderParentTree();
+    }));
+    parentTree.querySelectorAll('[data-parent-choice]').forEach(btn=>btn.addEventListener('click',()=>{
+      parentInput.value=btn.dataset.parentChoice;
+      const n=byAssetId.get(Number(parentInput.value));
+      document.getElementById('aw-parent-picked').textContent=`Seçili üst varlık: ${n?.name||''} (${n?.code||''})`;
+      renderParentTree();
+    }));
+  }
+  parentSearch.addEventListener('input',renderParentTree);
+  document.getElementById('aw-parent-expand').addEventListener('click',()=>{assetNodes.forEach(x=>expandedNodes.add(Number(x.id)));renderParentTree();});
+  document.getElementById('aw-parent-collapse').addEventListener('click',()=>{expandedNodes.clear();renderParentTree();});
+  document.getElementById('aw-parent-clear').addEventListener('click',()=>{
+    parentInput.value='';document.getElementById('aw-parent-picked').textContent='Üst varlık seçilmedi; yeni kayıt bağımsız varlık olarak oluşturulur.';renderParentTree();
+  });
+  if (parentInput.value) {
+    const n=byAssetId.get(Number(parentInput.value));
+    if(n) document.getElementById('aw-parent-picked').textContent=`Seçili üst varlık: ${n.name} (${n.code})`;
+  }
+  renderParentTree();
 
   // Birim hiyerarşisi yalnızca merkezî Unit kayıtlarından kurulur.
   const unitById = new Map(units.map(u => [Number(u.id), u]));
@@ -356,12 +448,12 @@
     const status=({Active:'Aktif',Passive:'Pasif',Scrap:'Hurda'})[value('Status')]||value('Status');
     const selectedRoom=room.value ? `${building.selectedOptions[0]?.textContent} / ${floor.selectedOptions[0]?.textContent} / ${room.selectedOptions[0]?.textContent}` : 'Seçilmedi';
     const cards=[
-      ['Kimlik Bilgileri','fa-id-card',[['Demirbaş Kodu','Kayıt sonrası otomatik'],['Demirbaş Adı',value('Name')],['Barkod',value('BarcodeNumber')]]],
-      ['Sınıflandırma','fa-layer-group',[['Kategori',display('AssetCategoryId')],['Marka',display('BrandId')],['Model',display('AssetModelId')]]],
+      ['Kimlik Bilgileri','fa-id-card',[['Demirbaş Kodu',mode === 'create' ? 'Kayıt sonrası otomatik' : value('AssetCode')],['Demirbaş Adı',value('Name')],['Barkod',value('BarcodeNumber')]]],
+      ['Sınıflandırma','fa-layer-group',[['Kategori',display('AssetCategoryId')],['Demirbaş Türü',display('AssetKindId')],['Üst Varlık',parentInput.value?(byAssetId.get(Number(parentInput.value))?.name||'—'):'Bağımsız'],['Marka',display('BrandId')],['Model',display('AssetModelId')]]],
       ['Organizasyon ve Konum','fa-sitemap',[['Sorumlu Organizasyon',selectedName(value('ResponsibleUnitId'))],['Kullanılan Organizasyon',value('UsingUnitId') ? selectedName(value('UsingUnitId')) : 'Seçilmedi'],['Bina / Kat / Oda',selectedRoom]]],
       ['Zimmet ve Durum','fa-user-check',[['İlk Zimmet',value('AssigneeUserId')?display('AssigneeUserId'):'Zimmet yok'],['Durum',status],['Açıklama',value('Description')]]]
     ];
-    document.getElementById('aw-preview').innerHTML=`<div class="aw-preview-hero"><i class="fas fa-laptop"></i><div><small>Yeni Demirbaş Kaydı</small><h3>${esc(value('Name')||'Demirbaş')}</h3><span class="aw-preview-status">${esc(status)}</span></div></div><div class="aw-preview-grid">${cards.map(([title,icon,items])=>`<div class="aw-preview-card"><h5><i class="fas ${icon}"></i>${esc(title)}</h5>${items.map(([k,v])=>`<div class="aw-preview-line"><span>${esc(k)}</span><strong>${esc(v||'—')}</strong></div>`).join('')}</div>`).join('')}</div>`;
+    document.getElementById('aw-preview').innerHTML=`<div class="aw-preview-hero"><i class="fas fa-laptop"></i><div><small>${mode==='edit'?'Demirbaş Güncelleme':'Yeni Demirbaş Kaydı'}</small><h3>${esc(value('Name')||'Demirbaş')}</h3><span class="aw-preview-status">${esc(status)}</span></div></div><div class="aw-preview-grid">${cards.map(([title,icon,items])=>`<div class="aw-preview-card"><h5><i class="fas ${icon}"></i>${esc(title)}</h5>${items.map(([k,v])=>`<div class="aw-preview-line"><span>${esc(k)}</span><strong>${esc(v||'—')}</strong></div>`).join('')}</div>`).join('')}</div>`;
   }
-  active(0);
+  active(step);
 })();

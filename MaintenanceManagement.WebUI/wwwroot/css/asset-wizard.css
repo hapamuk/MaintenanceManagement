@@ -25,3 +25,16 @@
 .aw-map{height:430px;min-height:430px;width:100%;position:relative;background:#e6edf9}
 .aw-map .leaflet-container{width:100%;height:100%}
 @media(max-width:768px){.aw-map{height:330px;min-height:330px}.aw-geo-panel{padding:12px}}
+
+/* V7 - Üst varlık ağacı */
+.aw-parent-tree{max-height:320px;overflow:auto;border:1px solid #dbe4f3;border-radius:12px;background:#f9fbff;padding:9px}
+.aw-parent-root{font-weight:700;color:#17366a;padding:11px 10px;background:#edf3ff;border-radius:8px;margin-bottom:8px}
+.aw-parent-category-label{font-weight:650;color:#274671;padding:10px 12px}
+.aw-parent-line{display:flex;align-items:center;min-height:35px;gap:4px}
+.aw-parent-toggle{width:27px;flex-shrink:0;border:0;background:transparent;color:#64789b}
+.aw-parent-placeholder{width:27px;flex-shrink:0}
+.aw-parent-choice{flex:1;text-align:left;border:0;background:transparent;border-radius:7px;color:#263e64;padding:7px 9px;cursor:pointer}
+.aw-parent-choice:hover{background:#e9f0ff}
+.aw-parent-choice.selected{background:#dce9ff;color:#1d4ed8;font-weight:700}
+.aw-parent-choice small{color:#7182a0}
+.aw-parent-block{background:#fff}

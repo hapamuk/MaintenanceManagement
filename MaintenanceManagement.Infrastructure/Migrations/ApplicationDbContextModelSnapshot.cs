@@ -41,6 +41,10 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.Property<int>("AssetModelId")
                         .HasColumnType("int");
 
+                    b.Property<string>("BarcodeNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -64,6 +68,9 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<int?>("SiteLocationId")
+                        .HasColumnType("int");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -72,6 +79,9 @@ namespace MaintenanceManagement.Infrastructure.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("UsingUnitId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("WarrantyEndDate")
                         .HasColumnType("datetime2");
@@ -82,9 +92,68 @@ namespace MaintenanceManagement.Infrastructure.Migrations
 
                     b.HasIndex("AssetModelId");
 
+                    b.HasIndex("SiteLocationId");
+
                     b.HasIndex("UnitId");
 
+                    b.HasIndex("UsingUnitId");
+
                     b.ToTable("Assets");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetAuditEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssetId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("NewValue")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OldValue")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("PerformedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PerformedByUserId");
+
+                    b.HasIndex("AssetId", "OccurredAt");
+
+                    b.ToTable("AssetAuditEvents", (string)null);
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetBuilding", b =>
@@ -263,6 +332,21 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.ToTable("AssetKinds");
                 });
 
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetKindBrand", b =>
+                {
+                    b.Property<int>("AssetKindId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BrandId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AssetKindId", "BrandId");
+
+                    b.HasIndex("BrandId");
+
+                    b.ToTable("AssetKindBrands", (string)null);
+                });
+
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetModel", b =>
                 {
                     b.Property<int>("Id")
@@ -354,6 +438,24 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.ToTable("AssetMovements");
                 });
 
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetParentLink", b =>
+                {
+                    b.Property<int>("AssetId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ParentAssetId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AssetId");
+
+                    b.HasIndex("ParentAssetId");
+
+                    b.ToTable("AssetParentLinks", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AssetParentLinks_NotSelf", "[AssetId] <> [ParentAssetId]");
+                        });
+                });
+
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetUser", b =>
                 {
                     b.Property<int>("Id")
@@ -389,7 +491,10 @@ namespace MaintenanceManagement.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssetId");
+                    b.HasIndex("AssetId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_AssetUsers_OneOpenAssignment")
+                        .HasFilter("[EndDate] IS NULL");
 
                     b.HasIndex("AssignedByUserId");
 
@@ -1974,17 +2079,48 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("MaintenanceManagement.Domain.Entities.SiteLocation", "SiteLocation")
+                        .WithMany()
+                        .HasForeignKey("SiteLocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MaintenanceManagement.Domain.Entities.Unit", "Unit")
                         .WithMany("Assets")
                         .HasForeignKey("UnitId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("MaintenanceManagement.Domain.Entities.Unit", "UsingUnit")
+                        .WithMany()
+                        .HasForeignKey("UsingUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("AssetKind");
 
                     b.Navigation("AssetModel");
 
+                    b.Navigation("SiteLocation");
+
                     b.Navigation("Unit");
+
+                    b.Navigation("UsingUnit");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetAuditEvent", b =>
+                {
+                    b.HasOne("MaintenanceManagement.Domain.Entities.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MaintenanceManagement.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("PerformedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetBuildingFloor", b =>
@@ -2040,6 +2176,21 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("AssetCategory");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetKindBrand", b =>
+                {
+                    b.HasOne("MaintenanceManagement.Domain.Entities.AssetKind", null)
+                        .WithMany()
+                        .HasForeignKey("AssetKindId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MaintenanceManagement.Domain.Entities.Brand", null)
+                        .WithMany()
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetModel", b =>
@@ -2098,6 +2249,21 @@ namespace MaintenanceManagement.Infrastructure.Migrations
                     b.Navigation("ToUnit");
 
                     b.Navigation("ToUser");
+                });
+
+            modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetParentLink", b =>
+                {
+                    b.HasOne("MaintenanceManagement.Domain.Entities.Asset", null)
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MaintenanceManagement.Domain.Entities.Asset", null)
+                        .WithMany()
+                        .HasForeignKey("ParentAssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MaintenanceManagement.Domain.Entities.AssetUser", b =>

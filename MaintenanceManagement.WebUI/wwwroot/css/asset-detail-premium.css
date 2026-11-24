@@ -1,0 +1,62 @@
+/* V8.5 premium detail skin – all page components scoped. No layout/entity changes required. */
+body:has(#assetDetailPage) #content-wrapper{background:radial-gradient(ellipse 80% 36% at 75% 2%,rgba(64,149,225,.38),transparent 75%),linear-gradient(135deg,#d8e9ff 0%,#bed9f6 44%,#dcecff 100%);min-width:0}
+body:has(#assetDetailPage) #content-wrapper #content{position:relative;isolation:isolate}
+body:has(#assetDetailPage) #content-wrapper #content:before{content:"";position:absolute;z-index:-1;pointer-events:none;left:0;right:0;top:0;height:420px;background:radial-gradient(ellipse 67% 85% at 75% -20%,rgba(17,111,204,.18),transparent),repeating-radial-gradient(ellipse at 120% -120%,transparent 0 115px,rgba(255,255,255,.23) 116px 118px,transparent 119px 190px);}
+body:has(#assetDetailPage) #accordionSidebar{background:linear-gradient(162deg,#061a3e,#102d60 54%,#06183a)!important}
+body:has(#assetDetailPage) #accordionSidebar .sidebar-brand{background:rgba(9,56,122,.55);border-bottom:1px solid rgba(86,175,255,.30)}
+body:has(#assetDetailPage) #accordionSidebar .nav-link:hover{background:rgba(45,111,217,.22);border-radius:9px}
+body:has(#assetDetailPage) #collapseAssets .collapse-inner{background:linear-gradient(150deg,#f5faff,#dce9ff);border:1px solid rgba(201,222,255,.75);box-shadow:0 10px 24px rgba(0,16,59,.17)}
+body:has(#assetDetailPage) .topbar{background:rgba(241,248,255,.85)!important;backdrop-filter:blur(8px)}
+#assetDetailPage.adv-page{max-width:1920px;padding:8px 20px 38px;color:#10285c;font-family:Nunito,system-ui,sans-serif;font-size:14px}
+#assetDetailPage .adv-titleline{margin:5px 0 18px;gap:16px}
+#assetDetailPage .adv-titleline h1{font-size:28px;font-weight:900;color:#091c48;letter-spacing:-.6px;text-shadow:0 1px rgba(255,255,255,.5)}
+#assetDetailPage .adv-back{height:46px;width:47px;background:linear-gradient(140deg,#fff,#e1edff);border:1px solid rgba(180,209,250,.9);box-shadow:0 5px 13px rgba(30,80,160,.14);color:#16479d}
+#assetDetailPage .adv-hero,#assetDetailPage .adv-stat-shell,#assetDetailPage .adv-tabs-shell{border:1px solid rgba(255,255,255,.85);border-radius:17px;box-shadow:0 15px 30px rgba(35,90,160,.16),0 3px 7px rgba(32,90,165,.06)}
+#assetDetailPage .adv-hero{position:relative;overflow:hidden;padding:23px 24px;gap:22px;min-height:211px;background:linear-gradient(117deg,rgba(255,255,255,.97),rgba(244,250,255,.91) 67%,rgba(231,242,255,.90))}
+#assetDetailPage .adv-hero:after{content:"";position:absolute;pointer-events:none;right:-100px;bottom:-96px;width:570px;height:190px;border-radius:50%;transform:rotate(-15deg);border:30px solid rgba(60,118,220,.07);box-shadow:0 0 0 22px rgba(71,140,227,.04)}
+#assetDetailPage .adv-placeholder{width:155px;min-height:160px;border-radius:15px;background:linear-gradient(155deg,#e8f4ff,#acdaff);color:#0a58cf;box-shadow:inset 0 1px rgba(255,255,255,.85);position:relative;z-index:1}
+#assetDetailPage .adv-placeholder i{font-size:84px;filter:drop-shadow(1px 7px 3px rgba(17,70,161,.24))}
+#assetDetailPage .adv-hero-main{position:relative;z-index:1}
+#assetDetailPage .adv-heading h2{font-size:22px;color:#051746;font-weight:900}
+#assetDetailPage .adv-kind{color:#31507f;margin:0 0 16px;font-weight:600}
+#assetDetailPage .adv-status{box-shadow:0 3px 8px rgba(9,92,46,.20)}
+#assetDetailPage .adv-green{background:linear-gradient(180deg,#26ca6b,#078a3b)}
+#assetDetailPage .adv-actions{gap:10px}
+#assetDetailPage .adv-actions .btn{font-size:12px;border-radius:9px;padding:10px 16px;box-shadow:0 4px 10px rgba(32,74,169,.08);font-weight:800}
+#assetDetailPage .adv-btn-primary{background:linear-gradient(180deg,#2878ff,#0443cf)!important;box-shadow:0 6px 13px rgba(14,79,196,.25)!important}
+#assetDetailPage .adv-btn-outline{background:linear-gradient(180deg,#fff,#f1f7ff)!important;border:1px solid #a6bfea!important;color:#173e9b!important}
+#assetDetailPage .adv-fact>i,#assetDetailPage .adv-organization-grid i{color:#335b9e;font-size:23px}
+#assetDetailPage .adv-fact strong,#assetDetailPage .adv-organization-grid strong{font-weight:800;color:#112b63}
+#assetDetailPage .adv-stat-shell{background:rgba(255,255,255,.63);padding:7px;gap:10px;margin:13px 0 21px}
+#assetDetailPage .adv-stat{min-height:94px;border:5px solid rgba(255,255,255,.93);border-radius:16px;position:relative;overflow:hidden;padding:16px 21px;box-shadow:0 3px 12px rgba(35,87,164,.08)}
+#assetDetailPage .adv-stat:after{content:"";position:absolute;width:100%;height:65px;right:-24%;bottom:-36px;border-radius:50%;transform:rotate(-17deg);background:rgba(68,146,235,.09);box-shadow:0 -15px 0 rgba(255,255,255,.11)}
+#assetDetailPage .adv-stat>i{font-size:34px;position:relative;z-index:1}
+#assetDetailPage .adv-stat>span{position:relative;z-index:1;font-size:12px;font-weight:700}
+#assetDetailPage .adv-stat strong{font-size:22px;font-weight:900}
+#assetDetailPage .adv-stat-blue{background:linear-gradient(120deg,#f0f8ff,#c8e6ff)}
+#assetDetailPage .adv-stat-green{background:linear-gradient(120deg,#f0fff5,#c9f2dc)}
+#assetDetailPage .adv-stat-purple{background:linear-gradient(120deg,#f8f4ff,#dfd1ff)}
+#assetDetailPage .adv-stat-yellow{background:linear-gradient(120deg,#fffdf2,#ffe9b4)}
+#assetDetailPage .adv-tabs-shell{background:rgba(255,255,255,.77);overflow:visible;position:relative;padding:0}
+#assetDetailPage .adv-tabs{background:linear-gradient(180deg,rgba(250,253,255,.98),rgba(237,246,255,.90));border-radius:15px 15px 0 0;padding:0 1px;overflow-x:auto;gap:6px;border-bottom:1px solid #c4d9f4}
+#assetDetailPage .adv-tabs button{max-width:none;min-width:155px;flex:1 0 auto;font-size:14px;padding:15px 13px;gap:12px;border-radius:12px 12px 0 0;transition:background .15s,color .15s}
+#assetDetailPage .adv-tabs button.active{color:#fff;background:linear-gradient(180deg,#237aff,#0040c7);box-shadow:0 5px 12px rgba(14,69,178,.21);border-color:transparent}
+#assetDetailPage .adv-tabs button.active i{color:#fff}
+#assetDetailPage .adv-tabs button.active:after{content:"";position:absolute;bottom:-4px;width:8px;height:8px;background:#0044cf;transform:rotate(45deg)}
+#assetDetailPage .adv-pane{padding:21px 22px 23px;background:linear-gradient(150deg,rgba(255,255,255,.97),rgba(233,245,255,.93));border-radius:0 0 16px 16px;min-height:235px}
+#assetDetailPage .adv-pane-title{font-size:21px;font-weight:900;margin-bottom:19px;color:#0a2359}
+#assetDetailPage .adv-info-grid{gap:9px 14px}
+#assetDetailPage .adv-info-grid>div{display:flex;flex-direction:row;align-items:center;gap:14px;background:linear-gradient(130deg,rgba(255,255,255,.97),rgba(249,252,255,.90));border:1px solid #c2d9f4;border-radius:10px;min-height:52px;padding:7px 11px;box-shadow:0 1px 2px rgba(34,81,158,.03)}
+#assetDetailPage .adv-field-icon{display:flex;flex:0 0 42px;width:42px;height:41px;justify-content:center;align-items:center;border-radius:9px;background:linear-gradient(135deg,#f5faff,#deecff);color:#2464c9;font-size:19px}
+#assetDetailPage .adv-field-text{min-width:0;display:flex;flex-direction:column;gap:1px}
+#assetDetailPage .adv-info-grid small{font-size:11px;color:#405a83}
+#assetDetailPage .adv-info-grid strong{font-size:13px;color:#0b2457;margin:0;font-weight:850;overflow-wrap:anywhere}
+#assetDetailPage .adv-description{background:rgba(234,245,255,.8);border:1px solid #cee0f8}
+#assetDetailPage .adv-pane-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+#assetDetailPage .adv-pane-toolbar .adv-pane-title{margin:0}
+#assetDetailPage .adv-table thead th{background:linear-gradient(180deg,#e7f0fc,#dce8f7)}
+#assetDetailPage .adv-filter-bar label span{background:#f4faff}
+@media(max-width:1350px){#assetDetailPage .adv-hero-top{flex-direction:column}#assetDetailPage .adv-hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#assetDetailPage .adv-actions{justify-content:flex-start}}
+@media(max-width:1050px){#assetDetailPage .adv-hero{flex-direction:column}#assetDetailPage .adv-placeholder{min-height:90px;width:100%}#assetDetailPage .adv-placeholder i{font-size:48px}#assetDetailPage .adv-stat-shell{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:660px){#assetDetailPage.adv-page{padding-left:8px;padding-right:8px}#assetDetailPage .adv-titleline h1{font-size:22px}#assetDetailPage .adv-hero{padding:14px}#assetDetailPage .adv-heading h2{font-size:18px}#assetDetailPage .adv-hero-grid{grid-template-columns:1fr}#assetDetailPage .adv-organization-grid{grid-template-columns:1fr}#assetDetailPage .adv-stat-shell{gap:3px}#assetDetailPage .adv-stat{padding:10px;min-height:90px;gap:10px}#assetDetailPage .adv-stat>i{font-size:24px}#assetDetailPage .adv-stat strong{font-size:17px}#assetDetailPage .adv-pane{padding:15px 10px}#assetDetailPage .adv-info-grid{grid-template-columns:1fr}#assetDetailPage .adv-tabs button{min-width:145px;font-size:12px}}
+@media(prefers-reduced-motion:reduce){#assetDetailPage *,#assetDetailPage *:before,#assetDetailPage *:after{transition:none!important;animation:none!important}}

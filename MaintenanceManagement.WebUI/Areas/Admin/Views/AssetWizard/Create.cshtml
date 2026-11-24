@@ -4,30 +4,53 @@
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Demirbaş Tanıtımı";
     var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var wizardMode = ViewData["WizardMode"]?.ToString() ?? "create";
+    var editingId = ViewData["AssetId"] is int assetId ? assetId : 0;
+    var formAction = wizardMode == "assign" ? "Assign" : wizardMode == "edit" ? "Edit" : "Create";
 }
 @section Styles {
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="~/css/asset-wizard.css" asp-append-version="true" />
 }
-<div class="container-fluid aw-page" id="assetWizard">
-  <div class="aw-title"><div class="aw-title-icon"><i class="fas fa-laptop"></i></div><div><h1>Demirbaş Tanıtımı</h1><p>6 adımda demirbaş kaydı ve ön izleme</p></div></div>
+<div class="container-fluid aw-page" id="assetWizard" data-mode="@wizardMode" data-initial-step="@(wizardMode == "assign" ? "3" : "0")">
+  <div class="aw-title"><div class="aw-title-icon"><i class="fas fa-laptop"></i></div><div><h1>@(wizardMode == "assign" ? "Demirbaş Zimmet İşlemi" : wizardMode == "edit" ? "Demirbaş Düzenleme" : "Demirbaş Tanıtımı")</h1><p>@(wizardMode == "assign" ? "Mevcut demirbaşa zimmet verin veya devredin" : wizardMode == "edit" ? "Altı adımda kayıtlı demirbaşı güncelleyin" : "6 adımda demirbaş kaydı ve ön izleme")</p></div></div>
   <div class="aw-steps" aria-label="Kayıt adımları">
-    @foreach (var label in new[]{"Temel Bilgiler","Kategori / Model","Organizasyonlar","Konum / Zimmet","Durum / Açıklama","Ön İzleme"}) { <div class="aw-step"><span class="aw-step-circle">@(Array.IndexOf(new[]{"Temel Bilgiler","Kategori / Model","Organizasyonlar","Konum / Zimmet","Durum / Açıklama","Ön İzleme"},label)+1)</span><small>@label</small></div> }
+    @foreach (var label in new[]{"Temel Bilgiler","Kategori / Tür / Model","Organizasyonlar","Konum / Zimmet","Durum / Açıklama","Ön İzleme"}) { <div class="aw-step"><span class="aw-step-circle">@(Array.IndexOf(new[]{"Temel Bilgiler","Kategori / Tür / Model","Organizasyonlar","Konum / Zimmet","Durum / Açıklama","Ön İzleme"},label)+1)</span><small>@label</small></div> }
   </div>
   <div class="row mt-4"><div class="col-xl-9 col-lg-8"><div class="aw-card">
-    <form asp-area="Admin" asp-controller="AssetWizard" asp-action="Create" method="post" id="assetWizardForm" novalidate>
+    <form asp-area="Admin" asp-controller="AssetWizard" asp-action="@formAction" asp-route-id="@(editingId > 0 ? editingId : (int?)null)" method="post" id="assetWizardForm" novalidate>
       @Html.AntiForgeryToken()
       <div asp-validation-summary="All" class="text-danger mb-3"></div>
       <section class="aw-panel" data-step="0"><h4><i class="fas fa-id-card"></i> Temel Bilgiler</h4><p>Demirbaşın kimlik bilgilerini girin.</p>
-        <div class="form-group"><label>Demirbaş Kodu</label><input type="text" value="Kaydedildiğinde otomatik oluşturulacak" class="form-control bg-light" readonly aria-label="Demirbaş kodu kayıt sonrası otomatik oluşturulur" /><small class="text-muted"><i class="fas fa-lock mr-1"></i> Kod, kayıt sırasında SQL Server tarafından üretilen demirbaş kimliğinden oluşturulur.</small></div>
+        <div class="form-group"><label>Demirbaş Kodu</label><input type="text" value="@(wizardMode == "create" ? "Kaydedildiğinde otomatik oluşturulacak" : Model.Input.AssetCode)" class="form-control bg-light" readonly aria-label="Demirbaş kodu kayıt sonrası otomatik oluşturulur" /><small class="text-muted"><i class="fas fa-lock mr-1"></i> @(wizardMode == "create" ? "Kod kayıt sırasında oluşturulur." : "Mevcut demirbaş kodu değiştirilemez.")</small></div>
         <div class="form-group"><label asp-for="Input.Name">Demirbaş Adı *</label><input asp-for="Input.Name" class="form-control" required maxlength="200" /></div>
         <div class="form-group"><label asp-for="Input.BarcodeNumber">Barkod Numarası</label><input asp-for="Input.BarcodeNumber" class="form-control" maxlength="100" /></div>
       </section>
       <section class="aw-panel" data-step="1" hidden><h4><i class="fas fa-layer-group"></i> Kategori, Marka ve Model</h4><p>Seçimler birbirine bağlıdır.</p>
         <div class="form-group"><label>Kategori *</label><select asp-for="Input.AssetCategoryId" class="form-control" id="aw-category" required><option value="">Kategori seçiniz</option>@foreach(var x in Model.Categories){<option value="@x.Id">@x.Text</option>}</select></div>
-        <!-- Demirbaş türü kullanıcıdan istenmez; servis kategoriye göre otomatik belirler. -->
-        <input asp-for="Input.AssetKindId" type="hidden" id="aw-kind" />
+        <div class="form-group"><label for="aw-kind">Demirbaş Türü *</label>
+          <div class="d-flex align-items-center">
+            <select asp-for="Input.AssetKindId" class="form-control" id="aw-kind" required>
+              <option value="">Önce kategori seçiniz</option>
+              @foreach(var x in Model.Kinds){<option value="@x.Id" data-group="@x.GroupId">@x.Text</option>}
+            </select>
+            <a class="btn btn-outline-primary ml-2 text-nowrap" asp-area="Admin" asp-controller="AssetKinds" asp-action="Index" target="_blank" rel="noopener">Tür Tanıtımı</a>
+          </div>
+          <small class="text-muted">Tür kategoriye, marka ise türe bağlıdır. Tanımlar yönetici ekranında yapılır.</small>
+        </div>
         <div class="form-row"><div class="form-group col-md-6"><label>Marka *</label><select asp-for="Input.BrandId" class="form-control" id="aw-brand" required><option value="">Marka seçiniz</option>@foreach(var x in Model.Brands){<option value="@x.Id">@x.Text</option>}</select></div><div class="form-group col-md-6"><label>Model *</label><select asp-for="Input.AssetModelId" class="form-control" id="aw-model" required><option value="">Model seçiniz</option>@foreach(var x in Model.Models){<option value="@x.Id" data-group="@x.GroupId">@x.Text</option>}</select></div></div>
+        <div class="aw-section-card mt-3 aw-parent-block">
+          <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div><h5 class="mb-1"><i class="fas fa-project-diagram text-primary mr-2"></i>Üst Varlık <span class="font-weight-normal text-muted small">(isteğe bağlı)</span></h5>
+            <small class="text-muted">Genel Müdürlük → Kategoriler → Birbirine bağlı demirbaşlar. Farklı kategoriye ait varlık da seçilebilir.</small></div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="aw-parent-clear">Üst varlığı temizle</button>
+          </div>
+          <input type="search" id="aw-parent-search" class="form-control my-3" placeholder="Demirbaş adı veya kodu ara..." />
+          <div class="d-flex mb-2"><button type="button" class="btn btn-outline-primary btn-sm mr-2" id="aw-parent-expand">Tümünü aç</button><button type="button" class="btn btn-outline-secondary btn-sm" id="aw-parent-collapse">Tümünü kapat</button></div>
+          <div id="aw-parent-tree" class="aw-parent-tree" role="tree" aria-label="Üst varlık ağacı"></div>
+          <input asp-for="Input.ParentAssetId" type="hidden" id="aw-parent-id" />
+          <div id="aw-parent-picked" class="small text-primary mt-2">Üst varlık seçilmedi; yeni kayıt bağımsız varlık olarak oluşturulur.</div>
+        </div>
       </section>
       <section class="aw-panel" data-step="2" hidden>
         <h4><i class="fas fa-sitemap"></i> Organizasyonlar</h4>
@@ -102,7 +125,7 @@
         </div>
       </section>
       <section class="aw-panel" data-step="4" hidden><h4><i class="fas fa-clipboard-check"></i> Durum ve Açıklama</h4>
-        <div class="form-group"><label>Demirbaş Durumu *</label><div class="aw-statuses"><label><input type="radio" asp-for="Input.Status" value="Active" checked /> Aktif</label><label><input type="radio" asp-for="Input.Status" value="Passive" /> Pasif</label><label><input type="radio" asp-for="Input.Status" value="Scrap" /> Hurda</label></div></div>
+        <div class="form-group"><label>Demirbaş Durumu *</label><div class="aw-statuses"><label><input type="radio" asp-for="Input.Status" value="Active" /> Aktif</label><label><input type="radio" asp-for="Input.Status" value="Passive" /> Pasif</label><label><input type="radio" asp-for="Input.Status" value="Scrap" /> Hurda</label></div></div>
         <div class="form-group"><label>Açıklama</label><textarea asp-for="Input.Description" rows="5" maxlength="500" class="form-control"></textarea></div>
       </section>
       <section class="aw-panel" data-step="5" hidden>
@@ -110,10 +133,13 @@
         <div id="aw-preview" class="aw-preview-modern"></div>
         <div class="aw-preview-note"><i class="fas fa-info-circle mr-2"></i> Kaydı tamamladıktan sonra demirbaş detay, zimmet ve hareket geçmişi ekranı açılır.</div>
       </section>
-      <div class="aw-actions"><button type="button" id="aw-prev" class="btn btn-outline-secondary" disabled><i class="fas fa-arrow-left mr-1"></i> Geri</button><button type="button" id="aw-next" class="btn btn-primary">İleri <i class="fas fa-arrow-right ml-1"></i></button><button type="submit" id="aw-submit" class="btn btn-success" hidden><i class="fas fa-save mr-1"></i> Kaydı Tamamla</button></div>
+      <div class="aw-actions"><button type="button" id="aw-prev" class="btn btn-outline-secondary" disabled><i class="fas fa-arrow-left mr-1"></i> Geri</button><button type="button" id="aw-next" class="btn btn-primary">İleri <i class="fas fa-arrow-right ml-1"></i></button><button type="submit" id="aw-submit" class="btn btn-success" hidden><i class="fas fa-save mr-1"></i> @(wizardMode == "assign" ? "Zimmeti Kaydet" : wizardMode == "edit" ? "Değişiklikleri Kaydet" : "Kaydı Tamamla")</button></div>
     </form>
   </div></div><aside class="col-xl-3 col-lg-4"><div class="aw-card aw-help"><i class="fas fa-magic fa-2x text-primary"></i><h5 class="mt-3">Kayıt Sihirbazı</h5><p>Her adımda yalnızca o bölüme ait alanlar görünür. Geri dönüp düzenleyebilirsiniz.</p><div id="aw-step-hint">Adım 1 / 6</div></div></aside></div>
 </div>
+<script id="aw-kind-brand-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.KindBrands, jsonOptions))</script>
+<script id="aw-asset-tree-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.AssetTree, jsonOptions))</script>
+<script id="aw-category-tree-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Categories, jsonOptions))</script>
 <script id="aw-unit-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Units, jsonOptions))</script>
 <script id="aw-places-config" type="application/json">@Html.Raw(JsonSerializer.Serialize(new { apiUrl = Url.Action("Hierarchy", "AssetPlaces", new { area = "Admin" }), mapProvider = "openstreetmap" }, jsonOptions))</script>
 @section Scripts {

@@ -1,0 +1,166 @@
+/* ================================================================
+   DEMIRBAS & BAKIM – V8.7 ORTAK PREMIUM YONETIM TEMASI
+   Premium Details sayfasinin mavi dilini TUM Admin sayfalarina tasir.
+   Bootstrap / SB Admin 2 degiskenleri ve JS davranislari korunur.
+   Bircok kural #content-wrapper altinda sinirli tutulur;
+   .adv-* / .aw-* / .ac-* ozel sayfa bileşenleri yeniden tasarlanmaz.
+   ================================================================ */
+body.admin-unified-premium {
+  --ap-ink: #102958;
+  --ap-soft-ink: #526a93;
+  --ap-accent: #1555d4;
+  --ap-line: #cbdcf5;
+  --ap-shadow: 0 12px 30px rgba(35,83,145,.12), 0 2px 6px rgba(30,73,135,.05);
+  color: var(--ap-ink);
+  background: #e7f1ff;
+}
+/* Uygulamanin tamaminda ayrintili ekranla ayni zemin ve dalgalar */
+body.admin-unified-premium #content-wrapper {
+  min-width: 0;
+  background:
+    radial-gradient(ellipse 80% 45% at 80% 4%, rgba(86,165,230,.25), transparent 75%),
+    linear-gradient(133deg,#deebff 0%,#c5ddf6 47%,#e8f3ff 100%) !important;
+}
+body.admin-unified-premium #content-wrapper #content {
+  position:relative;
+  isolation:isolate;
+}
+body.admin-unified-premium #content-wrapper #content:before {
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  z-index:-1;
+  left:0;right:0;top:0;height:420px;
+  background:
+    radial-gradient(ellipse 80% 100% at 85% -38%,rgba(18,103,209,.13),transparent 77%),
+    repeating-radial-gradient(ellipse at 123% -125%,transparent 0 120px,rgba(255,255,255,.22) 121px 123px,transparent 124px 197px);
+}
+/* Sol navigasyon: detay sayfasindaki lacivert sistemin geneline */
+body.admin-unified-premium #accordionSidebar.sidebar {
+  background: linear-gradient(165deg,#081a3c 0%,#102c60 52%,#071b3c 100%) !important;
+  box-shadow: 3px 0 16px rgba(6,35,85,.15);
+}
+body.admin-unified-premium #accordionSidebar .sidebar-brand {
+  background: rgba(7,55,119,.43);
+  border-bottom:1px solid rgba(125,195,255,.24);
+}
+body.admin-unified-premium #accordionSidebar .nav-link {
+  transition:background .16s ease,color .16s ease;
+}
+body.admin-unified-premium #accordionSidebar .nav-item.active > .nav-link,
+body.admin-unified-premium #accordionSidebar .nav-item > .nav-link:hover {
+  background: linear-gradient(90deg,rgba(15,112,244,.5),rgba(41,111,220,.12));
+  border-radius:9px;
+}
+body.admin-unified-premium #accordionSidebar .collapse-inner {
+  background:linear-gradient(151deg,#f8fbff 0%,#e1edff 100%);
+  border:1px solid rgba(201,223,255,.85);
+  box-shadow:0 8px 22px rgba(2,30,77,.16);
+  border-radius:10px !important;
+}
+body.admin-unified-premium #accordionSidebar .collapse-item.active {
+  color:#174fbb !important;
+  background:#dceaff !important;
+  border-radius:7px;
+  font-weight:800;
+}
+body.admin-unified-premium #accordionSidebar .collapse-item:hover {
+  background:#ecf4ff;
+  color:#123f98;
+  border-radius:7px;
+}
+/* Topbar / alt kisim */
+body.admin-unified-premium #content-wrapper .topbar {
+  background:rgba(241,248,255,.89) !important;
+  border-bottom:1px solid rgba(180,209,251,.65);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  box-shadow:0 4px 18px rgba(38,76,148,.09) !important;
+}
+body.admin-unified-premium #content-wrapper .topbar .form-control {
+  background:rgba(255,255,255,.84) !important;
+  border:1px solid #d2e0f6 !important;
+}
+body.admin-unified-premium .sticky-footer {
+  background:rgba(255,255,255,.72) !important;
+  border-top:1px solid rgba(194,215,246,.65);
+}
+/* Genel sayfa basliklari */
+body.admin-unified-premium #content-wrapper h1:not(.adv-titleline h1),
+body.admin-unified-premium #content-wrapper .h1,
+body.admin-unified-premium #content-wrapper .h3,
+body.admin-unified-premium #content-wrapper h2:not(.adv-heading h2) {
+  color:#0b2458;
+}
+/* Mevcut tablo ve kart tasarimlari kendi alanlarinda bozulmadan guclendirilir. */
+body.admin-unified-premium #content-wrapper .card:not(.adv-stat):not(.adv-hero),
+body.admin-unified-premium #content-wrapper .shadow:not(.topbar):not(.adv-stat-shell) {
+  border-color:rgba(189,212,245,.78);
+}
+body.admin-unified-premium #content-wrapper .card {
+  border-radius:13px;
+  box-shadow:var(--ap-shadow);
+  background:rgba(255,255,255,.94);
+}
+body.admin-unified-premium #content-wrapper .card-header {
+  background:linear-gradient(115deg,#fbfdff,#eef6ff);
+  border-bottom:1px solid #dbe8fa;
+  border-radius:13px 13px 0 0;
+}
+body.admin-unified-premium #content-wrapper .card-header h6 {
+  font-weight:800;
+}
+/* Standart veritablolari premium detayla uyumlu ama okunabilir */
+body.admin-unified-premium #content-wrapper .table:not(.adv-table) {
+  color:#17315f;
+}
+body.admin-unified-premium #content-wrapper .table:not(.adv-table) thead th {
+  background:linear-gradient(180deg,#e9f1fe,#dfeafa);
+  color:#29446e;
+  border-bottom:1px solid #c9daf3;
+  vertical-align:middle;
+}
+body.admin-unified-premium #content-wrapper .table:not(.adv-table) tbody tr:hover {
+  background:rgba(225,239,255,.55);
+}
+/* Ortak formlar */
+body.admin-unified-premium #content-wrapper .form-control:not(.adv-filter-bar .form-control),
+body.admin-unified-premium #content-wrapper .custom-select {
+  border-color:#c6d8f2;
+  border-radius:8px;
+  color:#173361;
+}
+body.admin-unified-premium #content-wrapper .form-control:focus,
+body.admin-unified-premium #content-wrapper .custom-select:focus {
+  border-color:#6299ed;
+  box-shadow:0 0 0 .18rem rgba(31,105,224,.13);
+}
+body.admin-unified-premium #content-wrapper .btn-primary:not(.adv-btn-primary) {
+  border-color:#1457d6;
+  background:linear-gradient(180deg,#347bfa,#1454d7);
+  box-shadow:0 4px 11px rgba(28,93,196,.17);
+}
+body.admin-unified-premium #content-wrapper .btn-primary:not(.adv-btn-primary):hover {
+  background:linear-gradient(180deg,#246ff0,#0e45c3);
+}
+body.admin-unified-premium #content-wrapper .btn {
+  border-radius:8px;
+}
+body.admin-unified-premium #content-wrapper a:focus-visible,
+body.admin-unified-premium #content-wrapper button:focus-visible {
+  outline:3px solid rgba(31,101,222,.35);
+  outline-offset:2px;
+}
+/* Detay, sihirbaz, harita gibi ozel tasarimlarin siniflari kasten yeniden tanimlanmaz. */
+body.admin-unified-premium #content-wrapper .table-responsive {
+  -webkit-overflow-scrolling:touch;
+}
+/* Dar ekranlar: buton ve tablolar disari tasmamali */
+@media(max-width:768px) {
+  body.admin-unified-premium #content-wrapper .container-fluid {padding-left:12px;padding-right:12px;}
+  body.admin-unified-premium #content-wrapper .card {border-radius:10px;}
+  body.admin-unified-premium #content-wrapper .topbar {backdrop-filter:none;}
+}
+@media(prefers-reduced-motion:reduce) {
+  body.admin-unified-premium #accordionSidebar .nav-link {transition:none;}
+}

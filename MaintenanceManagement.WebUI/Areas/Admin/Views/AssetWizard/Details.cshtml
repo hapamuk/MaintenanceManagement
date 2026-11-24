@@ -1,39 +1,234 @@
 @model MaintenanceManagement.Application.DTOs.AssetWizard.AssetDetailPageVm
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Demirbaş Detayı";
+    var status = Model.Status ?? "";
+    var active = status.Equals("Active", StringComparison.OrdinalIgnoreCase) || status.Equals("Aktif", StringComparison.OrdinalIgnoreCase);
+    var passive = status.Equals("Passive", StringComparison.OrdinalIgnoreCase) || status.Equals("Pasif", StringComparison.OrdinalIgnoreCase);
+    var statusLabel = active ? "Aktif" : passive ? "Pasif" : status.Equals("Scrap", StringComparison.OrdinalIgnoreCase) ? "Hurda" : status;
+    var currentAssignment = Model.Assignments.FirstOrDefault(x => x.IsCurrent);
+    var history = Model.History.OrderByDescending(x => x.Date).ToList();
+    var location = string.IsNullOrWhiteSpace(Model.Location) ? "Konum belirtilmedi" : Model.Location;
+    var category = string.IsNullOrWhiteSpace(Model.Category) ? "Belirtilmedi" : Model.Category;
+    var brandModel = string.IsNullOrWhiteSpace(Model.BrandModel) ? "Belirtilmedi" : Model.BrandModel;
+    var usingUnit = string.IsNullOrWhiteSpace(Model.UsingUnit) || Model.UsingUnit == "—" ? "Belirtilmedi" : Model.UsingUnit;
+
+    // Gerçek iş akışı controller'ları mevcut çözümde doğrulanmadan 404 üreten URL oluşturulmaz.
+    // appsettings.json: AssetDetailActions:EditPath = "/Admin/Assets/Edit/{id}" (yalnızca action mevcutsa)
+    string? SafeActionUrl(string name)
+    {
+        var template = Configuration[$"AssetDetailActions:{name}Path"];
+        if (string.IsNullOrWhiteSpace(template) || !template.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase)
+            || template.StartsWith("//", StringComparison.Ordinal)) return null;
+        return template.Replace("{id}", Model.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase);
+    }
+    var editUrl = Url.Action("Edit", "AssetWizard", new { area = "Admin", id = Model.Id });
+    var assignmentUrl = Url.Action("Assign", "AssetWizard", new { area = "Admin", id = Model.Id });
+    var workOrderUrl = SafeActionUrl("WorkOrder");
 }
-@section Styles { <link rel="stylesheet" href="~/css/asset-wizard.css" asp-append-version="true" /> }
-<div class="container-fluid aw-page">
-  <div class="aw-title"><div class="aw-title-icon"><i class="fas fa-desktop"></i></div><div><h1>Demirbaş Detayı</h1><p>Demirbaşın güncel bilgileri ve tüm geçmiş kayıtları</p></div></div>
-  @if(TempData["SuccessMessage"]!=null){<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
-  <div class="aw-card mb-3">
-    <div class="aw-detail-head"><div><h3 class="font-weight-bold">@Model.Code — @Model.Name</h3><span class="badge badge-success">@Model.Status</span></div><div><a asp-action="Create" class="btn btn-outline-primary"><i class="fas fa-plus mr-1"></i> Yeni Demirbaş</a></div></div>
-    <div class="row mt-4">
-      <div class="col-md-3 mb-3"><small>Kategori</small><div class="font-weight-bold">@Model.Category</div></div>
-      <div class="col-md-3 mb-3"><small>Marka / Model</small><div class="font-weight-bold">@Model.BrandModel</div></div>
-      <div class="col-md-3 mb-3"><small>Barkod</small><div class="font-weight-bold">@Model.Barcode</div></div>
-      <div class="col-md-3 mb-3"><small>Konum</small><div class="font-weight-bold">@Model.Location</div></div>
-      <div class="col-md-6"><small>Sorumlu Organizasyon</small><div class="font-weight-bold">@Model.ResponsibleUnit</div></div>
-      <div class="col-md-6"><small>Kullanan Organizasyon</small><div class="font-weight-bold">@Model.UsingUnit</div></div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/asset-catalog.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/asset-detail-visual.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/asset-detail-premium.css" asp-append-version="true" />
+}
+<div class="container-fluid ac-page adv-page" id="assetDetailPage">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div>
+    }
+    <div class="adv-titleline">
+        <a class="adv-back" asp-area="Admin" asp-controller="Assets" asp-action="Index" title="Demirbaş listesine dön" aria-label="Demirbaş listesine dön"><i class="fas fa-arrow-left"></i></a>
+        <h1>Demirbaş Detayı</h1>
     </div>
-  </div>
-  <div class="row mb-3">
-    <div class="col-md-4 mb-2"><div class="aw-stat"><small>İş Emri Sayısı</small><strong>@Model.WorkOrders.Count</strong></div></div>
-    <div class="col-md-4 mb-2"><div class="aw-stat"><small>Zimmet Kayıtları</small><strong>@Model.Assignments.Count</strong></div></div>
-    <div class="col-md-4 mb-2"><div class="aw-stat"><small>Hareket Kaydı</small><strong>@Model.History.Count</strong></div></div>
-  </div>
-  <div class="aw-card">
-    <div class="aw-tabs" role="tablist" aria-label="Demirbaş detay sekmeleri">
-      <button type="button" class="active" data-tab="info">Genel Bilgiler</button>
-      <button type="button" data-tab="assignments">Zimmet Geçmişi</button>
-      <button type="button" data-tab="orders">İş Emri Geçmişi</button>
-      <button type="button" data-tab="history">Hareket Geçmişi</button>
-    </div>
-    <section data-pane="info" class="pt-4"><h5>Genel Bilgiler</h5><p><b>Kayıt tarihi:</b> @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p><p><b>Açıklama:</b> @Model.Description</p></section>
-    <section data-pane="assignments" class="pt-4" hidden><h5>Zimmet Geçmişi</h5><div class="table-responsive"><table class="table table-hover aw-history-table"><thead><tr><th>Personel</th><th>Başlangıç</th><th>Bitiş</th><th>Durum</th></tr></thead><tbody>@foreach(var x in Model.Assignments){<tr><td>@x.User</td><td>@x.Start.ToString("dd.MM.yyyy HH:mm")</td><td>@(x.End?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td><td>@(x.IsCurrent ? "Mevcut zimmet" : "Geçmiş")</td></tr>}@if(Model.Assignments.Count==0){<tr><td colspan="4">Zimmet kaydı bulunamadı.</td></tr>}</tbody></table></div></section>
-    <section data-pane="orders" class="pt-4" hidden><h5>İş Emri Geçmişi</h5><div class="table-responsive"><table class="table table-hover aw-history-table"><thead><tr><th>Tarih</th><th>İş Emri</th><th>Açıklama</th></tr></thead><tbody>@foreach(var x in Model.WorkOrders){<tr><td>@x.Date.ToString("dd.MM.yyyy HH:mm")</td><td>@x.Reference</td><td>@x.Description</td></tr>}@if(Model.WorkOrders.Count==0){<tr><td colspan="3">İş emri bulunamadı.</td></tr>}</tbody></table></div></section>
-    <section data-pane="history" class="pt-4" hidden><div class="d-flex flex-wrap justify-content-between"><h5>Demirbaş Hareket Geçmişi</h5><div class="form-inline"><select id="aw-history-type" class="form-control mr-2 mb-2"><option value="">Tüm hareketler</option>@foreach(var name in Model.History.Select(x=>x.Type).Distinct()){<option>@name</option>}</select><input id="aw-history-search" class="form-control mb-2" placeholder="Açıklama veya referans ara..." /></div></div><div class="table-responsive"><table class="table table-hover aw-history-table"><thead><tr><th>Tarih / Saat</th><th>Hareket Türü</th><th>Açıklama</th><th>İlgili Kayıt</th><th>İşlemi Yapan</th></tr></thead><tbody>@foreach(var x in Model.History.OrderByDescending(x=>x.Date)){<tr data-history-type="@x.Type"><td>@x.Date.ToString("dd.MM.yyyy HH:mm")</td><td><span class="aw-pill">@x.Type</span></td><td>@x.Description</td><td>@x.Reference</td><td>@x.PerformedBy</td></tr>}@if(Model.History.Count==0){<tr><td colspan="5">Hareket kaydı bulunamadı.</td></tr>}</tbody></table></div></section>
-  </div>
+    <section class="adv-hero" aria-label="Demirbaş özet bilgileri">
+        <div class="adv-placeholder" aria-hidden="true"><i class="fas fa-desktop"></i></div>
+        <div class="adv-hero-main">
+            <div class="adv-hero-top">
+                <div class="adv-heading"><h2>@Model.Code - @Model.Name</h2><span class="adv-status @(active ? "adv-green" : passive ? "adv-gray" : "adv-amber")">@statusLabel</span></div>
+                <div class="adv-actions">
+
+                    @* 1. DEMİRBAŞ DÜZENLE *@
+                    <a asp-area="Admin"
+                       asp-controller="AssetWizard"
+                       asp-action="Edit"
+                       asp-route-id="@Model.Id"
+                       class="btn adv-btn-primary">
+
+                        <i class="fas fa-pen mr-2"></i>
+                        Düzenle
+                    </a>
+
+                    @* 2. ZİMMET DEVRET / İLK ZİMMET *@
+                    <a asp-area="Admin"
+                       asp-controller="AssetWizard"
+                       asp-action="Assign"
+                       asp-route-id="@Model.Id"
+                       class="btn adv-btn-outline">
+
+                        <i class="fas fa-user-plus mr-2"></i>
+
+                        @(currentAssignment == null
+                            ? "Zimmet Ver"
+                            : "Zimmet Devret")
+                    </a>
+
+                    @* 3. ZİMMET İADESİ *@
+                    @if (currentAssignment != null)
+                    {
+                        <form asp-area="Admin"
+                              asp-controller="AssetWizard"
+                              asp-action="Return"
+                              asp-route-id="@Model.Id"
+                              method="post"
+                              class="d-inline"
+                              onsubmit="return confirm('Bu demirbaşın mevcut zimmetini iade almak istediğinize emin misiniz?');">
+
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit"
+                                    class="btn adv-btn-outline">
+
+                                <i class="fas fa-undo mr-2"></i>
+                                Zimmet İadesi
+
+                            </button>
+
+                        </form>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="btn adv-btn-outline"
+                                disabled
+                                title="Aktif zimmet bulunmuyor.">
+
+                            <i class="fas fa-undo mr-2"></i>
+                            Zimmet İadesi
+
+                        </button>
+                    }
+
+                    @* 4. İŞ EMRİ OLUŞTUR *@
+                    @if (!string.IsNullOrWhiteSpace(workOrderUrl))
+                    {
+                        <a href="@workOrderUrl"
+                           class="btn adv-btn-outline">
+
+                            <i class="fas fa-wrench mr-2"></i>
+                            İş Emri Oluştur
+
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="btn adv-btn-outline"
+                                disabled
+                                title="İş emri oluşturma bağlantısı henüz tanımlanmadı.">
+
+                            <i class="fas fa-wrench mr-2"></i>
+                            İş Emri Oluştur
+
+                        </button>
+                    }
+
+                </div>
+            </div>
+            <div class="adv-kind">@category</div>
+            <div class="adv-hero-grid">
+                <div class="adv-fact"><i class="fas fa-layer-group"></i><span><strong>Kategori</strong><span>@category</span></span></div>
+                <div class="adv-fact"><i class="fas fa-tag"></i><span><strong>Marka / Model</strong><span>@brandModel</span></span></div>
+                <div class="adv-fact"><i class="fas fa-barcode"></i><span><strong>Barkod</strong><span>@(string.IsNullOrWhiteSpace(Model.Barcode) ? "—" : Model.Barcode)</span></span></div>
+                <div class="adv-fact"><i class="fas fa-map-marker-alt"></i><span><strong>Konum</strong><span>@location</span></span></div>
+            </div>
+            <div class="adv-organization-grid">
+                <div><i class="fas fa-building"></i><span><strong>Sorumlu Organizasyon</strong><span>@(string.IsNullOrWhiteSpace(Model.ResponsibleUnit) ? "—" : Model.ResponsibleUnit)</span></span></div>
+                <div><i class="fas fa-users"></i><span><strong>Kullanan Organizasyon</strong><span>@usingUnit</span></span></div>
+            </div>
+        </div>
+    </section>
+    <section class="adv-stat-shell" aria-label="Demirbaş istatistikleri">
+        <div class="adv-stat adv-stat-blue"><i class="fas fa-wrench"></i><span>İş Emri Sayısı<strong>@Model.WorkOrders.Count</strong></span></div>
+        <div class="adv-stat adv-stat-green"><i class="fas fa-user"></i><span>Zimmet Kaydı<strong>@Model.Assignments.Count <small>(@Model.Assignments.Count(x => x.IsCurrent) Aktif)</small></strong></span></div>
+        <div class="adv-stat adv-stat-purple"><i class="fas fa-exchange-alt"></i><span>Hareket Kaydı<strong>@Model.History.Count</strong></span></div>
+        <div class="adv-stat adv-stat-yellow"><i class="far fa-calendar-alt"></i><span>Kayıt Tarihi<strong class="adv-date">@Model.CreatedAt.ToString("dd.MM.yyyy")</strong></span></div>
+    </section>
+    <section class="adv-tabs-shell" id="ac-detail-tabs">
+        <div class="adv-tabs" role="tablist" aria-label="Demirbaş detay sekmeleri">
+            <button type="button" role="tab" data-tab="info" id="adv-tab-info" aria-controls="adv-pane-info" aria-selected="true" class="active"><i class="far fa-file-alt"></i>Genel Bilgiler</button>
+            <button type="button" role="tab" data-tab="assignments" id="adv-tab-assignments" aria-controls="adv-pane-assignments" aria-selected="false" tabindex="-1"><i class="far fa-user"></i>Zimmet Geçmişi</button>
+            <button type="button" role="tab" data-tab="orders" id="adv-tab-orders" aria-controls="adv-pane-orders" aria-selected="false" tabindex="-1"><i class="fas fa-wrench"></i>İş Emri Geçmişi</button>
+            <button type="button" role="tab" data-tab="history" id="adv-tab-history" aria-controls="adv-pane-history" aria-selected="false" tabindex="-1"><i class="far fa-clock"></i>Hareket Geçmişi</button>
+        </div>
+        <section class="adv-pane" data-pane="info" role="tabpanel" id="adv-pane-info" aria-labelledby="adv-tab-info">
+            <h3 class="adv-pane-title"><i class="far fa-file-alt"></i>Genel Bilgiler</h3>
+            <div class="adv-info-grid">
+                <div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-barcode"></i></span><span class="adv-field-text"><small>Demirbaş kodu</small><strong>@Model.Code</strong></span></div><div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-desktop"></i></span><span class="adv-field-text"><small>Demirbaş adı</small><strong>@Model.Name</strong></span></div>
+                <div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span><span class="adv-field-text"><small>Kategori</small><strong>@category</strong></span></div><div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-tag"></i></span><span class="adv-field-text"><small>Marka / Model</small><strong>@brandModel</strong></span></div>
+                <div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-barcode"></i></span><span class="adv-field-text"><small>Barkod</small><strong>@(string.IsNullOrWhiteSpace(Model.Barcode) ? "—" : Model.Barcode)</strong></span></div><div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-map-marker-alt"></i></span><span class="adv-field-text"><small>Konum</small><strong>@location</strong></span></div>
+                <div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-sitemap"></i></span><span class="adv-field-text"><small>Sorumlu Organizasyon</small><strong>@Model.ResponsibleUnit</strong></span></div><div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-users"></i></span><span class="adv-field-text"><small>Kullanan Organizasyon</small><strong>@usingUnit</strong></span></div>
+                <div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-user"></i></span><span class="adv-field-text"><small>Mevcut zimmet</small><strong>@(currentAssignment?.User ?? "Zimmet yok")</strong></span></div><div><span class="adv-field-icon" aria-hidden="true"><i class="fas fa-calendar-alt"></i></span><span class="adv-field-text"><small>Kayıt tarihi</small><strong>@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</strong></span></div>
+            </div>
+            <div class="adv-description"><strong>Açıklama</strong><p>@(string.IsNullOrWhiteSpace(Model.Description) ? "Açıklama bulunmuyor." : Model.Description)</p></div>
+        </section>
+        <section class="adv-pane" data-pane="assignments" role="tabpanel" id="adv-pane-assignments" aria-labelledby="adv-tab-assignments" hidden>
+            <div class="adv-pane-toolbar">
+                <h3 class="adv-pane-title"><i class="fas fa-user-check"></i>Demirbaş Zimmet Geçmişi</h3>
+                @if (currentAssignment != null)
+                {
+                    <form asp-area="Admin" asp-controller="AssetWizard" asp-action="Return"
+                          asp-route-id="@Model.Id" method="post"
+                          onsubmit="return confirm('Aktif zimmeti iade alıp kapatmak istiyor musunuz?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn adv-btn-outline"><i class="fas fa-undo mr-2"></i>Zimmet İadesi</button>
+                    </form>
+                }
+            </div>
+            <div class="table-responsive"><table class="table adv-table"><thead><tr><th>Personel</th><th>Başlangıç</th><th>Bitiş</th><th>Durum</th></tr></thead><tbody>
+                @foreach(var a in Model.Assignments.OrderByDescending(x => x.Start)) { <tr><td>@a.User</td><td>@a.Start.ToString("dd.MM.yyyy HH:mm")</td><td>@(a.End?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td><td><span class="adv-pill @(a.IsCurrent ? "adv-pill-green" : "adv-pill-gray")">@(a.IsCurrent ? "Aktif zimmet" : "Geçmiş")</span></td></tr> }
+                @if(Model.Assignments.Count == 0) { <tr><td colspan="4" class="text-center py-4">Zimmet kaydı bulunamadı.</td></tr> }
+            </tbody></table></div>
+        </section>
+        <section class="adv-pane" data-pane="orders" role="tabpanel" id="adv-pane-orders" aria-labelledby="adv-tab-orders" hidden>
+            <h3 class="adv-pane-title"><i class="fas fa-wrench"></i>İş Emri Geçmişi</h3>
+            <div class="table-responsive"><table class="table adv-table"><thead><tr><th>Tarih</th><th>İş Emri</th><th>Açıklama</th></tr></thead><tbody>
+                @foreach(var o in Model.WorkOrders.OrderByDescending(x => x.Date)) { <tr><td>@o.Date.ToString("dd.MM.yyyy HH:mm")</td><td>@o.Reference</td><td>@o.Description</td></tr> }
+                @if(Model.WorkOrders.Count == 0) { <tr><td colspan="3" class="text-center py-4">İş emri kaydı bulunamadı.</td></tr> }
+            </tbody></table></div>
+        </section>
+        <section class="adv-pane" data-pane="history" role="tabpanel" id="adv-pane-history" aria-labelledby="adv-tab-history" hidden>
+            <div class="adv-history-header">
+                <h3><i class="far fa-clock"></i>Demirbaş Hareket Geçmişi</h3>
+                <div class="adv-filter-bar">
+                    <label><span>Hareket Türü</span><select id="ac-history-type" class="form-control"><option value="">Tümü</option>@foreach(var name in history.Select(x => x.Type).Distinct().OrderBy(x => x)) { <option value="@name">@name</option> }</select></label>
+                    <label><span>Başlangıç Tarihi</span><input type="date" class="form-control" id="adv-history-start" /></label>
+                    <label><span>Bitiş Tarihi</span><input type="date" class="form-control" id="adv-history-end" /></label>
+                    <button type="button" id="adv-history-filter" class="btn adv-btn-primary"><i class="fas fa-search mr-2"></i>Filtrele</button>
+                </div>
+            </div>
+            <div class="table-responsive"><table class="table adv-table adv-timeline-table"><thead><tr><th>Tarih / Saat</th><th>Hareket Türü</th><th>Açıklama</th><th>İlgili Kayıt</th><th>İşlemi Yapan</th></tr></thead><tbody>
+                @foreach(var h in history) {
+                    var kind = h.Type ?? "";
+                    var lower = kind.ToLowerInvariant();
+                    var kindClass = lower.Contains("zimmet") && !lower.Contains("iade") ? "green" : lower.Contains("iade") ? "gray" : lower.Contains("emri") || lower.Contains("bakım") ? "blue" : lower.Contains("konum") ? "amber" : lower.Contains("organizasyon") ? "purple" : "teal";
+                    var icon = kindClass == "green" ? "fa-user" : kindClass == "gray" ? "fa-user-minus" : kindClass == "blue" ? "fa-wrench" : kindClass == "amber" ? "fa-map-marker-alt" : kindClass == "purple" ? "fa-exchange-alt" : "fa-plus";
+                    <tr data-history-type="@kind" data-history-date="@h.Date.ToString("yyyy-MM-dd")">
+                        <td class="adv-history-date"><span class="adv-line-icon adv-icon-@kindClass"><i class="fas @icon"></i></span><span>@h.Date.ToString("dd.MM.yyyy HH:mm")</span></td>
+                        <td><span class="adv-pill adv-pill-@kindClass">@kind</span></td>
+                        <td>@h.Description</td>
+                        <td>@(string.IsNullOrWhiteSpace(h.Reference) ? "—" : h.Reference)</td>
+                        <td>@(string.IsNullOrWhiteSpace(h.PerformedBy) ? "—" : h.PerformedBy)</td>
+                    </tr>
+                }
+                @if(history.Count == 0) { <tr><td colspan="5" class="text-center py-4">Henüz hareket kaydı bulunamadı.</td></tr> }
+            </tbody></table></div>
+            <div id="adv-history-empty" class="adv-filter-empty" hidden>Seçilen filtrelerle eşleşen hareket bulunamadı.</div>
+            <div class="adv-count" id="ac-history-count" aria-live="polite">@history.Count hareket kaydı</div>
+        </section>
+    </section>
 </div>
-@section Scripts {<script src="~/js/asset-detail.js" asp-append-version="true"></script>}
+@section Scripts {
+    <script src="~/js/asset-detail-premium.js" asp-append-version="true"></script>
+}

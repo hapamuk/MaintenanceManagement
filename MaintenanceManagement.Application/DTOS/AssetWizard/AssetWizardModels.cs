@@ -13,6 +13,8 @@ namespace MaintenanceManagement.Application.DTOs.AssetWizard
         public int AssetKindId { get; set; }
         public int BrandId { get; set; }
         public int AssetModelId { get; set; }
+        // Seçilmezse demirbaş kök varlık olarak kaydedilir.
+        public int? ParentAssetId { get; set; }
         [StringLength(100)] public string? BarcodeNumber { get; set; }
         public int? SiteLocationId { get; set; }
         public int ResponsibleUnitId { get; set; }
@@ -22,6 +24,15 @@ namespace MaintenanceManagement.Application.DTOs.AssetWizard
         public int? AssigneeUserId { get; set; }
     }
     public sealed class WizardOption { public int Id { get; set; } public string Text { get; set; } = ""; public int? ParentId { get; set; } public int? GroupId { get; set; } }
+    public sealed class AssetBrandKindLinkRow { public int KindId {get;set;} public int BrandId {get;set;} }
+    public sealed class AssetTreeRow
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Code { get; set; } = "";
+        public int CategoryId { get; set; }
+        public int? ParentAssetId { get; set; }
+    }
     public sealed class AssetCategoryScopeRow { public int CategoryId {get;set;} public int UnitId {get;set;} }
     public sealed class AssetWizardPageVm
     {
@@ -32,6 +43,8 @@ namespace MaintenanceManagement.Application.DTOs.AssetWizard
         public IReadOnlyList<WizardOption> Kinds { get; set; } = Array.Empty<WizardOption>();
         public IReadOnlyList<WizardOption> Brands { get; set; } = Array.Empty<WizardOption>();
         public IReadOnlyList<WizardOption> Models { get; set; } = Array.Empty<WizardOption>();
+        public IReadOnlyList<AssetBrandKindLinkRow> KindBrands { get; set; } = Array.Empty<AssetBrandKindLinkRow>();
+        public IReadOnlyList<AssetTreeRow> AssetTree { get; set; } = Array.Empty<AssetTreeRow>();
         public IReadOnlyList<WizardOption> Locations { get; set; } = Array.Empty<WizardOption>();
         public IReadOnlyList<WizardOption> Users { get; set; } = Array.Empty<WizardOption>();
     }

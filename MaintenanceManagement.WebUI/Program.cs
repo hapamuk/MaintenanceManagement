@@ -32,6 +32,8 @@ builder.Services.AddScoped<
     IAssetWizardService,
     AssetWizardService>();
 
+
+
 // Demirbaş Kategori, Marka ve Model Tanıtımı
 builder.Services.AddScoped<
     IAssetDefinitionService,

@@ -1,0 +1,63 @@
+@model MaintenanceManagement.Application.DTOs.AssetCatalog.AssetListPageVm
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Demirbaş Listesi";
+    var f = Model.Filter;
+    string detailUrl(int id) => Url.Action("Details", "AssetWizard", new { area = "Admin", id }) ?? "#";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/asset-catalog.css" asp-append-version="true" />
+}
+<div class="container-fluid ac-page">
+    <div class="ac-page-title">
+        <div class="ac-heading"><span class="ac-heading-icon"><i class="fas fa-boxes"></i></span>
+            <div><h1>Demirbaş Listesi</h1><p>Kayıtlı demirbaşları arayın, filtreleyin ve detaylarını inceleyin.</p></div>
+        </div>
+        <a class="btn btn-primary ac-main-btn" asp-area="Admin" asp-controller="AssetWizard" asp-action="Create"><i class="fas fa-plus mr-2"></i>Yeni Demirbaş</a>
+    </div>
+    <div class="ac-overview mb-3"><span class="ac-overview-icon"><i class="fas fa-clipboard-list"></i></span><div><small>Filtrelerle eşleşen demirbaş</small><strong>@Model.TotalCount.ToString("N0")</strong></div><div class="ac-overview-note">Listeleme veritabanında sayfalanır; yalnızca bu sayfanın kayıtları yüklenir.</div></div>
+    <div class="ac-surface">
+        <form asp-area="Admin" asp-controller="Assets" asp-action="Index" method="get" class="ac-filters" id="ac-filter-form">
+            <div class="ac-field ac-search"><label for="ac-search">Demirbaş ara</label><div class="ac-search-wrap"><i class="fas fa-search"></i><input id="ac-search" class="form-control" name="Search" value="@f.Search" maxlength="100" placeholder="Kod, ad, barkod, seri veya envanter numarası" /></div></div>
+            <div class="ac-field"><label for="ac-category">Kategori</label><select class="form-control" id="ac-category" name="CategoryId"><option value="">Tüm kategoriler</option>@foreach (var c in Model.Categories) { if (f.CategoryId == c.Id) { <option selected value="@c.Id">@c.Name</option> } else { <option value="@c.Id">@c.Name</option> } }</select></div>
+            <div class="ac-field"><label for="ac-status">Durum</label><select class="form-control" id="ac-status" name="Status"><option value="">Tüm durumlar</option>@foreach (var s in new[] { "Active", "Passive", "Scrap" }) { if (string.Equals(f.Status,s,StringComparison.OrdinalIgnoreCase)) { <option selected value="@s">@(s=="Active"?"Aktif":s=="Passive"?"Pasif":"Hurda")</option> } else { <option value="@s">@(s=="Active"?"Aktif":s=="Passive"?"Pasif":"Hurda")</option> } }</select></div>
+            <div class="ac-field ac-pagesize"><label for="ac-pagesize">Sayfa boyutu</label><select name="PageSize" class="form-control" id="ac-pagesize">@foreach (var size in new[] { 10,20,50,100 }) { if (f.PageSize == size) { <option selected value="@size">@size</option> } else { <option value="@size">@size</option> } }</select></div>
+            <div class="ac-filter-buttons"><button class="btn btn-primary" type="submit"><i class="fas fa-filter mr-1"></i>Filtrele</button><a class="btn btn-outline-secondary" asp-area="Admin" asp-controller="Assets" asp-action="Index">Temizle</a></div>
+        </form>
+        <div class="ac-list-meta"><strong>Demirbaşlar</strong><span>@Model.FirstRecord–@Model.LastRecord / @Model.TotalCount kayıt</span></div>
+        <div class="table-responsive">
+          <table class="table ac-table mb-0">
+            <thead><tr><th>Kod / Demirbaş</th><th>Kategori / Tür</th><th>Marka / Model</th><th>Sorumlu Organizasyon</th><th>Durum</th><th>Kayıt Tarihi</th><th class="text-right">İşlem</th></tr></thead>
+            <tbody>
+            @foreach(var item in Model.Items)
+            {
+                var isActive = item.Status.Equals("Active",StringComparison.OrdinalIgnoreCase);
+                var isPassive = item.Status.Equals("Passive",StringComparison.OrdinalIgnoreCase);
+                var statusText = isActive ? "Aktif" : isPassive ? "Pasif" : item.Status.Equals("Scrap",StringComparison.OrdinalIgnoreCase) ? "Hurda" : item.Status;
+                <tr>
+                    <td><a href="@detailUrl(item.Id)" class="ac-asset-link"><span class="ac-asset-symbol"><i class="fas fa-desktop"></i></span><span><strong>@item.Name</strong><small>Demirbaş #@item.Code</small></span></a></td>
+                    <td><strong>@item.Category</strong><small>@item.Kind</small></td>
+                    <td><strong>@item.Brand</strong><small>@item.Model</small></td>
+                    <td><strong>@item.ResponsibleUnit</strong><small>@(string.IsNullOrWhiteSpace(item.UsingUnit)?"Kullanan organizasyon belirtilmedi":"Kullanan: "+item.UsingUnit)</small></td>
+                    <td><span class="ac-status @(isActive?"ac-status-success":isPassive?"ac-status-muted":"ac-status-warning")"><i class="fas fa-circle"></i>@statusText</span></td>
+                    <td class="ac-date">@item.CreatedAt.ToString("dd.MM.yyyy")</td>
+                    <td class="text-right"><a href="@detailUrl(item.Id)" class="btn btn-outline-primary btn-sm ac-detail-link" aria-label="@item.Name detayını görüntüle">Detay <i class="fas fa-arrow-right ml-1"></i></a></td>
+                </tr>
+            }
+            @if (Model.Items.Count == 0)
+            {<tr><td colspan="7"><div class="ac-empty"><i class="fas fa-search"></i><strong>Kayıt bulunamadı</strong><span>Aramanızı veya filtreleri değiştirerek tekrar deneyin.</span></div></td></tr>}
+            </tbody>
+          </table>
+        </div>
+        @if(Model.TotalPages > 1)
+        {
+            <nav class="ac-pagination" aria-label="Demirbaş listesi sayfaları">
+                <span>Sayfa @f.Page / @Model.TotalPages</span>
+                <div>
+                    <a class="btn btn-outline-secondary btn-sm @(f.Page<=1?"disabled":"")" aria-disabled="@(f.Page<=1?"true":"false")" href="@(f.Page<=1?"#":Url.Action("Index","Assets",new{area="Admin",Search=f.Search,Status=f.Status,CategoryId=f.CategoryId,Page=f.Page-1,PageSize=f.PageSize}))"><i class="fas fa-chevron-left mr-1"></i>Önceki</a>
+                    <a class="btn btn-outline-secondary btn-sm @(f.Page>=Model.TotalPages?"disabled":"")" aria-disabled="@(f.Page>=Model.TotalPages?"true":"false")" href="@(f.Page>=Model.TotalPages?"#":Url.Action("Index","Assets",new{area="Admin",Search=f.Search,Status=f.Status,CategoryId=f.CategoryId,Page=f.Page+1,PageSize=f.PageSize}))">Sonraki<i class="fas fa-chevron-right ml-1"></i></a>
+                </div>
+            </nav>
+        }
+    </div>
+</div>

@@ -1,4 +1,4 @@
-﻿using MaintenanceManagement.Domain.Entities;
+using MaintenanceManagement.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
@@ -181,6 +181,16 @@ namespace MaintenanceManagement.Infrastructure.Data
 
         public DbSet<WarehousePersonnel> WarehousePersonnels { get; set; } = null!;
 
+
+        #region Demirbaş Tür-Marka ve Üst Varlık Bağlantıları
+
+        public DbSet<AssetKindBrand> AssetKindBrands { get; set; } = null!;
+        public DbSet<AssetParentLink> AssetParentLinks { get; set; } = null!;
+
+        #endregion
+
+        // Demirbaşın zimmet ve iş emri DIŞINDAKİ değişiklik geçmişi.
+        public DbSet<AssetAuditEvent> AssetAuditEvents { get; set; } = null!;
 
         #region OnModelCreating
 
@@ -763,6 +773,84 @@ namespace MaintenanceManagement.Infrastructure.Data
                     .HasForeignKey(x => x.SiteLocationId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
+
+            #endregion
+
+            #region Demirbaş Tür-Marka ve Üst Varlık Fluent API
+
+            modelBuilder.Entity<AssetKindBrand>(entity =>
+            {
+                entity.ToTable("AssetKindBrands");
+                entity.HasKey(x => new { x.AssetKindId, x.BrandId });
+                entity.HasOne<AssetKind>().WithMany()
+                    .HasForeignKey(x => x.AssetKindId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne<Brand>().WithMany()
+                    .HasForeignKey(x => x.BrandId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<AssetParentLink>(entity =>
+            {
+                entity.ToTable("AssetParentLinks");
+                entity.HasKey(x => x.AssetId); // Bir demirbaşın yalnızca bir üst varlığı olur.
+                entity.HasOne<Asset>().WithMany()
+                    .HasForeignKey(x => x.AssetId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne<Asset>().WithMany()
+                    .HasForeignKey(x => x.ParentAssetId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(x => x.ParentAssetId);
+                entity.ToTable(t => t.HasCheckConstraint("CK_AssetParentLinks_NotSelf", "[AssetId] <> [ParentAssetId]"));
+            });
+
+            #endregion
+
+            #region Asset Kullanılan Organizasyon ve Oda Konumu (V7.1)
+
+            modelBuilder.Entity<Asset>(entity =>
+            {
+                entity.HasOne(x => x.UsingUnit)
+                    .WithMany()
+                    .HasForeignKey(x => x.UsingUnitId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.SiteLocation)
+                    .WithMany()
+                    .HasForeignKey(x => x.SiteLocationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(x => x.BarcodeNumber)
+                    .HasMaxLength(100);
+            });
+
+            #endregion
+
+            #region AssetAuditEvent Fluent API
+
+            modelBuilder.Entity<AssetAuditEvent>(entity =>
+            {
+                entity.ToTable("AssetAuditEvents");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.EventType).HasMaxLength(120).IsRequired();
+                entity.Property(x => x.FieldName).HasMaxLength(80).IsRequired();
+                entity.Property(x => x.OldValue).HasMaxLength(2000);
+                entity.Property(x => x.NewValue).HasMaxLength(2000);
+                entity.Property(x => x.Description).HasMaxLength(4000).IsRequired();
+                entity.HasIndex(x => new { x.AssetId, x.OccurredAt });
+                entity.HasOne(x => x.Asset)
+                    .WithMany()
+                    .HasForeignKey(x => x.AssetId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne<User>()
+                    .WithMany()
+                    .HasForeignKey(x => x.PerformedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Aynı demirbaşta aynı anda yalnız bir açık zimmet olabilir.
+            // Mevcut verilerde birden çok açık zimmet varsa migration öncesi düzeltin.
+            modelBuilder.Entity<AssetUser>()
+                .HasIndex(x => x.AssetId)
+                .HasDatabaseName("UX_AssetUsers_OneOpenAssignment")
+                .IsUnique()
+                .HasFilter("[EndDate] IS NULL");
 
             #endregion
 

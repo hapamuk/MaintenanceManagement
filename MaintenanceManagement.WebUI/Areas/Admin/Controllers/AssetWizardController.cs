@@ -47,8 +47,8 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
             if (input.AssetCategoryId > 0 && input.UsingUnitId > 0 &&
                 !await _definitions.CategoryAllowsUnitAsync(input.AssetCategoryId, input.UsingUnitId, ct))
                 ModelState.AddModelError("AssetCategoryId", "Kategori kullanan organizasyon kapsamında değil.");
-            if (input.AssetCategoryId <= 0 || input.BrandId <= 0 || input.AssetModelId <= 0)
-                ModelState.AddModelError("", "Kategori, marka ve model seçilmelidir.");
+            if (input.AssetCategoryId <= 0 || input.AssetKindId <= 0 || input.BrandId <= 0 || input.AssetModelId <= 0)
+                ModelState.AddModelError("", "Kategori, demirbaş türü, marka ve model seçilmelidir.");
             if (input.ResponsibleUnitId <= 0)
                 ModelState.AddModelError("", "Sorumlu organizasyon seçilmelidir.");
             if (!ModelState.IsValid)
@@ -70,6 +70,109 @@ namespace MaintenanceManagement.WebUI.Areas.Admin.Controllers
                 page.Input = input;
                 return View(page);
             }
+        }
+
+
+        // GET: /Admin/AssetWizard/Edit/123 — altı adım ve eski değerler korunur.
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id, CancellationToken ct = default)
+        {
+            if (id <= 0) return NotFound();
+            var vm = await _service.GetEditFormAsync(id, ct);
+            if (vm == null) return NotFound();
+            SetupWizard("edit", id);
+            return View("Create", vm);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, AssetWizardInput input, CancellationToken ct = default)
+        {
+            if (CurrentUserId <= 0) return Challenge();
+            if (id <= 0) return NotFound();
+            if (input.AssetCategoryId <= 0 || input.AssetKindId <= 0 || input.BrandId <= 0 || input.AssetModelId <= 0)
+                ModelState.AddModelError("", "Kategori, tür, marka ve model seçilmelidir.");
+            if (input.ResponsibleUnitId <= 0)
+                ModelState.AddModelError("", "Sorumlu organizasyon seçilmelidir.");
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    await _service.UpdateAsync(id, input, CurrentUserId, ct);
+                    TempData["SuccessMessage"] = "Demirbaş bilgileri güncellendi.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+                catch (Exception ex) when (ex is InvalidOperationException || ex is ValidationException)
+                {
+                    ModelState.AddModelError("", ex.Message);
+                }
+            }
+            var page = await _service.GetFormAsync(ct);
+            page.Input = input;
+            SetupWizard("edit", id);
+            return View("Create", page);
+        }
+
+        // GET: /Admin/AssetWizard/Assign/123 — yalnızca 4. adım açılır.
+        [HttpGet]
+        public async Task<IActionResult> Assign(int id, CancellationToken ct = default)
+        {
+            if (id <= 0) return NotFound();
+            var page = await _service.GetEditFormAsync(id, ct);
+            if (page == null) return NotFound();
+            page.Input.AssigneeUserId = null;
+            SetupWizard("assign", id);
+            return View("Create", page);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Assign(int id, AssetWizardInput input, CancellationToken ct = default)
+        {
+            if (CurrentUserId <= 0) return Challenge();
+            if (id <= 0) return NotFound();
+            // Bu action, diğer demirbaş alanlarını asla güncellemez.
+            if (!input.AssigneeUserId.HasValue || input.AssigneeUserId.Value <= 0)
+                ModelState.AddModelError("", "Zimmet verilecek personeli seçiniz.");
+            if (input.AssigneeUserId.HasValue && input.AssigneeUserId.Value > 0)
+            {
+                try
+                {
+                    await _service.AssignExistingAsync(id, input.AssigneeUserId.Value, CurrentUserId, ct);
+                    TempData["SuccessMessage"] = "Demirbaş zimmetlendi.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+                catch (Exception ex) when (ex is InvalidOperationException || ex is ValidationException)
+                {
+                    ModelState.AddModelError("", ex.Message);
+                }
+            }
+            var page = await _service.GetEditFormAsync(id, ct);
+            if (page == null) return NotFound();
+            page.Input.AssigneeUserId = input.AssigneeUserId;
+            SetupWizard("assign", id);
+            return View("Create", page);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Return(int id, CancellationToken ct = default)
+        {
+            if (CurrentUserId <= 0) return Challenge();
+            if (id <= 0) return NotFound();
+            try
+            {
+                await _service.ReturnExistingAsync(id, CurrentUserId, ct);
+                TempData["SuccessMessage"] = "Zimmet iadesi gerçekleştirildi; geçmiş kaydı korundu.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        private void SetupWizard(string mode, int id)
+        {
+            ViewData["WizardMode"] = mode;
+            ViewData["AssetId"] = id;
         }
 
         [HttpGet]

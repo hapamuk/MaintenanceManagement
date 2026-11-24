@@ -221,6 +221,8 @@ namespace MaintenanceManagement.Infrastructure.DependencyInjection
 
             services.AddScoped<IAssetWizardService, AssetWizardService>();
 
+            services.AddScoped<IAssetCatalogService, AssetCatalogService>();
+
             return services;
         }
     }
